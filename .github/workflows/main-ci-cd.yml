@@ -125,13 +125,12 @@ jobs:
 
     - name: Deploy Function App (az CLI)
       run: |
-        # Używamy az functionapp deploy ze świeżo utworzonym plikiem ZIP
-        az functionapp deploy \
-          --resource-group ${{ env.RESOURCE_GROUP_NAME }} \
-          --name ${{ env.FUNCTION_APP_NAME }} \
-          --src-path "${{ env.FUNCTION_CODE_DIR }}/function_app_deploy.zip" \ # <-- Zmieniona ścieżka na nowy ZIP
-          --type zip \
-          --build-remote true
+          az functionapp deploy \
+            --resource-group "${{ env.RESOURCE_GROUP_NAME }}" \
+            --name "${{ env.FUNCTION_APP_NAME }}" \
+            --src-path "${{ env.FUNCTION_CODE_DIR }}/function_app_deploy.zip" \
+            --type zip \
+            --build-remote true
 
     - name: Logout from Azure (Deployment)
       run: az logout
