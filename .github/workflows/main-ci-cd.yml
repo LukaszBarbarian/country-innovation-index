@@ -112,6 +112,9 @@ jobs:
         cd ${{ env.FUNCTION_CODE_DIR }}
         zip -r ${{ github.workspace }}/functionapp.zip . -x "*.git*" "__pycache__/*"
 
+    - name: List zip contents
+      run: unzip -l ${{ github.workspace }}/functionapp.zip        
+
     - name: 'Login to Azure for Deployment'
       uses: azure/login@v2
       with:
