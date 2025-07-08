@@ -86,9 +86,9 @@ resource "azurerm_function_app" "main_function_app" {
   storage_account_name        = azurerm_storage_account.sa_functions.name
   storage_account_access_key  = azurerm_storage_account.sa_functions.primary_access_key
 
-  version    = "~4" # Wersja runtime Azure Functions (np. "~4" dla .NET 6/Python 3.9+)
-  os_type    = var.app_service_plan_os_type
-  https_only = true # Wymuś HTTPS
+  version    = "~4"
+  #os_type    = var.app_service_plan_os_type
+  https_only = true
 
   # Ustawienia aplikacji dla Function App
   app_settings = {
@@ -134,30 +134,30 @@ resource "null_resource" "zip_function_code_package" {
 }
 
 ### 7. Null Resource do wdrożenia kodu funkcji za pomocą Azure CLI
-resource "null_resource" "deploy_function_code_cli" {
-  depends_on = [
-    azurerm_function_app.main_function_app, # Zapewnia, że Function App jest już utworzona
-    null_resource.zip_function_code_package # Zapewnia, że plik ZIP został utworzony i jest aktualny
-  ]
+# resource "null_resource" "deploy_function_code_cli" {
+#   depends_on = [
+#     azurerm_function_app.main_function_app, # Zapewnia, że Function App jest już utworzona
+#     null_resource.zip_function_code_package # Zapewnia, że plik ZIP został utworzony i jest aktualny
+#   ]
 
-  provisioner "local-exec" {
-    # Używamy Azure CLI do wdrożenia wcześniej utworzonego pliku ZIP.
-    # Musisz mieć zainstalowane Azure CLI i być zalogowany.
-    command = <<EOT
-az functionapp deployment source config-zip --resource-group ${azurerm_resource_group.rg_functions.name} --name ${azurerm_function_app.main_function_app.name} --src ${local.output_zip_file}
-az functionapp restart --resource-group ${azurerm_resource_group.rg_functions.name} --name ${azurerm_function_app.main_function_app.name}
-EOT
-    # Użyj odpowiedniego interpretera w zależności od systemu operacyjnego
-    # Dla Windowsa:
-    interpreter = ["cmd.exe", "/C"]
-    # Dla Linux/macOS:
-    # interpreter = ["bash", "-c"]
-  }
+#   provisioner "local-exec" {
+#     # Używamy Azure CLI do wdrożenia wcześniej utworzonego pliku ZIP.
+#     # Musisz mieć zainstalowane Azure CLI i być zalogowany.
+#     command = <<EOT
+# az functionapp deployment source config-zip --resource-group ${azurerm_resource_group.rg_functions.name} --name ${azurerm_function_app.main_function_app.name} --src ${local.output_zip_file}
+# az functionapp restart --resource-group ${azurerm_resource_group.rg_functions.name} --name ${azurerm_function_app.main_function_app.name}
+# EOT
+#     # Użyj odpowiedniego interpretera w zależności od systemu operacyjnego
+#     # Dla Windowsa:
+#     interpreter = ["cmd.exe", "/C"]
+#     # Dla Linux/macOS:
+#     # interpreter = ["bash", "-c"]
+#   }
 
-  # Ten triggers blokuje wykonanie provisionera, dopóki hash kodu źródłowego się nie zmieni.
-  # Odwołujemy się do hasha wygenerowanego przez 'zip_function_code_package',
-  # co oznacza, że wdrożenie nastąpi tylko wtedy, gdy kod funkcji ulegnie zmianie.
-  triggers = {
-    source_code_hash = null_resource.zip_function_code_package.triggers.source_code_hash
-  }
-}
+#   # Ten triggers blokuje wykonanie provisionera, dopóki hash kodu źródłowego się nie zmieni.
+#   # Odwołujemy się do hasha wygenerowanego przez 'zip_function_code_package',
+#   # co oznacza, że wdrożenie nastąpi tylko wtedy, gdy kod funkcji ulegnie zmianie.
+#   triggers = {
+#     source_code_hash = null_resource.zip_function_code_package.triggers.source_code_hash
+#   }
+# }
