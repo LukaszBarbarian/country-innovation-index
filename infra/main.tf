@@ -11,10 +11,11 @@ locals {
   # Ścieżki do kodu funkcji i skryptu do pakowania
   # source_code_dir to katalog główny projektu 'CV-DEMO1'
   source_code_dir        = abspath("${path.module}/..")
+  
   # output_zip_file to plik ZIP, który zostanie utworzony w katalogu 'CV-DEMO1'
-  output_zip_file        = abspath("${path.module}/../function_app_package.zip")
+  #output_zip_file        = abspath("${path.module}/../function_app_package.zip")
   # create_zip_script_path to ścieżka do skryptu Pythona do pakowania
-  create_zip_script_path = abspath("${path.module}/../tools/create_zip.py")
+  #create_zip_script_path = abspath("${path.module}/../tools/create_zip.py")
 }
 
 ## --- Zasoby Infrastruktury Azure ---
@@ -109,29 +110,29 @@ resource "azurerm_function_app" "main_function_app" {
 
 ## --- Pakowanie i Wdrażanie Kodu Funkcji ---
 
-### 6. Null Resource do pakowania kodu funkcji za pomocą skryptu Python
-resource "null_resource" "zip_function_code_package" {
-  # `local-exec` uruchamia komendę na maszynie, z której uruchamiasz Terraform
-  provisioner "local-exec" {
-    # Upewnij się, że masz Pythona w PATH lub podaj pełną ścieżkę do interpretera Pythona.
-    # To polecenie wywołuje Twój skrypt Python, przekazując mu ścieżkę źródłową kodu i ścieżkę wyjściowego ZIPa.
-    command = "python ${local.create_zip_script_path} ${local.source_code_dir} ${local.output_zip_file}"
-    # Jeśli Python nie jest w PATH, możesz spróbować:
-    # interpreter = ["cmd.exe", "/C"] # Dla Windowsa
-    # interpreter = ["bash", "-c"]   # Dla Linux/macOS
-  }
+# ### 6. Null Resource do pakowania kodu funkcji za pomocą skryptu Python
+# resource "null_resource" "zip_function_code_package" {
+#   # `local-exec` uruchamia komendę na maszynie, z której uruchamiasz Terraform
+#   provisioner "local-exec" {
+#     # Upewnij się, że masz Pythona w PATH lub podaj pełną ścieżkę do interpretera Pythona.
+#     # To polecenie wywołuje Twój skrypt Python, przekazując mu ścieżkę źródłową kodu i ścieżkę wyjściowego ZIPa.
+#     command = "python ${local.create_zip_script_path} ${local.source_code_dir} ${local.output_zip_file}"
+#     # Jeśli Python nie jest w PATH, możesz spróbować:
+#     # interpreter = ["cmd.exe", "/C"] # Dla Windowsa
+#     # interpreter = ["bash", "-c"]   # Dla Linux/macOS
+#   }
 
-  # `triggers` sprawia, że provisioner uruchomi się tylko wtedy, gdy zmieni się hasz kodu źródłowego.
-  # Hasz jest obliczany na podstawie zawartości wszystkich plików w katalogu source_code_dir.
-  triggers = {
-    source_code_hash = md5(join("", [
-      for f in fileset(local.source_code_dir, "**") : filemd5(
-        # Ważne: Zbuduj pełną ścieżkę do pliku, aby filemd5 mogło go znaleźć
-        format("%s/%s", local.source_code_dir, f)
-      )
-    ]))
-  }
-}
+#   # `triggers` sprawia, że provisioner uruchomi się tylko wtedy, gdy zmieni się hasz kodu źródłowego.
+#   # Hasz jest obliczany na podstawie zawartości wszystkich plików w katalogu source_code_dir.
+#   triggers = {
+#     source_code_hash = md5(join("", [
+#       for f in fileset(local.source_code_dir, "**") : filemd5(
+#         # Ważne: Zbuduj pełną ścieżkę do pliku, aby filemd5 mogło go znaleźć
+#         format("%s/%s", local.source_code_dir, f)
+#       )
+#     ]))
+#   }
+# }
 
 ### 7. Null Resource do wdrożenia kodu funkcji za pomocą Azure CLI
 # resource "null_resource" "deploy_function_code_cli" {
