@@ -1,0 +1,124 @@
+name: Workflow cv-demo1
+
+# Wyzwala workflow przy pushu do gałęzi 'main'
+# i przy zmianach w katalogach 'terraform' LUB 'function_app_code'.
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'terraform/**'
+      - './' # Zmieniona ścieżka do kodu funkcji
+      - '.github/workflows/main-ci-cd.yml'
+  workflow_dispatch:
+
+env:
+  PYTHON_VERSION: '3.11' # Python V2 najlepiej działa z nowszymi wersjami, np. 3.11
+  FUNCTION_APP_OS: linux
+  TERRAFORM_DIR: ./terraform
+  FUNCTION_CODE_DIR: ./function_app_code # Katalog z kodem funkcji
+
+jobs:
+  # --- Job do zarządzania infrastrukturą Terraform ---
+  terraform:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: 'Login to Azure for Terraform'
+      uses: azure/login@v2
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: 1.5.0
+
+    - name: Terraform Init
+      id: init
+      run: terraform init
+      working-directory: ${{ env.TERRAFORM_DIR }}
+
+    - name: Terraform Validate
+      id: validate
+      run: terraform validate
+      working-directory: ${{ env.TERRAFORM_DIR }}
+
+    - name: Terraform Plan
+      id: plan
+      run: terraform plan -no-color -input=false -out=tfplan
+      working-directory: ${{ env.TERRAFORM_DIR }}
+      continue-on-error: true
+
+    - name: Terraform Apply
+      id: apply
+      # Uruchamia apply tylko po pushu do main i udanym planie
+      if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.plan.outcome == 'success' }}
+      run: terraform apply -input=false -auto-approve tfplan
+      working-directory: ${{ env.TERRAFORM_DIR }}
+
+    - name: Get Terraform Outputs
+      id: tf_outputs
+      run: |
+        FUNCTION_APP_NAME=$(terraform output -raw function_app_name)
+        RESOURCE_GROUP_NAME=$(terraform output -raw resource_group_name)
+
+        echo "FUNCTION_APP_NAME=$FUNCTION_APP_NAME" >> $GITHUB_ENV
+        echo "RESOURCE_GROUP_NAME=$RESOURCE_GROUP_NAME" >> $GITHUB_ENV
+      working-directory: ${{ env.TERRAFORM_DIR }}
+
+    - name: Logout from Azure (Terraform)
+      run: az logout
+      if: always()
+
+  # --- Job do wdrożenia kodu funkcji ---
+  deploy-function:
+    runs-on: ubuntu-latest
+    needs: terraform # Ten job uruchomi się TYLKO PO zakończeniu joba 'terraform'
+    if: success()
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python version
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Install Azure Functions Core Tools
+      run: |
+        npm install -g azure-functions-core-tools@4 --unsafe-perm true
+
+    - name: Install function app dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+      working-directory: ${{ env.FUNCTION_CODE_DIR }} # Zainstaluj w katalogu z kodem
+
+    - name: Zip Function App Content
+      # Dla modelu V2 i nowszych, Azure Functions Core Tools pakują wszystko z bieżącego katalogu
+      # pamiętając o .funcignore. Nie potrzebujesz osobnych katalogów funkcji wewnątrz ZIP-a.
+      run: |
+        func pack --output ../functionapp.zip # Pakuje zawartość Function_CODE_DIR do pliku ZIP wyżej
+      working-directory: ${{ env.FUNCTION_CODE_DIR }}
+
+    - name: 'Login to Azure for Deployment'
+      uses: azure/login@v2
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: 'Deploy Azure Function App'
+      uses: azure/functions-action@v1
+      with:
+        app-name: ${{ env.FUNCTION_APP_NAME }}
+        resource-group: ${{ env.RESOURCE_GROUP_NAME }}
+        package: functionapp.zip # Ścieżka do wygenerowanego ZIP-a (teraz jest w katalogu nadrzędnym)
+        scm-do-build-during-deployment: true
+        function-app-os: ${{ env.FUNCTION_APP_OS }}
+
+    - name: Logout from Azure (Deployment)
+      run: az logout
+      if: always()
