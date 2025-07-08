@@ -1,33 +1,27 @@
 name: Workflow cv-demo1
 
-# Wyzwala workflow przy pushu do gałęzi 'main'
-# i przy zmianach w katalogach 'infra' LUB 'function_app_code'.
 on:
   push:
     branches:
       - main
     paths:
-      # Zaktualizowana ścieżka do katalogu Terraform
       - 'infra/**'
-      # Zaktualizowana ścieżka do kodu funkcji (jeśli jest w podkatalogu)
       - './'
-      # Dodano ścieżkę do samego pliku workflow, aby zmiany w nim również wyzwalały workflow
       - '.github/workflows/main-ci-cd.yml'
-  # Umożliwia ręczne uruchomienie workflow z interfejsu GitHub
   workflow_dispatch:
 
 env:
   PYTHON_VERSION: '3.11'
   FUNCTION_APP_OS: linux
-  # Zaktualizowana ścieżka do katalogu Terraform
   TERRAFORM_DIR: ./infra
-  # Zaktualizowana ścieżka do katalogu z kodem funkcji (jeśli istnieje, w przeciwnym razie ustaw na .)
   FUNCTION_CODE_DIR: ./
 
 jobs:
-  # --- Job do zarządzania infrastrukturą Terraform ---
   terraform:
     runs-on: ubuntu-latest
+    outputs:
+      function_app_name: ${{ steps.tf_outputs.outputs.function_app_name }}
+      resource_group_name: ${{ steps.tf_outputs.outputs.resource_group_name }}
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
@@ -47,16 +41,13 @@ jobs:
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v3
       with:
-        # Możesz rozważyć użycie nowszej wersji Terraform, jeśli jest dostępna i stabilna
         terraform_version: 1.5.0
 
     - name: Terraform Init
-      id: init
       run: terraform init
       working-directory: ${{ env.TERRAFORM_DIR }}
 
     - name: Terraform Validate
-      id: validate
       run: terraform validate
       working-directory: ${{ env.TERRAFORM_DIR }}
 
@@ -64,15 +55,10 @@ jobs:
       id: plan
       run: terraform plan -no-color -input=false -out=tfplan
       working-directory: ${{ env.TERRAFORM_DIR }}
-      # Pozostawiamy continue-on-error: true, aby plan mógł się zakończyć niepowodzeniem, ale nie blokował dalszych kroków,
-      # co jest przydatne do przeglądu zmian.
       continue-on-error: true
 
     - name: Terraform Apply
       id: apply
-      # Uruchamia apply tylko po pushu do main i udanym planie
-      # Dodano warunek, aby upewnić się, że to prawdziwy push, a nie np. workflow_dispatch,
-      # co może być istotne w produkcyjnych środowiskach.
       if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.plan.outcome == 'success' }}
       run: terraform apply -input=false -auto-approve tfplan
       working-directory: ${{ env.TERRAFORM_DIR }}
@@ -86,28 +72,21 @@ jobs:
         echo "FUNCTION_APP_NAME=$FUNCTION_APP_NAME" >> $GITHUB_ENV
         echo "RESOURCE_GROUP_NAME=$RESOURCE_GROUP_NAME" >> $GITHUB_ENV
 
-        # Ustaw jako outputy joba
-        echo "::set-output name=function_app_name::$FUNCTION_APP_NAME"
-        echo "::set-output name=resource_group_name::$RESOURCE_GROUP_NAME"
+        echo "function_app_name=$FUNCTION_APP_NAME" >> $GITHUB_OUTPUT
+        echo "resource_group_name=$RESOURCE_GROUP_NAME" >> $GITHUB_OUTPUT
       working-directory: ${{ env.TERRAFORM_DIR }}
 
-
     - name: Logout from Azure (Terraform)
-      # Zawsze wyloguj się, nawet jeśli poprzednie kroki zawiodły
       run: az logout
       if: always()
 
-  # --- Job do wdrożenia kodu funkcji ---
   deploy-function:
     runs-on: ubuntu-latest
-    # Ten job uruchomi się TYLKO PO zakończeniu joba 'terraform'
-    # Zapewnia, że job 'deploy-function' uruchomi się tylko, gdy job 'terraform' zakończy się sukcesem.
     needs: terraform
     if: success()
     env:
       FUNCTION_APP_NAME: ${{ needs.terraform.outputs.function_app_name }}
       RESOURCE_GROUP_NAME: ${{ needs.terraform.outputs.resource_group_name }}
-
 
     steps:
     - name: Checkout repository
@@ -119,21 +98,16 @@ jobs:
         python-version: ${{ env.PYTHON_VERSION }}
 
     - name: Install Azure Functions Core Tools
-      # Użyj stabilnej wersji npm, jeśli są problemy z --unsafe-perm
       run: |
         npm install -g azure-functions-core-tools@4 --unsafe-perm true
 
     - name: Install function app dependencies
       run: |
         python -m pip install --upgrade pip
-        # Upewnij się, że requirements.txt jest w FUNCTION_CODE_DIR
         pip install -r requirements.txt
       working-directory: ${{ env.FUNCTION_CODE_DIR }}
 
     - name: Zip Function App Content
-      # Dla modelu V2 i nowszych, Azure Functions Core Tools pakują wszystko z bieżącego katalogu
-      # pamiętając o .funcignore. Nie potrzebujesz osobnych katalogów funkcji wewnątrz ZIP-a.
-      # Zmieniono ścieżkę wyjściową na bardziej uniwersalną, do katalogu workspace
       run: |
         func pack --output ${{ github.workspace }}/functionapp.zip --python
       working-directory: ${{ env.FUNCTION_CODE_DIR }}
@@ -146,7 +120,7 @@ jobs:
     - name: 'Deploy Azure Function App'
       uses: azure/functions-action@v1
       with:
-        app-name: ${{ env.FUNCTION_APP_NAME }} # app-name jest poprawne!
+        app-name: ${{ env.FUNCTION_APP_NAME }}
         package: ${{ github.workspace }}/functionapp.zip
         scm-do-build-during-deployment: true
 
