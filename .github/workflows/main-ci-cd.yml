@@ -6,15 +6,15 @@ on:
       - main
     paths:
       - 'infra/**'
-      - './'
+      - './' # Obejmuje wszystkie zmiany w katalogu głównym i jego podkatalogach
       - '.github/workflows/main-ci-cd.yml'
-  workflow_dispatch:
+  workflow_dispatch: # Pozwala na ręczne uruchomienie workflow
 
 env:
-  PYTHON_VERSION: '3.11'
+  PYTHON_VERSION: '3.11' # Ustaw jedną, spójną wersję Pythona
   FUNCTION_APP_OS: linux
   TERRAFORM_DIR: ./infra
-  FUNCTION_CODE_DIR: ./
+  FUNCTION_CODE_DIR: ./ # Definicja, że kod funkcji jest w katalogu głównym
 
 jobs:
   terraform:
@@ -87,6 +87,7 @@ jobs:
     env:
       FUNCTION_APP_NAME: ${{ needs.terraform.outputs.function_app_name }}
       RESOURCE_GROUP_NAME: ${{ needs.terraform.outputs.resource_group_name }}
+      # PYTHON_VERSION i FUNCTION_CODE_DIR dziedziczone z globalnego env
 
     steps:
     - name: Checkout repository
@@ -100,6 +101,11 @@ jobs:
     - name: Install Azure Functions Core Tools
       run: |
         npm install -g azure-functions-core-tools@4 --unsafe-perm true
+        # Uwaga: dla 'az functionapp deploy' z --src istniejącym ZIP-em,
+        # Azure Functions Core Tools nie jest technicznie potrzebne do samego deployu.
+        # Jest potrzebne, jeśli używałbyś 'func azure functionapp publish' bezpośrednio w pipeline,
+        # ale tutaj używamy az CLI. Możesz rozważyć usunięcie tego kroku,
+        # jeśli nie planujesz używać innych komend func w przyszłości.
 
     - name: Install function app dependencies
       run: |
@@ -107,23 +113,24 @@ jobs:
         pip install -r requirements.txt
       working-directory: ${{ env.FUNCTION_CODE_DIR }}
 
+    # Usunięto krok "Package Function App (ZIP)", ponieważ używasz już istniejącego "test_package.zip"
+
     - name: Login to Azure
       uses: azure/login@v2
       with:
-        creds: ${{ secrets.AZURE_CREDENTIALS }}      
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-    - name: Package Function App (ZIP)
+    - name: Deploy Function App using existing ZIP (az CLI)
       run: |
-        pushd '${{ env.FUNCTION_CODE_DIR }}'
-        zip -r function_app.zip .
-        popd
-
-    - name: Deploy using ZIP API (az CLI)
-      run: |
-        az functionapp deployment source config-zip \
-          -g ${{ env.RESOURCE_GROUP_NAME }} \
-          -n ${{ env.FUNCTION_APP_NAME }} \
-          --src "${{ env.FUNCTION_CODE_DIR }}/function_app.zip"
+        # Używamy az functionapp deploy, co jest odpowiednikiem --zip-path w func CLI.
+        # Sprawdź, czy Twój plik test_package.zip zawiera WSZYSTKO, co jest potrzebne
+        # do uruchomienia funkcji (kod, requirements.txt, host.json, itd.)
+        az functionapp deploy \
+          --resource-group ${{ env.RESOURCE_GROUP_NAME }} \
+          --name ${{ env.FUNCTION_APP_NAME }} \
+          --src "./test_package.zip" \
+          --type zip \
+          --build-remote true # Odpowiednik --build remote
 
     - name: Logout from Azure (Deployment)
       run: az logout
