@@ -35,8 +35,14 @@ jobs:
     - name: 'Login to Azure for Terraform'
       uses: azure/login@v2
       with:
-        # Upewnij się, że ten secret jest poprawnie skonfigurowany w repozytorium GitHub
         creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Export Azure credentials for Terraform
+      run: |
+        echo "ARM_CLIENT_ID=${{ fromJson(secrets.AZURE_CREDENTIALS).clientId }}" >> $GITHUB_ENV
+        echo "ARM_CLIENT_SECRET=${{ fromJson(secrets.AZURE_CREDENTIALS).clientSecret }}" >> $GITHUB_ENV
+        echo "ARM_SUBSCRIPTION_ID=${{ fromJson(secrets.AZURE_CREDENTIALS).subscriptionId }}" >> $GITHUB_ENV
+        echo "ARM_TENANT_ID=${{ fromJson(secrets.AZURE_CREDENTIALS).tenantId }}" >> $GITHUB_ENV
 
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v3
