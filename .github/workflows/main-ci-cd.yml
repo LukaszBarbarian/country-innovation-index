@@ -102,22 +102,27 @@ jobs:
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-    - name: Set Function App Runtime Settings for Python Model V2 # <-- KLUCZOWY KROK DLA MODELU V2
-      run: |
-        az functionapp config appsettings set \
-          --resource-group "${{ env.RESOURCE_GROUP_NAME }}" \
-          --name "${{ env.FUNCTION_APP_NAME }}" \
-          --settings FUNCTIONS_WORKER_RUNTIME=python \
-                    FUNCTIONS_EXTENSION_VERSION='~4' \
-                    AzureFunctionsWebJobsFeatureFlags=EnableWorkerExtension
-      # Te ustawienia są niezbędne, aby Azure Function App działała z Python Model V2.
-      # WAŻNE: Ten krok musi być wykonany PRZED deployem kodu.
+    # Ten krok został usunięty, ponieważ ustawienia runtime'u
+    # są teraz zarządzane przez Terraform w main.tf.
+    # - name: Set Function App Runtime Settings for Python Model V2
+    #   run: |
+    #     az functionapp config appsettings set \
+    #       --resource-group "${{ env.RESOURCE_GROUP_NAME }}" \
+    #       --name "${{ env.FUNCTION_APP_NAME }}" \
+    #       --settings FUNCTIONS_WORKER_RUNTIME=python \
+    #                 FUNCTIONS_EXTENSION_VERSION='~4' \
+    #                 AzureFunctionsWebJobsFeatureFlags=EnableWorkerExtension
 
     - name: Deploy Function App with Azure Functions Action
-      uses: Azure/functions-action@v1 # Wciąż używamy v1, bo v2 nie działało
+      uses: Azure/functions-action@v1
       with:
         app-name: ${{ env.FUNCTION_APP_NAME }}
         package: ${{ env.FUNCTION_CODE_DIR }}
+        # Wszystkie parametry związane z budowaniem i runtime zostały usunięte z 'with:',
+        # ponieważ akcja @v1 mogła ich nie obsługiwać i powodować błędy.
+        # Spodziewamy się, że akcja @v1 po prostu wykona podstawowy deploy,
+        # a konfiguracja runtime'u i Oryx (zdalne budowanie)
+        # zostanie wykonana przez Azure Functions na podstawie ustawień z Terraform.
 
     - name: Logout from Azure (Deployment)
       run: az logout

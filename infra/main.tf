@@ -98,8 +98,8 @@ resource "azurerm_function_app" "main_function_app" {
     APPLICATIONINSIGHTS_CONNECTION_STRING = azurerm_application_insights.app_insights.connection_string
     AzureWebJobsStorage                 = azurerm_storage_account.sa_functions.primary_connection_string
     FUNCTIONS_EXTENSION_VERSION         = "~4"                                       # Wersja rozszerzenia funkcji (dla blueprintów)
-    "AzureWebJobsFeatureFlags"          = "EnableWorkerIndexing"                     # Włącz indexowanie workerów dla Python V2 (blueprinty)
-    # WEBSITE_RUN_FROM_PACKAGE nie jest tutaj ustawiany, zostanie ustawiony automatycznie przez az functionapp deployment source config-zip
+    AzureFunctionsWebJobsFeatureFlags = "EnableWorkerExtension" # <--- ZMIANA TUTAJ!
+    WEBSITE_RUN_FROM_PACKAGE          = "1" # <--- NOWE USTAWIENIE!
   }
 
   tags = {
