@@ -127,7 +127,7 @@ jobs:
       # pamiętając o .funcignore. Nie potrzebujesz osobnych katalogów funkcji wewnątrz ZIP-a.
       # Zmieniono ścieżkę wyjściową na bardziej uniwersalną, do katalogu workspace
       run: |
-        func pack --output ${{ github.workspace }}/functionapp.zip
+        func pack --output ${{ github.workspace }}/functionapp.zip --python
       working-directory: ${{ env.FUNCTION_CODE_DIR }}
 
     - name: 'Login to Azure for Deployment'
