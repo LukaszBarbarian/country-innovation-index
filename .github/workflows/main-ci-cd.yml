@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
 
 env:
-  PYTHON_VERSION: '3.12'
+  PYTHON_VERSION: '3.12' # Ustaw jedną, spójną wersję Pythona
   FUNCTION_APP_OS: linux
   TERRAFORM_DIR: ./infra
   FUNCTION_CODE_DIR: ./ # Definicja, że kod funkcji jest w katalogu głównym
@@ -101,28 +101,20 @@ jobs:
       uses: azure/login@v2
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
+        # Akcje Core Tools działają w kontekście zalogowanego użytkownika AZ CLI, więc login jest konieczny
 
-    # Ten krok został usunięty, ponieważ ustawienia runtime'u
-    # są teraz zarządzane przez Terraform w main.tf.
-    # - name: Set Function App Runtime Settings for Python Model V2
-    #   run: |
-    #     az functionapp config appsettings set \
-    #       --resource-group "${{ env.RESOURCE_GROUP_NAME }}" \
-    #       --name "${{ env.FUNCTION_APP_NAME }}" \
-    #       --settings FUNCTIONS_WORKER_RUNTIME=python \
-    #                 FUNCTIONS_EXTENSION_VERSION='~4' \
-    #                 AzureFunctionsWebJobsFeatureFlags=EnableWorkerExtension
+    - name: Install Azure Functions Core Tools # <-- NOWY/PRZYWRÓCONY KROK
+      run: |
+        npm install -g azure-functions-core-tools@4 --unsafe-perm true
+        func --version
 
-    - name: Deploy Function App with Azure Functions Action
-      uses: Azure/functions-action@v1
-      with:
-        app-name: ${{ env.FUNCTION_APP_NAME }}
-        package: ${{ env.FUNCTION_CODE_DIR }}
-        # Wszystkie parametry związane z budowaniem i runtime zostały usunięte z 'with:',
-        # ponieważ akcja @v1 mogła ich nie obsługiwać i powodować błędy.
-        # Spodziewamy się, że akcja @v1 po prostu wykona podstawowy deploy,
-        # a konfiguracja runtime'u i Oryx (zdalne budowanie)
-        # zostanie wykonana przez Azure Functions na podstawie ustawień z Terraform.
+    - name: Deploy Function App using Func Core Tools # <-- KLUCZOWY KROK
+      run: |
+        func azure functionapp publish ${{ env.FUNCTION_APP_NAME }} \
+          --python \
+          --build remote \
+          --force # Dodaj --force, jeśli deployujesz do istniejącej apki i chcesz nadpisać
+      working-directory: ${{ env.FUNCTION_CODE_DIR }} # Upewniamy się, że jesteśmy w katalogu z kodem funkcji
 
     - name: Logout from Azure (Deployment)
       run: az logout
