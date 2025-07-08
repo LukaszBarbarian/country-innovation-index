@@ -122,15 +122,12 @@ jobs:
 
     - name: Deploy Function App using existing ZIP (az CLI)
       run: |
-        # Używamy az functionapp deploy, co jest odpowiednikiem --zip-path w func CLI.
-        # Sprawdź, czy Twój plik test_package.zip zawiera WSZYSTKO, co jest potrzebne
-        # do uruchomienia funkcji (kod, requirements.txt, host.json, itd.)
         az functionapp deploy \
-          --resource-group ${{ env.RESOURCE_GROUP_NAME }} \
-          --name ${{ env.FUNCTION_APP_NAME }} \
-          --src "./test_package.zip" \
-          --type zip \
-          --build-remote true # Odpowiednik --build remote
+        --resource-group ${{ env.RESOURCE_GROUP_NAME }} \
+        --name ${{ env.FUNCTION_APP_NAME }} \
+        --src-path "./test_package.zip" \ # <-- ZMIANA TUTAJ!
+        --type zip \
+        --build-remote true
 
     - name: Logout from Azure (Deployment)
       run: az logout
