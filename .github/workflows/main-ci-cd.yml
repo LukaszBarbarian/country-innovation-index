@@ -15,8 +15,9 @@ env:
   FUNCTION_APP_OS: linux
   TERRAFORM_DIR: ./infra
   FUNCTION_CODE_DIR: ./ # Definicja, że kod funkcji jest w katalogu głównym
-  # Zdefiniuj ścieżkę do pliku ZIP, który zostanie utworzony
-  AZURE_FUNCTION_APP_PACKAGE_PATH: './function_app_package.zip' 
+  # Zdefiniuj ścieżkę do pliku ZIP. Ustawiamy go w katalogu głównym repozytorium.
+  AZURE_FUNCTION_APP_PACKAGE_NAME: 'function_app_package.zip' # Tylko nazwa pliku
+  AZURE_FUNCTION_APP_PACKAGE_FULL_PATH: '${{ github.workspace }}/function_app_package.zip' # Pełna ścieżka
 
 jobs:
   terraform:
@@ -104,24 +105,27 @@ jobs:
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-    - name: Zip function app content # <-- NOWY KROK: ręczne pakowanie
+    - name: Zip function app content # <-- Zmieniamy sposób pakowania
       run: |
-        # Instalujemy zip, jeśli go nie ma
         sudo apt-get update && sudo apt-get install -y zip
-        # Pakujemy zawartość katalogu funkcji (w tym function_app.py, host.json, requirements.txt)
-        zip -r ${{ env.AZURE_FUNCTION_APP_PACKAGE_PATH }} .
-      working-directory: ${{ env.FUNCTION_CODE_DIR }} # Pakuj z katalogu z kodem
+        # Pakujemy zawartość katalogu z kodem do pliku ZIP w głównym katalogu repozytorium
+        zip -r ${{ env.AZURE_FUNCTION_APP_PACKAGE_FULL_PATH }} .
+      working-directory: ${{ env.FUNCTION_CODE_DIR }} # Upewnij się, że pakujesz z ./ (katalogu z kodem)
 
-    - name: Deploy Function App using Azure WebApps Deploy Action # <-- KLUCZOWA ZMIANA AKCJI
-      uses: azure/webapps-deploy@v2 # Używamy ogólnej akcji do deployu webapp/functionapp
+    - name: List files in current directory # <-- KROK DIAGNOSTYCZNY
+      run: ls -la . 
+
+    - name: List files in workspace root # <-- KROK DIAGNOSTYCZNY
+      run: ls -la ${{ github.workspace }}
+
+    - name: Deploy Function App using Azure WebApps Deploy Action
+      uses: azure/webapps-deploy@v2
       with:
         app-name: ${{ env.FUNCTION_APP_NAME }}
-        slot-name: 'production' # Zazwyczaj deployujemy do 'production'
-        package: ${{ env.AZURE_FUNCTION_APP_PACKAGE_PATH }} # Ścieżka do utworzonego ZIP-a
-        # Dodatkowe konfiguracje dla budowania Oryx (mogą być już w app settings z Terraform, ale to dla pewności)
-        # scm-do-build-during-deployment: true # Ta akcja może nie mieć tych parametrów,
-        # enable-oryx-build: true               # lepiej polegać na ustawieniach Terraform.
-        # remote-build: true
+        slot-name: 'production'
+        package: ${{ env.AZURE_FUNCTION_APP_PACKAGE_FULL_PATH }} # <-- Używamy pełnej ścieżki
+        # Wersja runtime Pythona, jeśli potrzebne (ale powinna być w Terraformie)
+        # python-version: '${{ env.PYTHON_VERSION }}' # Możesz spróbować, ale już jest w TF
 
     - name: Logout from Azure (Deployment)
       run: az logout
