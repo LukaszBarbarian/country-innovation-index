@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
 
 env:
-  PYTHON_VERSION: '3.12'
+  PYTHON_VERSION: '3.11'
   FUNCTION_APP_OS: linux
   TERRAFORM_DIR: ./infra
   FUNCTION_CODE_DIR: ./ # Definicja, że kod funkcji jest w katalogu głównym
