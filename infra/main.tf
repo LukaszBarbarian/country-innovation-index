@@ -93,13 +93,13 @@ resource "azurerm_function_app" "main_function_app" {
 
   # Ustawienia aplikacji dla Function App
   app_settings = {
-    FUNCTIONS_WORKER_RUNTIME            = "python"                                     # Określa runtime funkcji (python, dotnet, node, java, powershell)
-    FUNCTIONS_WORKER_RUNTIME_VERSION    = "~3.12"                                      # Wersja języka Python
+    FUNCTIONS_WORKER_RUNTIME            = "python"                                    
+    FUNCTIONS_WORKER_RUNTIME_VERSION    = "~3.12"                                     
     APPLICATIONINSIGHTS_CONNECTION_STRING = azurerm_application_insights.app_insights.connection_string
     AzureWebJobsStorage                 = azurerm_storage_account.sa_functions.primary_connection_string
-    FUNCTIONS_EXTENSION_VERSION         = "~4"                                       # Wersja rozszerzenia funkcji (dla blueprintów)
-    AzureFunctionsWebJobsFeatureFlags = "EnableWorkerExtension" # <--- ZMIANA TUTAJ!
-    WEBSITE_RUN_FROM_PACKAGE          = "1" # <--- NOWE USTAWIENIE!
+    FUNCTIONS_EXTENSION_VERSION         = "~4"                                      
+    AzureFunctionsWebJobsFeatureFlags = "EnableWorkerExtension" 
+    WEBSITE_RUN_FROM_PACKAGE          = "1"
   }
 
   tags = {

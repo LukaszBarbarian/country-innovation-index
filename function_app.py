@@ -2,16 +2,19 @@ import azure.functions as func
 import logging
 from shared.decorators.ingest_decorator import ingest_data_pipeline 
 from bronze_ingestion.api_factory.types import ApiType
-from bronze_ingestion.api_handlers.who_handlers import prepare_who_ingestion_params # Zmieniono nazwę pliku z 'who_handlers' na 'who_api_handler' zgodnie z konwencją
+from bronze_ingestion.api_handlers.who_handlers import prepare_who_ingestion_params
+from bronze_ingestion.api_factory.factory import ApiFactory
+from bronze_ingestion.api_client.who_api_client import WhoApiClient 
 
-# --- Inicjalizacja loggera dla tego modułu ---
+
+
 logger = logging.getLogger(__name__)
 
 app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 
-@app.route(route="whoingest2", methods=["GET", "POST"]) # Dodano wymagane metody HTTP
+@app.route(route="whoingest", methods=["GET", "POST"]) 
 @ingest_data_pipeline(ApiType.WHO)
-async def whoingest(req: func.HttpRequest) -> func.HttpResponse: # Funkcja musi być async
+async def whoingest(req: func.HttpRequest) -> func.HttpResponse:
     """
     Punkt końcowy HTTP do inicjowania procesu ingestii danych z WHO API.
     Deleguje parsowanie i walidację parametrów do dedykowanego handlera,

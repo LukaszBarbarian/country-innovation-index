@@ -6,7 +6,7 @@ from .base import ApiClient, ApiResponse
 
 # Importuj fabrykę i typy z pakietu bronze_ingestion.api_factory
 from bronze_ingestion.api_factory.factory import ApiFactory
-from bronze_ingestion.api_factory.types import ApiType, WhoApiQueryType # Upewnij się, że WhoApiQueryType jest tutaj zdefiniowane lub zaimportowane
+from bronze_ingestion.api_factory.types import ApiType
 
 logger = logging.getLogger(__name__)
 
@@ -56,53 +56,39 @@ class WhoApiClient(ApiClient):
         logger.info(f"WhoApiClient initialized with base_url: {self.base_url}")
 
     def fetch_data(
-        self,
-        query_type: WhoApiQueryType, 
-        indicator: Optional[str] = None,
-        dimension_name: Optional[str] = None, 
-        filters: Optional[Dict[str, str]] = None
-    ) -> ApiResponse:
-        """
-        Pobiera dane z WHO API na podstawie podanych parametrów.
-        Buduje endpoint i parametry zapytania zgodnie ze specyfikacją WHO GHO API.
-        """
+    self,
+    indicator: Optional[str] = None,
+    dimension: Optional[str] = None,
+    filters: Optional[Dict[str, str]] = None) -> ApiResponse:
         endpoint = ""
         query_params: Dict[str, str] = {}
 
-        if query_type == "indicator_data":
-            if not indicator:
-                raise ValueError("Indicator ID is required for 'indicator_data' query type.")
-            endpoint = indicator # Dla WHO GHO API, ID wskaźnika jest bezpośrednio endpointem
-        elif query_type == "dimensions":
-            endpoint = "Dimension" # Endpoint do listy wszystkich wymiarów
-        elif query_type == "dimension_values":
-            if not dimension_name:
-                raise ValueError("Dimension name (e.g., 'COUNTRY') is required for 'dimension_values' query type.")
-            endpoint = f"DIMENSION/{dimension_name}/DimensionValues" # Endpoint do listy wartości dla konkretnego wymiaru
-        elif query_type == "indicators": # Zgodnie z tym co miałeś '_indicators' to 'Indicator' endpoint
-            endpoint = "Indicator" # Endpoint do listy wszystkich wskaźników
-        else:
-            raise ValueError(f"Unsupported WHO API query type: {query_type}")
+        if indicator:
+            if indicator.lower() == "all":
+                endpoint = "Indicator"
+            else:
+                endpoint = indicator
 
-        # Dodaj filtry OData do query_params
+        elif dimension:
+            if dimension.lower() == "all":
+                endpoint = "Dimension"
+            else:
+                endpoint = f"DIMENSION/{dimension}/DimensionValues"
+
+        else:
+            raise ValueError("At least one of 'indicator' or 'dimension' must be provided.")
+
+        # Filtry OData
         if filters:
             filter_parts = []
             for dim, value in filters.items():
-                if dim.endswith("_contains"): # Obsługa filtra 'contains'
+                if dim.endswith("_contains"):
                     real_dim = dim[:-len("_contains")]
                     filter_parts.append(f"contains({real_dim},'{value}')")
-                else: # Standardowy filtr 'equal'
+                else:
                     filter_parts.append(f"{dim} eq '{value}'")
             query_params["$filter"] = " and ".join(filter_parts)
 
-        logger.info(f"Fetching WHO data (type: {query_type}) from endpoint: {endpoint} with query params: {query_params}")
-        
-        # Użyj metody `get` z klasy bazowej `ApiClient` do wykonania zapytania HTTP
-        # `super().get` zapewni, że używana jest sesja requests z klasy bazowej
-        base_api_response: ApiResponse = super().get(endpoint=endpoint, params=query_params)
-
-        # Przetwórz bazową odpowiedź za pomocą WhoApiResponse, aby wyodrębnić dane 'value'
-        who_api_response = WhoApiResponse(base_api_response)
-        logger.info("WHO API response processed by WhoApiResponse.")
-        
-        return who_api_response
+        logger.info(f"Fetching WHO data from endpoint: {endpoint} with query params: {query_params}")
+        base_api_response = super().get(endpoint=endpoint, params=query_params)
+        return WhoApiResponse(base_api_response)
