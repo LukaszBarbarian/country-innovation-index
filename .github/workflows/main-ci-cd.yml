@@ -112,11 +112,15 @@ jobs:
         pip install -r requirements.txt --target ./.python_packages
       working-directory: ${{ env.FUNCTION_CODE_DIR }} # Upewnij się, że requirements.txt jest w tym katalogu
 
-    - name: Zip function app content
+    - name: Zip function app content # <--- Zmieniamy sposób pakowania
       run: |
         sudo apt-get update && sudo apt-get install -y zip
-        # Pakujemy całą zawartość katalogu głównego, włącznie z ./.python_packages
-        zip -r ${{ env.AZURE_FUNCTION_APP_PACKAGE_FULL_PATH }} .
+        # Tworzymy pakiet ZIP, uwzględniając tylko niezbędne pliki/foldery
+        zip -r ${{ env.AZURE_FUNCTION_APP_PACKAGE_FULL_PATH }} . \
+          -x "infra/*" \
+          -x ".git/*" \
+          -x ".github/*" \
+          -x ".vscode/*" \
       working-directory: ${{ env.FUNCTION_CODE_DIR }}
 
     - name: Calculate ZIP size
