@@ -25,6 +25,7 @@ jobs:
     outputs:
       function_app_name: ${{ steps.tf_outputs.outputs.function_app_name }}
       resource_group_name: ${{ steps.tf_outputs.outputs.resource_group_name }}
+      data_factory_name: ${{ steps.tf_outputs.outputs.data_factory_name }}
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
