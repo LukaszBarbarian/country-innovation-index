@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import azure.functions as func
 from functools import wraps
+import json # <--- DODAJ TEN IMPORT
 from typing import Callable, Awaitable
 from bronze_ingestion.api_factory.types import ApiType
 from bronze_ingestion.api_factory.factory import ApiFactory
@@ -11,7 +12,7 @@ from bronze_ingestion.api_client.base import ApiClient, ApiResponse
 from shared.storage_account.bronze_storage_manager import BronzeStorageManager
 
 def ingest_data_pipeline(api_type: ApiType):
-    def decorator(func_to_decorate: Callable[[func.HttpRequest], Awaitable[tuple[dict, str] | func.HttpResponse]]): # Zmieniono typ zwracany przez dekorowaną funkcję
+    def decorator(func_to_decorate: Callable[[func.HttpRequest], Awaitable[tuple[dict, str] | func.HttpResponse]]):
         @wraps(func_to_decorate)
         async def wrapper(req: func.HttpRequest) -> func.HttpResponse:
             print(f"[INFO] Function '{func_to_decorate.__name__}' triggered for API: {api_type.value}")
@@ -33,7 +34,13 @@ def ingest_data_pipeline(api_type: ApiType):
                 response: ApiResponse = api_client.fetch_data(**api_params)
 
                 if not response.ok:
-                    return func.HttpResponse(f"[ERROR] API returned status {response.status_code}", status_code=502)
+                    # Zwracamy JSON z błędem
+                    error_payload = {
+                        "status": "ERROR",
+                        "message": f"API returned status {response.status_code} for {api_type.value}.",
+                        "details": response.text() # Dodaj szczegóły z API, jeśli są
+                    }
+                    return func.HttpResponse(json.dumps(error_payload), mimetype="application/json", status_code=502)
 
                 data_to_save = response.json()
                 print(f"[DEBUG] Retrieved data type: {type(data_to_save)}")
@@ -42,17 +49,33 @@ def ingest_data_pipeline(api_type: ApiType):
                 storage_manager = BronzeStorageManager()
                 blob_path = storage_manager.upload_json_data(data_to_save, api_name, dataset_name_for_storage)
 
+                # --- ZMIANA TUTAJ: ZWRACAJ JSON ---
+                success_payload = {
+                    "status": "SUCCESS",
+                    "message": f"Ingested data for '{dataset_name_for_storage}' from {api_type.value}. Saved to {blob_path}",
+                    "dataset_name": dataset_name_for_storage,
+                    "blob_path": blob_path # Dodaj ścieżkę do bloba do odpowiedzi
+                }
                 return func.HttpResponse(
-                    f"[SUCCESS] Ingested data for '{dataset_name_for_storage}' from {api_type.value}. Saved to {blob_path}",
+                    json.dumps(success_payload), # <--- Konwertujemy słownik na string JSON
+                    mimetype="application/json", # <--- Ustawiamy Content-Type na JSON
                     status_code=200
                 )
 
             except ValueError as ve:
                 print(f"[ERROR] ValueError: {ve}")
-                return func.HttpResponse(f"[ERROR] Invalid input or config: {ve}", status_code=400)
+                error_payload = {
+                    "status": "ERROR",
+                    "message": f"Invalid input or config: {ve}"
+                }
+                return func.HttpResponse(json.dumps(error_payload), mimetype="application/json", status_code=400)
             except Exception as e:
                 print(f"[ERROR] Unexpected exception: {e}")
-                return func.HttpResponse(f"[ERROR] Unexpected exception: {e}", status_code=500)
+                error_payload = {
+                    "status": "ERROR",
+                    "message": f"Unexpected server error: {e}"
+                }
+                return func.HttpResponse(json.dumps(error_payload), mimetype="application/json", status_code=500)
 
         return wrapper
     return decorator

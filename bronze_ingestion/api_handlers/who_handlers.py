@@ -9,10 +9,8 @@ async def prepare_who_ingestion_params(req: func.HttpRequest) -> Union[Tuple[Dic
 
     if req.method == 'POST':
         try:
-            req_body_str = await req.get_body_as_str()
-            if req_body_str:
-                req_body = json.loads(req_body_str)
-
+            req_body = req.get_json()
+            if req_body:
                 if "indicator" in req_body and not indicator:
                     indicator = req_body["indicator"]
                 if "dimension" in req_body and not dimension:
