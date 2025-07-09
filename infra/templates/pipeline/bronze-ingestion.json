@@ -1,11 +1,66 @@
 {
 	"name": "bronze-ingestion",
 	"properties": {
+		"activities": [
+			{
+				"name": "who-foreach",
+				"type": "ForEach",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@pipeline().parameters.inputArray",
+						"type": "Expression"
+					},
+					"isSequential": true,
+					"activities": [
+						{
+							"name": "whoingest",
+							"type": "AzureFunctionActivity",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"functionName": "whoingest",
+								"body": {
+									"value": "@json(concat('{ \"', item().paramName, '\": \"', item().paramValue, '\" }'))",
+									"type": "Expression"
+								},
+								"method": "POST"
+							},
+							"linkedServiceName": {
+								"referenceName": "azure_function_linked_service",
+								"type": "LinkedServiceReference"
+							}
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"inputArray": {
+				"type": "array",
+				"defaultValue": [
+					{
+						"paramName": "indicator",
+						"paramValue": "WHOSIS_000001"
+					},
+					{
+						"paramName": "dimension",
+						"paramValue": "all"
+					}
+				]
+			}
+		},
 		"folder": {
 			"name": "cv-demo1/bronze"
 		},
-		"annotations": [],
-		"lastPublishTime": "2025-07-09T11:29:59Z"
-	},
-	"type": "Microsoft.DataFactory/factories/pipelines"
+		"annotations": []
+	}
 }
