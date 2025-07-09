@@ -1,0 +1,11 @@
+{
+	"name": "bronze-ingestion",
+	"properties": {
+		"folder": {
+			"name": "cv-demo1/bronze"
+		},
+		"annotations": [],
+		"lastPublishTime": "2025-07-09T11:29:59Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}
