@@ -11,7 +11,7 @@ locals {
   # Ścieżki do kodu funkcji i skryptu do pakowania
   # source_code_dir to katalog główny projektu 'CV-DEMO1'
   source_code_dir        = abspath("${path.module}/..")
-
+  
   # output_zip_file to plik ZIP, który zostanie utworzony w katalogu 'CV-DEMO1'
   #output_zip_file        = abspath("${path.module}/../function_app_package.zip")
   # create_zip_script_path to ścieżka do skryptu Pythona do pakowania
@@ -94,12 +94,12 @@ resource "azurerm_function_app" "main_function_app" {
   # Ustawienia aplikacji dla Function App
   app_settings = {
     FUNCTIONS_WORKER_RUNTIME            = "python"                                     # Określa runtime funkcji (python, dotnet, node, java, powershell)
-    FUNCTIONS_WORKER_RUNTIME_VERSION    = "~3.11"                                       # Wersja języka Python                                    
+    FUNCTIONS_WORKER_RUNTIME_VERSION    = "~3.12"                                      # Wersja języka Python
     APPLICATIONINSIGHTS_CONNECTION_STRING = azurerm_application_insights.app_insights.connection_string
     AzureWebJobsStorage                 = azurerm_storage_account.sa_functions.primary_connection_string
-    FUNCTIONS_EXTENSION_VERSION         = "~4"                                      
-    AzureFunctionsWebJobsFeatureFlags = "EnableWorkerExtension" 
-    WEBSITE_RUN_FROM_PACKAGE          = "1"
+    FUNCTIONS_EXTENSION_VERSION         = "~4"                                       # Wersja rozszerzenia funkcji (dla blueprintów)
+    "AzureWebJobsFeatureFlags"          = "EnableWorkerIndexing"                     # Włącz indexowanie workerów dla Python V2 (blueprinty)
+    # WEBSITE_RUN_FROM_PACKAGE nie jest tutaj ustawiany, zostanie ustawiony automatycznie przez az functionapp deployment source config-zip
   }
 
   tags = {
