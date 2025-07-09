@@ -51,8 +51,3 @@ output "gold_container_name" {
   description = "The name of the Gold layer container."
   value       = azurerm_storage_container.container_gold.name
 }
-
-output "data_factory_name" {
-  value = module.adf_factory.data_factory_name
-}
-
