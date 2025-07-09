@@ -7,6 +7,12 @@ variable "project_prefix" {
   default     = "demosur"
 }
 
+variable "resource_group_name" {
+  description = "The name of the resource group for shared modules like ADF"
+  type        = string
+  default     = "" # zostanie nadpisane w `main.tf`, więc może być pusty
+}
+
 variable "location" {
   description = "The Azure region where resources will be deployed."
   type        = string
