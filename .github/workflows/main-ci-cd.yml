@@ -14,7 +14,10 @@ env:
   PYTHON_VERSION: '3.11'
   FUNCTION_APP_OS: linux
   TERRAFORM_DIR: ./infra
-  FUNCTION_CODE_DIR: ./
+  FUNCTION_CODE_DIR: ./ # Definicja, że kod funkcji jest w katalogu głównym
+  # Zdefiniuj ścieżkę do pliku ZIP. Ustawiamy go w katalogu głównym repozytorium.
+  AZURE_FUNCTION_APP_PACKAGE_NAME: 'function_app_package.zip' # Tylko nazwa pliku
+  AZURE_FUNCTION_APP_PACKAGE_FULL_PATH: '${{ github.workspace }}/function_app_package.zip' # Pełna ścieżka
 
 jobs:
   terraform:
@@ -37,7 +40,6 @@ jobs:
         echo "ARM_CLIENT_SECRET=${{ fromJson(secrets.AZURE_CREDENTIALS).clientSecret }}" >> $GITHUB_ENV
         echo "ARM_SUBSCRIPTION_ID=${{ fromJson(secrets.AZURE_CREDENTIALS).subscriptionId }}" >> $GITHUB_ENV
         echo "ARM_TENANT_ID=${{ fromJson(secrets.AZURE_CREDENTIALS).tenantId }}" >> $GITHUB_ENV
-
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v3
       with:
@@ -68,10 +70,8 @@ jobs:
       run: |
         FUNCTION_APP_NAME=$(terraform output -raw function_app_name)
         RESOURCE_GROUP_NAME=$(terraform output -raw resource_group_name)
-
         echo "FUNCTION_APP_NAME=$FUNCTION_APP_NAME" >> $GITHUB_ENV
         echo "RESOURCE_GROUP_NAME=$RESOURCE_GROUP_NAME" >> $GITHUB_ENV
-
         echo "function_app_name=$FUNCTION_APP_NAME" >> $GITHUB_OUTPUT
         echo "resource_group_name=$RESOURCE_GROUP_NAME" >> $GITHUB_OUTPUT
       working-directory: ${{ env.TERRAFORM_DIR }}
@@ -102,11 +102,27 @@ jobs:
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-    - name: Deploy Function App with Azure Functions Action # <-- Minimalistyczna konfiguracja
-      uses: Azure/functions-action@v1
+    - name: Zip function app content # <-- Zmieniamy sposób pakowania
+      run: |
+        sudo apt-get update && sudo apt-get install -y zip
+        # Pakujemy zawartość katalogu z kodem do pliku ZIP w głównym katalogu repozytorium
+        zip -r ${{ env.AZURE_FUNCTION_APP_PACKAGE_FULL_PATH }} .
+      working-directory: ${{ env.FUNCTION_CODE_DIR }} # Upewnij się, że pakujesz z ./ (katalogu z kodem)
+
+    - name: List files in current directory # <-- KROK DIAGNOSTYCZNY
+      run: ls -la . 
+
+    - name: List files in workspace root # <-- KROK DIAGNOSTYCZNY
+      run: ls -la ${{ github.workspace }}
+
+    - name: Deploy Function App using Azure WebApps Deploy Action
+      uses: azure/webapps-deploy@v2
       with:
         app-name: ${{ env.FUNCTION_APP_NAME }}
-        package: ${{ env.FUNCTION_CODE_DIR }} # Akcja sama spakuje ten katalog i go deployuje
+        slot-name: 'production'
+        package: ${{ env.AZURE_FUNCTION_APP_PACKAGE_FULL_PATH }} # <-- Używamy pełnej ścieżki
+        # Wersja runtime Pythona, jeśli potrzebne (ale powinna być w Terraformie)
+        # python-version: '${{ env.PYTHON_VERSION }}' # Możesz spróbować, ale już jest w TF
 
     - name: Logout from Azure (Deployment)
       run: az logout
