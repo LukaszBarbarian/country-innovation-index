@@ -130,6 +130,3 @@ jobs:
     - name: Logout from Azure (Deployment)
       run: az logout
       if: always()
-
-
-      
