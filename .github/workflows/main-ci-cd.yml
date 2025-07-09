@@ -71,12 +71,15 @@ jobs:
       run: |
         FUNCTION_APP_NAME=$(terraform output -raw function_app_name)
         RESOURCE_GROUP_NAME=$(terraform output -raw resource_group_name)
+        DATA_FACTORY_NAME=$(terraform output -raw data_factory_name)
 
         echo "FUNCTION_APP_NAME=$FUNCTION_APP_NAME" >> $GITHUB_ENV
         echo "RESOURCE_GROUP_NAME=$RESOURCE_GROUP_NAME" >> $GITHUB_ENV
+        echo "DATA_FACTORY_NAME=$DATA_FACTORY_NAME" >> $GITHUB_ENV
 
         echo "function_app_name=$FUNCTION_APP_NAME" >> $GITHUB_OUTPUT
         echo "resource_group_name=$RESOURCE_GROUP_NAME" >> $GITHUB_OUTPUT
+        echo "data_factory_name=$DATA_FACTORY_NAME" >> $GITHUB_OUTPUT
       working-directory: ${{ env.TERRAFORM_DIR }}
 
     - name: Logout from Azure (Terraform)
@@ -112,11 +115,11 @@ jobs:
         zip -r ${{ env.AZURE_FUNCTION_APP_PACKAGE_FULL_PATH }} .
       working-directory: ${{ env.FUNCTION_CODE_DIR }} # Upewnij się, że pakujesz z ./ (katalogu z kodem)
 
-    - name: List files in current directory # <-- KROK DIAGNOSTYCZNY
-      run: ls -la . 
+    # - name: List files in current directory # <-- KROK DIAGNOSTYCZNY
+    #   run: ls -la . 
 
-    - name: List files in workspace root # <-- KROK DIAGNOSTYCZNY
-      run: ls -la ${{ github.workspace }}
+    # - name: List files in workspace root # <-- KROK DIAGNOSTYCZNY
+    #   run: ls -la ${{ github.workspace }}
 
     - name: Deploy Function App using Azure WebApps Deploy Action
       uses: azure/webapps-deploy@v2
@@ -130,3 +133,40 @@ jobs:
     - name: Logout from Azure (Deployment)
       run: az logout
       if: always()
+
+
+  deploy-adf:
+    name: Deploy ADF Pipelines
+    runs-on: ubuntu-latest
+    needs: terraform
+    if: success()
+    env:
+      RESOURCE_GROUP_NAME: ${{ needs.terraform.outputs.resource_group_name }}
+      DATAFACTORY_NAME: ${{ needs.terraform.outputs.data_factory_name }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Export ADF ARM Template
+        run: |
+          az datafactory pipeline export-arm-template \
+            --factory-name $DATAFACTORY_NAME \
+            --resource-group $RESOURCE_GROUP_NAME \
+            --output-folder ./infra/adf \
+            --overwrite
+
+      - name: Deploy ADF ARM Template
+        run: |
+          az deployment group create \
+            --resource-group $RESOURCE_GROUP_NAME \
+            --template-file ./infra/adf/template.json \
+            --parameters ./infra/adf/parameters.json
+
+      - name: Logout from Azure (ADF)
+        run: az logout
+        if: always()

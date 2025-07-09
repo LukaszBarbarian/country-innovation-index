@@ -1,24 +1,14 @@
 # --- Zmienne lokalne (locals) ---
 locals {
-  # Unikalny sufiks dla nazw zasobów, bazujący na ID grupy zasobów
-  # Użycie funkcji sha1() na ID resource group zapewni unikalność po pierwszym utworzeniu RG
   unique_suffix = substr(sha1(azurerm_resource_group.rg_functions.id), 0, 4)
 
-  # Finalne nazwy zasobów (z możliwością nadpisania przez zmienne wejściowe)
   function_app_name_final           = var.function_app_name != "" ? var.function_app_name : "${var.project_prefix}${var.environment}func${local.unique_suffix}"
   function_storage_account_name_final = lower(replace("${var.project_prefix}${var.environment}func${local.unique_suffix}sa", "-", "")) # Nazwy kont storage muszą być małe litery i bez myślników
 
-  # Ścieżki do kodu funkcji i skryptu do pakowania
-  # source_code_dir to katalog główny projektu 'CV-DEMO1'
+  data_factory_name_final = "${var.project_prefix}-${var.environment}-adf-${local.unique_suffix}"
   source_code_dir        = abspath("${path.module}/..")
-  
-  # output_zip_file to plik ZIP, który zostanie utworzony w katalogu 'CV-DEMO1'
-  #output_zip_file        = abspath("${path.module}/../function_app_package.zip")
-  # create_zip_script_path to ścieżka do skryptu Pythona do pakowania
-  #create_zip_script_path = abspath("${path.module}/../tools/create_zip.py")
 }
 
-## --- Zasoby Infrastruktury Azure ---
 
 ### 1. Resource Group
 resource "azurerm_resource_group" "rg_functions" {
@@ -108,57 +98,12 @@ resource "azurerm_function_app" "main_function_app" {
   }
 }
 
-## --- Pakowanie i Wdrażanie Kodu Funkcji ---
 
-# ### 6. Null Resource do pakowania kodu funkcji za pomocą skryptu Python
-# resource "null_resource" "zip_function_code_package" {
-#   # `local-exec` uruchamia komendę na maszynie, z której uruchamiasz Terraform
-#   provisioner "local-exec" {
-#     # Upewnij się, że masz Pythona w PATH lub podaj pełną ścieżkę do interpretera Pythona.
-#     # To polecenie wywołuje Twój skrypt Python, przekazując mu ścieżkę źródłową kodu i ścieżkę wyjściowego ZIPa.
-#     command = "python ${local.create_zip_script_path} ${local.source_code_dir} ${local.output_zip_file}"
-#     # Jeśli Python nie jest w PATH, możesz spróbować:
-#     # interpreter = ["cmd.exe", "/C"] # Dla Windowsa
-#     # interpreter = ["bash", "-c"]   # Dla Linux/macOS
-#   }
+module "adf_factory" {
+  source               = "./adf"
+  resource_group_name  = azurerm_resource_group.rg_functions.name
+  location             = azurerm_resource_group.rg_functions.location
+  data_factory_name    = local.data_factory_name_final
+  function_app_url     = "https://${azurerm_function_app.main_function_app.default_hostname}/api"
 
-#   # `triggers` sprawia, że provisioner uruchomi się tylko wtedy, gdy zmieni się hasz kodu źródłowego.
-#   # Hasz jest obliczany na podstawie zawartości wszystkich plików w katalogu source_code_dir.
-#   triggers = {
-#     source_code_hash = md5(join("", [
-#       for f in fileset(local.source_code_dir, "**") : filemd5(
-#         # Ważne: Zbuduj pełną ścieżkę do pliku, aby filemd5 mogło go znaleźć
-#         format("%s/%s", local.source_code_dir, f)
-#       )
-#     ]))
-#   }
-# }
-
-### 7. Null Resource do wdrożenia kodu funkcji za pomocą Azure CLI
-# resource "null_resource" "deploy_function_code_cli" {
-#   depends_on = [
-#     azurerm_function_app.main_function_app, # Zapewnia, że Function App jest już utworzona
-#     null_resource.zip_function_code_package # Zapewnia, że plik ZIP został utworzony i jest aktualny
-#   ]
-
-#   provisioner "local-exec" {
-#     # Używamy Azure CLI do wdrożenia wcześniej utworzonego pliku ZIP.
-#     # Musisz mieć zainstalowane Azure CLI i być zalogowany.
-#     command = <<EOT
-# az functionapp deployment source config-zip --resource-group ${azurerm_resource_group.rg_functions.name} --name ${azurerm_function_app.main_function_app.name} --src ${local.output_zip_file}
-# az functionapp restart --resource-group ${azurerm_resource_group.rg_functions.name} --name ${azurerm_function_app.main_function_app.name}
-# EOT
-#     # Użyj odpowiedniego interpretera w zależności od systemu operacyjnego
-#     # Dla Windowsa:
-#     interpreter = ["cmd.exe", "/C"]
-#     # Dla Linux/macOS:
-#     # interpreter = ["bash", "-c"]
-#   }
-
-#   # Ten triggers blokuje wykonanie provisionera, dopóki hash kodu źródłowego się nie zmieni.
-#   # Odwołujemy się do hasha wygenerowanego przez 'zip_function_code_package',
-#   # co oznacza, że wdrożenie nastąpi tylko wtedy, gdy kod funkcji ulegnie zmianie.
-#   triggers = {
-#     source_code_hash = null_resource.zip_function_code_package.triggers.source_code_hash
-#   }
-# }
+}
