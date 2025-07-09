@@ -105,25 +105,32 @@ jobs:
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-    - name: Zip function app content # <-- Zmieniamy sposób pakowania
+    - name: Install Python dependencies # <--- NOWY KROK: Instalacja zależności
+      run: |
+        python -m pip install --upgrade pip
+        # Instalujemy zależności do ukrytego folderu ./.python_packages
+        pip install -r requirements.txt --target ./.python_packages
+      working-directory: ${{ env.FUNCTION_CODE_DIR }} # Upewnij się, że requirements.txt jest w tym katalogu
+
+    - name: Zip function app content
       run: |
         sudo apt-get update && sudo apt-get install -y zip
-        # Pakujemy zawartość katalogu z kodem do pliku ZIP w głównym katalogu repozytorium
+        # Pakujemy całą zawartość katalogu głównego, włącznie z ./.python_packages
         zip -r ${{ env.AZURE_FUNCTION_APP_PACKAGE_FULL_PATH }} .
-      working-directory: ${{ env.FUNCTION_CODE_DIR }} # Upewnij się, że pakujesz z ./ (katalogu z kodem)
-
+      working-directory: ${{ env.FUNCTION_CODE_DIR }}
 
     - name: Calculate ZIP size
       id: zip_size
       run: |
         ZIP_SIZE_BYTES=$(stat -c %s "${{ env.AZURE_FUNCTION_APP_PACKAGE_FULL_PATH }}")
         ZIP_SIZE_MB=$(echo "scale=2; $ZIP_SIZE_BYTES / 1024 / 1024" | bc)
-        echo "ZIP file size: ${ZIP_SIZE_MB} MB"      
+        echo "ZIP file size: ${ZIP_SIZE_MB} MB"
 
-    - name: List files in current directory # <-- KROK DIAGNOSTYCZNY
-      run: ls -la . 
+    - name: List files in current directory (after zip) # Zaktualizowany opis
+      run: ls -la .
+      working-directory: ${{ env.FUNCTION_CODE_DIR }} # Upewnij się, że patrzymy na właściwy katalog
 
-    - name: List files in workspace root # <-- KROK DIAGNOSTYCZNY
+    - name: List files in workspace root (after zip) # Zaktualizowany opis
       run: ls -la ${{ github.workspace }}
 
     - name: Deploy Function App using Azure WebApps Deploy Action
@@ -131,9 +138,7 @@ jobs:
       with:
         app-name: ${{ env.FUNCTION_APP_NAME }}
         slot-name: 'production'
-        package: ${{ env.AZURE_FUNCTION_APP_PACKAGE_FULL_PATH }} # <-- Używamy pełnej ścieżki
-        # Wersja runtime Pythona, jeśli potrzebne (ale powinna być w Terraformie)
-        # python-version: '${{ env.PYTHON_VERSION }}' # Możesz spróbować, ale już jest w TF
+        package: ${{ env.AZURE_FUNCTION_APP_PACKAGE_FULL_PATH }}
 
     - name: Logout from Azure (Deployment)
       run: az logout
