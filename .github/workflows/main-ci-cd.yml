@@ -14,10 +14,7 @@ env:
   PYTHON_VERSION: '3.11'
   FUNCTION_APP_OS: linux
   TERRAFORM_DIR: ./infra
-  FUNCTION_CODE_DIR: ./ # Definicja, że kod funkcji jest w katalogu głównym
-  # Zdefiniuj ścieżkę do pliku ZIP. Ustawiamy go w katalogu głównym repozytorium.
-  AZURE_FUNCTION_APP_PACKAGE_NAME: 'function_app_package.zip' # Tylko nazwa pliku
-  AZURE_FUNCTION_APP_PACKAGE_FULL_PATH: '${{ github.workspace }}/function_app_package.zip' # Pełna ścieżka
+  FUNCTION_CODE_DIR: ./
 
 jobs:
   terraform:
@@ -105,44 +102,11 @@ jobs:
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-    - name: Install Python dependencies # <--- NOWY KROK: Instalacja zależności
-      run: |
-        python -m pip install --upgrade pip
-        # Instalujemy zależności do ukrytego folderu ./.python_packages
-        pip install -r requirements.txt --target ./.python_packages
-      working-directory: ${{ env.FUNCTION_CODE_DIR }} # Upewnij się, że requirements.txt jest w tym katalogu
-
-    - name: Zip function app content # <--- Zmieniamy sposób pakowania
-      run: |
-        sudo apt-get update && sudo apt-get install -y zip
-        # Tworzymy pakiet ZIP, uwzględniając tylko niezbędne pliki/foldery
-        zip -r ${{ env.AZURE_FUNCTION_APP_PACKAGE_FULL_PATH }} . \
-          -x "infra/*" \
-          -x ".git/*" \
-          -x ".github/*" \
-          -x ".vscode/*" \
-      working-directory: ${{ env.FUNCTION_CODE_DIR }}
-
-    - name: Calculate ZIP size
-      id: zip_size
-      run: |
-        ZIP_SIZE_BYTES=$(stat -c %s "${{ env.AZURE_FUNCTION_APP_PACKAGE_FULL_PATH }}")
-        ZIP_SIZE_MB=$(echo "scale=2; $ZIP_SIZE_BYTES / 1024 / 1024" | bc)
-        echo "ZIP file size: ${ZIP_SIZE_MB} MB"
-
-    - name: List files in current directory (after zip) # Zaktualizowany opis
-      run: ls -la .
-      working-directory: ${{ env.FUNCTION_CODE_DIR }} # Upewnij się, że patrzymy na właściwy katalog
-
-    - name: List files in workspace root (after zip) # Zaktualizowany opis
-      run: ls -la ${{ github.workspace }}
-
-    - name: Deploy Function App using Azure WebApps Deploy Action
-      uses: azure/webapps-deploy@v2
+    - name: Deploy Function App with Azure Functions Action # <-- Minimalistyczna konfiguracja
+      uses: Azure/functions-action@v1
       with:
         app-name: ${{ env.FUNCTION_APP_NAME }}
-        slot-name: 'production'
-        package: ${{ env.AZURE_FUNCTION_APP_PACKAGE_FULL_PATH }}
+        package: ${{ env.FUNCTION_CODE_DIR }} # Akcja sama spakuje ten katalog i go deployuje
 
     - name: Logout from Azure (Deployment)
       run: az logout
