@@ -67,9 +67,16 @@ variable "app_insights_daily_cap" {
   default     = 100
 }
 
-
 variable "function_code_zip_output_relative_path" {
   description = "Relative path for the output function app ZIP file"
   type        = string
   default     = "function_app_package.zip"
 }
+
+
+# variable "storage_account_name" {
+#   description = "The name of the Azure Storage Account (Data Lake Gen2) for Databricks Metastore storage root."
+#   type        = string
+#   # Możesz tu dodać default, jeśli chcesz, ale lepiej, żeby było ustawione dynamicznie
+# }
+

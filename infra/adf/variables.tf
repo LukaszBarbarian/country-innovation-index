@@ -25,3 +25,10 @@ variable "function_app_url" {
   type        = string
 }
 
+
+
+variable "environment" {
+  description = "The environment name (e.g., dev, test, prod)."
+  type        = string
+  default     = "dev"
+}

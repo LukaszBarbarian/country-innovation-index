@@ -5,8 +5,8 @@ from typing import Optional, Dict, Any
 from .base import ApiClient, ApiResponse 
 
 # Importuj fabrykę i typy z pakietu bronze_ingestion.api_factory
-from bronze_ingestion.api_factory.factory import ApiFactory
-from bronze_ingestion.api_factory.types import ApiType
+from bronze_ingestion.api_factory.base import ApiFactory
+from shared.enums.api_type import ApiType
 
 logger = logging.getLogger(__name__)
 

@@ -4,6 +4,11 @@ resource "azurerm_data_factory" "adf_instance" {
   name                = var.adf_name 
   location            = var.location
   resource_group_name = var.resource_group_name
+
+  tags = {
+    Environment = var.environment
+    Project     = var.project_prefix
+  }
 }
 
 
@@ -11,30 +16,26 @@ resource "azurerm_data_factory" "adf_instance" {
 resource "azurerm_data_factory_pipeline" "bronze_ingestion_pipeline" {
   name            = "bronze-ingestion"
   data_factory_id = azurerm_data_factory.adf_instance.id
-  folder          = "cv-demo1/bronze" # To pole jest już obsługiwane przez 'folder'
+  folder          = "cv-demo1/bronze"
 
   # Definicja parametrów potoku
   parameters = {
-    inputArray = {
-      type         = "Array"
-      defaultValue = jsonencode([ # defaultValue musi być stringiem JSON
-        {
-          paramName = "indicator"
-          paramValue = "WHOSIS_000001"
-        },
-        {
-          paramName = "dimension"
-          paramValue = "all"
-        }
-      ])
+  inputArray = jsonencode([
+    {
+      paramName  = "indicator"
+      paramValue = "WHOSIS_000001"
+    },
+    {
+      paramName  = "dimension"
+      paramValue = "all"
     }
-  }
-
-  # Definicja aktywności potoku
+  ])
+}
+  # Definicja aktywności potoku (pozostaje bez zmian, jeśli została już naprawiona)
   activities_json = jsonencode([
     {
       "name": "who-foreach",
-      "type": "C:\Users\Mateusz\Desktop\CV-DEMO1\infra\adf\linked_service.tf", # To jest błędna ścieżka, musi być "ForEach"
+      "type": "ForEach", # Upewnij się, że to jest "ForEach", a nie ścieżka!
       "dependsOn": [],
       "userProperties": [],
       "typeProperties": {
@@ -65,7 +66,6 @@ resource "azurerm_data_factory_pipeline" "bronze_ingestion_pipeline" {
               "method": "POST"
             },
             "linkedServiceName": {
-              # WAŻNE: Używamy dynamicznego odwołania Terraform do nazwy Linked Service
               "referenceName": azurerm_data_factory_linked_service_azure_function.azure_func.name,
               "type": "LinkedServiceReference"
             }

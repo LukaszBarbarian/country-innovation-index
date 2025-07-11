@@ -91,10 +91,11 @@ resource "azurerm_function_app" "main_function_app" {
   #os_type    = var.app_service_plan_os_type
   https_only = true
 
+
   # Ustawienia aplikacji dla Function App
   app_settings = {
     FUNCTIONS_WORKER_RUNTIME            = "python"                                     # Określa runtime funkcji (python, dotnet, node, java, powershell)
-    FUNCTIONS_WORKER_RUNTIME_VERSION    = "~3.12"                                      # Wersja języka Python
+    #FUNCTIONS_WORKER_RUNTIME_VERSION    = "~3.12"                                      # Wersja języka Python
     APPLICATIONINSIGHTS_CONNECTION_STRING = azurerm_application_insights.app_insights.connection_string
     AzureWebJobsStorage                 = azurerm_storage_account.sa_functions.primary_connection_string
     FUNCTIONS_EXTENSION_VERSION         = "~4"                                       # Wersja rozszerzenia funkcji (dla blueprintów)
@@ -110,11 +111,28 @@ resource "azurerm_function_app" "main_function_app" {
 
 module "adf" {
   source                  = "./adf"
-  # WAŻNE: Nazwa przekazywana do modułu ADF powinna być teraz 'adf_name'
-  # i powinna być generowana z Twoich prefixów.
   adf_name                = "${var.project_prefix}-${var.environment}-df"
   resource_group_name     = azurerm_resource_group.rg_functions.name
   location                = var.location
   project_prefix          = var.project_prefix
+  environment             = var.environment
   function_app_url        = azurerm_function_app.main_function_app.default_hostname
+}
+
+module "databricks" {
+  source                = "./databricks"
+  
+  # Przekazywanie wymaganych zmiennych do modułu databricks
+  databricks_name       = "${var.project_prefix}-${var.environment}-ws"
+  resource_group_name   = azurerm_resource_group.rg_functions.name # Referencja do RG zdefiniowanego w tym module
+  location              = var.location
+  project_prefix        = var.project_prefix
+  environment           = var.environment
+
+  # Przekazywanie informacji o Storage Account z modułu głównego do modułu databricks
+  storage_account_name  = azurerm_storage_account.sadatalake.name
+  storage_account_id    = azurerm_storage_account.sadatalake.id
+  bronze_container_name = azurerm_storage_container.container_bronze.name # Pamiętaj o container_bronze
+  silver_container_name = azurerm_storage_container.container_silver.name # Pamiętaj o container_bronze
+
 }

@@ -6,8 +6,8 @@ import azure.functions as func
 from functools import wraps
 import json # <--- DODAJ TEN IMPORT
 from typing import Callable, Awaitable
-from shared.enums.api_type import ApiType
-from bronze_ingestion.api_factory.base import ApiFactory
+from bronze_ingestion.api_factory.types import ApiType
+from bronze_ingestion.api_factory.factory import ApiFactory
 from bronze_ingestion.api_client.base import ApiClient, ApiResponse
 from shared.storage_account.bronze_storage_manager import BronzeStorageManager
 
