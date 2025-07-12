@@ -135,4 +135,7 @@ module "databricks" {
   bronze_container_name = azurerm_storage_container.container_bronze.name # Pamiętaj o container_bronze
   silver_container_name = azurerm_storage_container.container_silver.name # Pamiętaj o container_bronze
 
+  key_vault_id          = azurerm_key_vault.main_keyvault.id
+  key_vault_uri         = azurerm_key_vault.main_keyvault.vault_uri
+
 }

@@ -47,3 +47,13 @@ variable "silver_container_name" {
 }
 
 
+
+variable "key_vault_id" {
+  description = "The ID of the Azure Key Vault to link with Databricks secret scope."
+  type        = string
+}
+
+variable "key_vault_uri" {
+  description = "The URI of the Azure Key Vault to link with Databricks secret scope."
+  type        = string
+}

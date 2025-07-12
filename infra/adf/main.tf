@@ -9,6 +9,10 @@ resource "azurerm_data_factory" "adf_instance" {
     Environment = var.environment
     Project     = var.project_prefix
   }
+
+  identity {
+    type = "SystemAssigned"
+  }
 }
 
 

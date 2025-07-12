@@ -13,44 +13,53 @@ resource "azurerm_databricks_workspace" "this" {
 }
 
 
-resource "databricks_metastore_assignment" "this" {
-  provider = databricks.account
+# resource "databricks_metastore_assignment" "this" {
+#   provider = databricks.account
 
-  metastore_id         = "4f24dcd1-9601-4727-ab67-d97cebce64ca"
-  workspace_id         = "3391578650895245"
-  default_catalog_name = "main"
+#   metastore_id         = "4f24dcd1-9601-4727-ab67-d97cebce64ca"
+#   workspace_id         = "3391578650895245"
+#   default_catalog_name = "main"
+# }
+
+
+resource "azurerm_user_assigned_identity" "databricks_adls_mi" {
+  name                = "${var.project_prefix}-${var.environment}-databricks-adls-mi"
+  resource_group_name = var.resource_group_name
+  location            = var.location
 }
 
+# Przypisanie roli dla User-Assigned MI do Storage Account
+resource "azurerm_role_assignment" "databricks_adls_mi_access" {
+  scope                = var.storage_account_id # <--- UŻYJ ZMIENNEJ WEJŚCIOWEJ
+  role_definition_name = "Storage Blob Data Contributor"
+  principal_id         = azurerm_user_assigned_identity.databricks_adls_mi.principal_id
+}
 
-# resource "azurerm_user_assigned_identity" "databricks_adls_mi" {
-#   name                = "${var.project_prefix}-${var.environment}-databricks-adls-mi"
-#   resource_group_name = var.resource_group_name
-#   location            = var.location
-# }
+# Databricks Access Connector dla Unity Catalog
+resource "azurerm_databricks_access_connector" "uc_adls_connector" {
+  name                = "${var.project_prefix}-${var.environment}-uc-adls-connector"
+  resource_group_name = var.resource_group_name
+  location            = var.location
 
-# # Przypisanie roli dla User-Assigned MI do Storage Account
-# resource "azurerm_role_assignment" "databricks_adls_mi_access" {
-#   scope                = var.storage_account_id # <--- UŻYJ ZMIENNEJ WEJŚCIOWEJ
-#   role_definition_name = "Storage Blob Data Contributor"
-#   principal_id         = azurerm_user_assigned_identity.databricks_adls_mi.principal_id
-# }
+  identity {
+    type = "SystemAssigned"
+  }
+}
 
-# # Databricks Access Connector dla Unity Catalog
-# resource "azurerm_databricks_access_connector" "uc_adls_connector" {
-#   name                = "${var.project_prefix}-${var.environment}-uc-adls-connector"
-#   resource_group_name = var.resource_group_name
-#   location            = var.location
+# Przypisanie roli dla Access Connector do Storage Account
+resource "azurerm_role_assignment" "uc_adls_connector_access" {
+  scope                = var.storage_account_id # <--- UŻYJ ZMIENNEJ WEJŚCIOWEJ
+  role_definition_name = "Storage Blob Data Contributor"
+  principal_id         = azurerm_databricks_access_connector.uc_adls_connector.identity[0].principal_id
+}
 
-#   identity {
-#     type = "SystemAssigned"
+# resource "databricks_secret_scope" "keyvault_scope" {
+#   name = "${var.project_prefix}-${var.environment}-kv-scope" # Nazwa zakresu sekretów w Databricks
+
+#   keyvault_metadata {
+#     resource_id = var.key_vault_id # ID Azure Key Vault przekazane jako zmienna
+#     dns_name    = replace(var.key_vault_uri, "https://", "") # DNS name (bez protokołu)
 #   }
-# }
-
-# # Przypisanie roli dla Access Connector do Storage Account
-# resource "azurerm_role_assignment" "uc_adls_connector_access" {
-#   scope                = var.storage_account_id # <--- UŻYJ ZMIENNEJ WEJŚCIOWEJ
-#   role_definition_name = "Storage Blob Data Contributor"
-#   principal_id         = azurerm_databricks_access_connector.uc_adls_connector.identity[0].principal_id
 # }
 
 # # Databricks Storage Credential
