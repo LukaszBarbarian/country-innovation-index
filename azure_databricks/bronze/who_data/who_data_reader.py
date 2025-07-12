@@ -6,4 +6,4 @@ class WhoDataReader(DataLakeReader):
     
 
     def read(self):
-        return super().read()
+        print("WhoDataReader: Metoda 'read' została wywołana!")
