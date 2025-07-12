@@ -9,7 +9,7 @@
 			"workspaceResourceId": "/subscriptions/4f24dcd1-9601-4727-ab67-d97cebce64ca/resourceGroups/demosur-dev-rg/providers/Microsoft.Databricks/workspaces/demosur-dev-ws",
 			"newClusterNodeType": "Standard_DS3_v2",
 			"newClusterNumOfWorker": "1",
-			"newClusterVersion": "10.4.x-scala2.12",
+			"newClusterVersion": "11.3.x-scala2.12",
 			"clusterOption": "Fixed",
 			"newClusterInitScripts": []
 		}
