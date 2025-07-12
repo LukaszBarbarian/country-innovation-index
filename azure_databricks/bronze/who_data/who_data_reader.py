@@ -4,3 +4,6 @@ class WhoDataReader(DataLakeReader):
     def __init__(self, spark, target_container_path):
         super().__init__(spark, target_container_path)
     
+
+    def read(self):
+        return super().read()
