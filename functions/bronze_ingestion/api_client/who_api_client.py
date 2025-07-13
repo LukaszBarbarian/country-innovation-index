@@ -6,7 +6,7 @@ from .base import ApiClient, ApiResponse
 
 # Importuj fabrykę i typy z pakietu bronze_ingestion.api_factory
 from bronze_ingestion.api_factory.base import ApiFactory
-from shared.enums.api_type import ApiType
+from common.enums.api_type import ApiType
 
 logger = logging.getLogger(__name__)
 
