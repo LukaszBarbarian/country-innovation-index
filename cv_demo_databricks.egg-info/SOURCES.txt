@@ -1,7 +1,0 @@
-setup_databricks.py
-cv_demo_databricks.egg-info/PKG-INFO
-cv_demo_databricks.egg-info/SOURCES.txt
-cv_demo_databricks.egg-info/dependency_links.txt
-cv_demo_databricks.egg-info/requires.txt
-cv_demo_databricks.egg-info/top_level.txt
-src/azure_databricks/__init__.py

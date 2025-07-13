@@ -1,8 +1,0 @@
-Metadata-Version: 2.1
-Name: cv-demo-databricks
-Version: 0.1.0
-Summary: Core Databricks utilities for CV-DEMO1 project.
-Author: Your Name
-Requires-Python: >=3.9
-Requires-Dist: pyspark>=3.3.0
-Requires-Dist: pandas>=2.0.0
