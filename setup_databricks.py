@@ -1,21 +1,20 @@
-# CV-DEMO1/setup_databricks.py
-
-from setuptools import setup
+# W setup_databricks.py
+from setuptools import setup, find_packages # WAŻNE: Importuj find_packages
 
 setup(
-    name='cv-demo-databricks', # Unikalna nazwa pakietu do instalacji (np. pip install cv-demo-databricks)
+    name='cv-demo-databricks',
     version='0.1.0',
-    packages=['azure_databricks'], # Jawnie pakujemy tylko ten główny pakiet
-    package_dir={'azure_databricks': 'src/azure_databricks'}, # Mapuje go do src/azure_databricks
+    packages=find_packages(where='src'), # Znajdzie pakiety w katalogu 'src'
+    package_dir={'': 'src'}, # Powiedz setuptools, że pakiety zaczynają się w 'src'
     install_requires=[
         'pyspark>=3.3.0',
         'pandas>=2.0.0',
         # Ważne: Dodaj tutaj swój pakiet `decorators` jako zależność!
-        # Python wie, że musi go najpierw zainstalować.
-       # 'cv-demo-decorators', # Nazwa pakietu z setup_decorators.py
+        # Jeśli to osobny pakiet wheel, możesz potrzebować go zainstalować osobno
+        # 'cv-demo-decorators',
         # Dodaj WSZYSTKIE inne biblioteki Pythona, których używa KOD W 'azure_databricks'
     ],
-    python_requires='>=3.9', # Minimalna wersja Pythona
+    python_requires='>=3.9',
     author='Your Name',
     description='Core Databricks utilities for CV-DEMO1 project.',
 )

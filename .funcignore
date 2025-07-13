@@ -1,0 +1,14 @@
+.vscode/
+.git/
+.gitignore
+__pycache__/
+.venv/
+infra/              # <-- Dodaj tę linię, aby wykluczyć cały folder infra
+*.tfstate
+*.tfstate.backup
+.terraform/
+local.settings.json
+function_app_package.zip # Jeśli ten plik jest w tym samym folderze i nie chcesz go wysyłać
+# Możesz dodać inne foldery i pliki, które nie są potrzebne na produkcji
+# np. testy
+# tests/
