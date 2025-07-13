@@ -11,3 +11,4 @@ pyspark
 azure-keyvault-secrets
 setuptools
 wheel
+delta
