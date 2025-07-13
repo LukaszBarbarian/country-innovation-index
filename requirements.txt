@@ -9,3 +9,5 @@ azure-storage-blob
 pandas
 pyspark
 azure-keyvault-secrets
+setuptools
+wheel
