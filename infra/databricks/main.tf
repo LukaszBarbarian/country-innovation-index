@@ -64,14 +64,14 @@ resource "azurerm_role_assignment" "uc_adls_connector_access" {
   principal_id         = azurerm_databricks_access_connector.uc_adls_connector.identity[0].principal_id
 }
 
-# resource "databricks_secret_scope" "keyvault_scope" {
-#   name = "${var.project_prefix}-${var.environment}-kv-scope" # Nazwa zakresu sekretów w Databricks
-
-#   keyvault_metadata {
-#     resource_id = var.key_vault_id # ID Azure Key Vault przekazane jako zmienna
-#     dns_name    = replace(var.key_vault_uri, "https://", "") # DNS name (bez protokołu)
-#   }
-# }
+resource "databricks_secret_scope" "keyvault_scope" {
+  name = "${var.project_prefix}-${var.environment}-keyvault-scope"
+  
+  keyvault_metadata {
+    resource_id = var.key_vault_id
+    dns_name    = "https://${var.key_vault_uri}.vault.azure.net" # LUB po prostu var.key_vault_uri, zależne od formatu Twojej zmiennej
+  }
+}
 
 # # Databricks Storage Credential
 # resource "databricks_storage_credential" "adls_credential" {
