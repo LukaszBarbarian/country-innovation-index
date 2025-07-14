@@ -12,4 +12,3 @@ azure-keyvault-secrets
 setuptools
 wheel
 delta
-pyspark delta-spark
