@@ -22,16 +22,16 @@ resource "azurerm_databricks_workspace" "this" {
 # }
 
 
-resource "azurerm_role_assignment" "adf_databricks_contributor_role" {
-  # Scope to Databricks Workspace ID
-  scope                = azurerm_databricks_workspace.this.id
-  role_definition_name = "Contributor"
-  principal_id         = var.azure_data_factory_managed_identity_principal_id # <-- NOWA ZMIENNA WEJŚCIOWA
+# resource "azurerm_role_assignment" "adf_databricks_contributor_role" {
+#   # Scope to Databricks Workspace ID
+#   scope                = azurerm_databricks_workspace.this.id
+#   role_definition_name = "Contributor"
+#   principal_id         = var.azure_data_factory_managed_identity_principal_id # <-- NOWA ZMIENNA WEJŚCIOWA
   
-  depends_on = [
-    azurerm_databricks_workspace.this
-  ]
-}
+#   depends_on = [
+#     azurerm_databricks_workspace.this
+#   ]
+# }
 
 resource "azurerm_user_assigned_identity" "databricks_adls_mi" {
   name                = "${var.project_prefix}-${var.environment}-databricks-adls-mi"
@@ -64,14 +64,14 @@ resource "azurerm_role_assignment" "uc_adls_connector_access" {
   principal_id         = azurerm_databricks_access_connector.uc_adls_connector.identity[0].principal_id
 }
 
-resource "databricks_secret_scope" "keyvault_scope" {
-  name = "${var.project_prefix}-${var.environment}-keyvault-scope"
+# resource "databricks_secret_scope" "keyvault_scope" {
+#   name = "${var.project_prefix}-${var.environment}-keyvault-scope"
   
-  keyvault_metadata {
-    resource_id = var.key_vault_id
-    dns_name    = "https://${var.key_vault_uri}.vault.azure.net"
-  }
-}
+#   keyvault_metadata {
+#     resource_id = var.key_vault_id
+#     dns_name    = "https://${var.key_vault_uri}.vault.azure.net"
+#   }
+# }
 
 # # Databricks Storage Credential
 # resource "databricks_storage_credential" "adls_credential" {

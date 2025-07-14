@@ -17,7 +17,7 @@ output "databricks_access_connector_id" {
   value       = azurerm_databricks_access_connector.uc_adls_connector.id
 }
 
-output "databricks_secret_scope_name" {
-  description = "The name of the Databricks secret scope for Key Vault."
-  value       = databricks_secret_scope.keyvault_scope.name
-}
+# output "databricks_secret_scope_name" {
+#   description = "The name of the Databricks secret scope for Key Vault."
+#   value       = databricks_secret_scope.keyvault_scope.name
+# }
