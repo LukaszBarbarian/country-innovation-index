@@ -69,7 +69,7 @@ resource "databricks_secret_scope" "keyvault_scope" {
   
   keyvault_metadata {
     resource_id = var.key_vault_id
-    dns_name    = "https://${var.key_vault_uri}.vault.azure.net" # LUB po prostu var.key_vault_uri, zależne od formatu Twojej zmiennej
+    dns_name    = "https://${var.key_vault_uri}.vault.azure.net"
   }
 }
 
