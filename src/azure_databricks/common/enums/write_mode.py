@@ -5,3 +5,4 @@ class WriteMode(Enum):
     APPEND = "append"
     OVERWRITE = "overwrite"
     MERGE = "merge"
+    OVERWRITE_PARTITIONS = "overwrite_partitions"

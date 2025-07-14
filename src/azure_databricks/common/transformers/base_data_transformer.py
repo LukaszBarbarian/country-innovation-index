@@ -1,67 +1,68 @@
-import asyncio
-from abc import ABC, abstractmethod
-from typing import Any, Optional, Dict, List
+# azure_databricks/common/base_data_transformer.py
 
 from pyspark.sql import SparkSession, DataFrame
-from azure_databricks.common.enums.write_mode import WriteMode
-from azure_databricks.common.configuration.config import ProjectConfig
+from typing import Any, Dict, Optional, List
+from abc import ABC, abstractmethod
+
 from azure_databricks.common.persister.persister import Persister
-from azure_databricks.common.enums.file_format import FileFormat
+from azure_databricks.common.configuration.config import ProjectConfig
 from azure_databricks.common.enums.etl_layers import ETLLayer
+from azure_databricks.common.enums.file_format import FileFormat
+from azure_databricks.common.enums.write_mode import WriteMode
+from azure_databricks.common.reader.reader import DataReader
+from azure_databricks.common.enums.domain_source import DomainSource # <-- Dodany import
 
 class BaseDataTransformer(ABC):
-    def __init__(self, spark: SparkSession, persister: Persister, config: ProjectConfig,
-                 source_id: str, 
+    def __init__(self,
+                 spark: SparkSession,
+                 persister: Persister,
+                 data_reader: DataReader,
+                 config: ProjectConfig,
+                 source_name: str,
+                 target_layer: ETLLayer,
+                 domain_source: DomainSource, # <-- DODANY PARAMETR
                  specific_config: Optional[Dict[str, Any]] = None):
-        
         self.spark = spark
-        self.persister = persister # Persister jest wstrzykiwany i przechowywany
+        self.persister = persister
+        self.data_reader = data_reader
         self.config = config
-        self.source_id = source_id 
+        self.source_name = source_name
+        self.target_layer = target_layer
+        self.domain_source = domain_source # <-- PRZYPISANIE
         self.specific_config = specific_config if specific_config is not None else {}
+        print(f"BaseDataTransformer zainicjowany dla źródła: '{self.source_name}', warstwy docelowej: '{self.target_layer.value}', domeny: '{self.domain_source.value}' z konfiguracją: {self.specific_config}")
 
-        print(f"Inicjowanie BaseDataTransformer dla źródła: {self.source_id}")
+    async def process(self):
+        """
+        Główna metoda orkiestrująca proces ETL (Extract, Transform, Load).
+        Ta metoda powinna być wywoływana przez orkiestratora ETL.
+        """
+        print(f"Rozpoczynam przetwarzanie danych dla '{self.source_name}' w domenie '{self.domain_source.value}' do warstwy '{self.target_layer.value}'...")
+
+        # 1. Transformacja danych
+        transformed_df = self.transform()
+
+        # 2. Zapis danych do odpowiedniej warstwy (delegowanie do Persistera)
+        if self.target_layer == ETLLayer.BRONZE:
+            self.persister.persist_to_bronze(transformed_df, self.source_name, WriteMode.OVERWRITE_PARTITIONS)
+        elif self.target_layer == ETLLayer.SILVER:
+            # Pamiętaj, że dla MERGE musisz przekazać merge_keys
+            self.persister.persist_to_silver(transformed_df, self.source_name, WriteMode.MERGE, merge_keys=["id"])
+        elif self.target_layer == ETLLayer.GOLD:
+            self.persister.persist_to_gold(transformed_df, self.source_name, WriteMode.OVERWRITE_PARTITIONS)
+        else:
+            raise ValueError(f"Nieznana lub nieobsługiwana warstwa docelowa: {self.target_layer.value}")
+
+        print(f"Przetwarzanie danych dla '{self.source_name}' w domenie '{self.domain_source.value}' do warstwy '{self.target_layer.value}' zakończone.")
 
     @abstractmethod
-    async def process(self):
+    def transform(self) -> DataFrame:
+        """
+        Abstrakcyjna metoda, która musi zostać zaimplementowana przez klasy dziedziczące.
+        Zawiera logikę transformacji danych.
+        """
         pass
 
     def _read_data(self, path: str, file_format: FileFormat, options: Optional[Dict[str, Any]] = None) -> DataFrame:
-        """Deleguje odczyt."""
-        return self.spark.read.format(file_format.value).options(**(options if options else {})).load(path)
-
-    # METODY ZAPISU DELEGUJĄCE DO PERSISTERA
-    def _persist_to_bronze(self, df: DataFrame, base_table_name: str, mode: WriteMode, partition_cols: Optional[List[str]] = None):
-        """Persists DataFrame to Bronze layer by delegating to the Persister."""
-        if partition_cols is None:
-            partition_cols = []
-            
-        print(f"Deleguję zapis {df.count()} rekordów do Persistera (warstwa Bronze, tabela: {base_table_name}, tryb: {mode.value}).")
-        self.persister.persist_df(
-            df=df, 
-            base_table_name=base_table_name, 
-            layer=ETLLayer.BRONZE, 
-            mode=mode, 
-            partition_cols=partition_cols
-        )
-        print(f"Zapis do Bronze (tabela: {base_table_name}) zakończony (delegowano do Persistera).")
-
-    def _persist_to_silver(self, df: DataFrame, base_table_name: str, mode: WriteMode, 
-                                     partition_cols: Optional[List[str]] = None, primary_keys: Optional[List[str]] = None):
-        """Persists DataFrame to Silver layer by delegating to the Persister."""
-        if partition_cols is None:
-            partition_cols = []
-            
-        print(f"Deleguję zapis {df.count()} rekordów do Persistera (warstwa Silver, tabela: {base_table_name}, tryb: {mode.value}).")
-        if mode == WriteMode.MERGE and not primary_keys:
-            raise ValueError("For MERGE mode in Silver, 'primary_keys' must be provided.")
-
-        self.persister.persist_df(
-            df=df, 
-            base_table_name=base_table_name, 
-            layer=ETLLayer.SILVER, 
-            mode=mode, 
-            partition_cols=partition_cols,
-            merge_keys=primary_keys 
-        )
-        print(f"Zapis do Silver (tabela: {base_table_name}) zakończony (delegowano do Persistera).")
+        """Odczytuje dane z podanej ścieżki i formatu."""
+        return self.data_reader.read_data(path, file_format, options)

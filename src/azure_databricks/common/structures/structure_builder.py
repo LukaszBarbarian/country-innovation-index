@@ -7,21 +7,18 @@ from azure_databricks.common.enums.etl_layers import ETLLayer
 class StructureBuilder:
     def __init__(self, spark: SparkSession, dbutils_obj: Any, config: ProjectConfig):
         self.spark = spark
-        self.dbutils = dbutils_obj # Przekazujemy dbutils_obj do StructureBuilder
-        self.config = config     # Przekazujemy ProjectConfig
+        self.dbutils = dbutils_obj 
+        self.config = config 
         
-        # Pobieramy nazwę katalogu UC z configa
+        # Pobieramy nazwy i ID z ProjectConfig
         self.catalog_name = self.config.get_unity_catalog_name() 
-
-        # Pobieramy ID konektora dostępowego i nazwę konta storage z configa (poprzez BaseCloudConfig)
-        self.access_connector_id = self.config.databricks_access_connector_id
-        self.storage_account_name = self.config.datalake_storage_account_name
+        self.access_connector_id = self.config.databricks_access_connector_id # ID Managed Identity/Service Principal
+        self.storage_account_name = self.config.datalake_storage_account_name # Nazwa konta storage
         
         # Definiujemy nazwy dla Storage Credentials i External Locations
-        # Możesz dostosować te nazwy, np. dodając 'env'
+        # Upewnij się, że nazwy są unikalne w Unity Catalog
         self.storage_credential_name = f"sc_{self.config.env}_{self.storage_account_name.replace('.', '_').replace('-', '_')}"
         
-        # Nazwy external locations mogą być per-warstwowe lub ogólne
         self.external_location_raw = f"el_raw_{self.config.env}_{self.storage_account_name.replace('.', '_').replace('-', '_')}"
         self.external_location_bronze = f"el_bronze_{self.config.env}_{self.storage_account_name.replace('.', '_').replace('-', '_')}"
         self.external_location_silver = f"el_silver_{self.config.env}_{self.storage_account_name.replace('.', '_').replace('-', '_')}"
@@ -29,17 +26,34 @@ class StructureBuilder:
         
         print("Inicjowanie StructureBuilder.")
 
-    def _execute_sql(self, sql_command: str, success_message: str, error_message: str):
-        """Pomocnicza metoda do wykonywania komend SQL i obsługi błędów."""
+    def _execute_sql(self, sql_command: str, success_message: str, error_message: str, check_exists_command: Optional[str] = None):
+        """
+        Pomocnicza metoda do wykonywania komend SQL i obsługi błędów,
+        z opcjonalnym sprawdzeniem istnienia przed wykonaniem CREATE.
+        """
+        if check_exists_command:
+            try:
+                self.spark.sql(check_exists_command)
+                print(f"Obiekt już istnieje: {check_exists_command.split(' ')[2]}. Pomijam tworzenie.")
+                return True # Obiekt już istnieje, więc sukces
+            except Exception:
+                # Obiekt nie istnieje, przechodzimy do tworzenia
+                print(f"Obiekt nie istnieje, tworzę: {check_exists_command.split(' ')[2]}.")
+        
         try:
             print(f"Wykonuję: {sql_command}")
             self.spark.sql(sql_command)
             print(success_message)
             return True
         except Exception as e:
+            # W Unity Catalog, błędy "ALREADY_EXISTS" często oznaczają sukces
+            # Możesz to obsłużyć bardziej elegancko, sprawdzając treść błędu
+            # lub po prostu ignorując ten konkretny typ błędu, jeśli używasz IF NOT EXISTS
+            if "ALREADY_EXISTS" in str(e).upper():
+                print(f"Ostrzeżenie: Obiekt już istnieje, mimo próby utworzenia. Ignoruję błąd: {e}")
+                return True
             print(f"BŁĄD: {error_message}. Szczegóły: {e}")
-            # Rzuć wyjątek ponownie, jeśli błąd jest krytyczny
-            raise
+            raise # Rzuć wyjątek ponownie, jeśli błąd jest krytyczny
 
     def initialize_databricks_environment(self):
         """
@@ -51,39 +65,36 @@ class StructureBuilder:
         self.ensure_catalog_exists(self.catalog_name)
 
         # 2. Utwórz / użyj Storage Credential
-        # To wymaga uprawnień do tworzenia Storage Credential w Unity Catalog.
-        # Wartość `self.config.databricks_access_connector_id` to Application ID dla Service Principal
-        # lub Managed Identity, który ma dostęp do ADLS Gen2.
+        # WAŻNE: ensure_storage_credential_exists używa MANAGED IDENTITY
+        # Upewnij się, że 'self.access_connector_id' to poprawne ID Twojego Managed Identity/Service Principal
         self.ensure_storage_credential_exists(
             name=self.storage_credential_name,
-            azure_application_id=self.access_connector_id # ID konektora dostępowego
+            azure_application_id=self.access_connector_id
         )
 
         # 3. Utwórz / użyj External Locations dla każdej warstwy
-        # Pamiętaj, że pełne ścieżki do kontenerów są w ProjectConfig
         self.ensure_external_location_exists(
             name=self.external_location_raw,
-            path=self.config.RAW_CONTAINER,
+            path=self.config.get_raw_location(), # Używamy getterów z configa
             credential_name=self.storage_credential_name
         )
         self.ensure_external_location_exists(
             name=self.external_location_bronze,
-            path=self.config.BRONZE_CONTAINER,
+            path=self.config.get_bronze_location(),
             credential_name=self.storage_credential_name
         )
         self.ensure_external_location_exists(
             name=self.external_location_silver,
-            path=self.config.SILVER_CONTAINER,
+            path=self.config.get_silver_location(),
             credential_name=self.storage_credential_name
         )
         self.ensure_external_location_exists(
             name=self.external_location_gold,
-            path=self.config.GOLD_CONTAINER,
+            path=self.config.get_gold_location(),
             credential_name=self.storage_credential_name
         )
 
         # 4. Utwórz schematy (bazy danych) w Unity Catalog
-        # Ważne: do tworzenia schematów potrzebujesz uprawnień CREATE SCHEMA w danym katalogu.
         self.ensure_schema_exists(self.catalog_name, ETLLayer.BRONZE.value)
         self.ensure_schema_exists(self.catalog_name, ETLLayer.SILVER.value)
         self.ensure_schema_exists(self.catalog_name, ETLLayer.GOLD.value)
@@ -93,7 +104,6 @@ class StructureBuilder:
     def ensure_catalog_exists(self, catalog_name: str):
         """
         Zapewnia, że katalog Unity Catalog istnieje.
-        Wymaga uprawnień do tworzenia katalogów (Account Admin lub przypisana rola).
         """
         self._execute_sql(
             sql_command=f"CREATE CATALOG IF NOT EXISTS {catalog_name}",
@@ -104,7 +114,6 @@ class StructureBuilder:
     def ensure_schema_exists(self, catalog_name: str, schema_name: str):
         """
         Zapewnia, że schemat (baza danych) istnieje w podanym katalogu Unity Catalog.
-        Wymaga uprawnień CREATE SCHEMA w katalogu.
         """
         full_schema_name = f"{catalog_name}.{schema_name}"
         self._execute_sql(
@@ -115,67 +124,38 @@ class StructureBuilder:
 
     def ensure_storage_credential_exists(self, name: str, azure_application_id: str):
         """
-        Zapewnia, że Storage Credential istnieje w Unity Catalog.
-        Używa Service Principal (Azure Application ID) lub Managed Identity.
-        Wymaga uprawnień CREATE STORAGE CREDENTIAL.
+        Zapewnia, że Storage Credential istnieje w Unity Catalog, używając Managed Identity.
         """
-        # Możesz dodać logikę do sprawdzania, czy credential istnieje,
-        # ale CREATE STORAGE CREDENTIAL IF NOT EXISTS nie jest obsługiwane.
-        # Dlatego bezpieczniej jest próbować go utworzyć i obsłużyć błąd,
-        # jeśli już istnieje.
-        sql_command = f"""
-            CREATE STORAGE CREDENTIAL IF NOT EXISTS {name}
-            MANAGED IDENTITY '{azure_application_id}';
-            -- Alternatywnie dla Service Principal:
-            -- SERVICE PRINCIPAL '{azure_application_id}'
-            -- CLIENT SECRET '{Secrets.get_secret(self.dbutils, self.config.DATABRICKS_SECRET_SCOPE, "service-principal-client-secret-key")}';
-        """
-        # Sprawdź istnienie ręcznie, bo "IF NOT EXISTS" nie działa dla STORAGE CREDENTIAL
-        try:
-            self.spark.sql(f"DESCRIBE STORAGE CREDENTIAL {name}")
-            print(f"Storage Credential '{name}' już istnieje.")
-        except Exception:
-            print(f"Tworzę Storage Credential '{name}'.")
-            self._execute_sql(
-                sql_command=f"""
-                    CREATE STORAGE CREDENTIAL {name}
-                    MANAGED IDENTITY '{azure_application_id}'
-                """,
-                success_message=f"Storage Credential '{name}' utworzono pomyślnie.",
-                error_message=f"Nie udało się utworzyć Storage Credential '{name}'. Sprawdź uprawnienia CREATE STORAGE CREDENTIAL i poprawność ID."
-            )
+        self._execute_sql(
+            sql_command=f"""
+                CREATE STORAGE CREDENTIAL {name}
+                MANAGED IDENTITY '{azure_application_id}'
+            """,
+            success_message=f"Storage Credential '{name}' utworzono pomyślnie.",
+            error_message=f"Nie udało się utworzyć Storage Credential '{name}'. Sprawdź uprawnienia CREATE STORAGE CREDENTIAL i poprawność ID.",
+            check_exists_command=f"DESCRIBE STORAGE CREDENTIAL {name}" # Sprawdzamy istnienie przed próbą CREATE
+        )
             
     def ensure_external_location_exists(self, name: str, path: str, credential_name: str):
         """
         Zapewnia, że External Location istnieje w Unity Catalog.
-        Mapuje ścieżkę ADLS Gen2 na nazwę w UC, używając Storage Credential.
-        Wymaga uprawnień CREATE EXTERNAL LOCATION.
         """
-        # Podobnie jak przy Storage Credential, CREATE EXTERNAL LOCATION IF NOT EXISTS nie działa.
-        try:
-            self.spark.sql(f"DESCRIBE EXTERNAL LOCATION {name}")
-            print(f"External Location '{name}' ({path}) już istnieje.")
-        except Exception:
-            print(f"Tworzę External Location '{name}' dla ścieżki '{path}'.")
-            self._execute_sql(
-                sql_command=f"""
-                    CREATE EXTERNAL LOCATION {name}
-                    URL '{path}'
-                    WITH CREDENTIAL {credential_name}
-                """,
-                success_message=f"External Location '{name}' utworzono pomyślnie dla ścieżki '{path}'.",
-                error_message=f"Nie udało się utworzyć External Location '{name}' dla ścieżki '{path}'. Sprawdź uprawnienia CREATE EXTERNAL LOCATION i poprawność ścieżki/credentiala."
-            )
+        self._execute_sql(
+            sql_command=f"""
+                CREATE EXTERNAL LOCATION {name}
+                URL '{path}'
+                WITH CREDENTIAL {credential_name}
+            """,
+            success_message=f"External Location '{name}' utworzono pomyślnie dla ścieżki '{path}'.",
+            error_message=f"Nie udało się utworzyć External Location '{name}' dla ścieżki '{path}'. Sprawdź uprawnienia CREATE EXTERNAL LOCATION i poprawność ścieżki/credentiala.",
+            check_exists_command=f"DESCRIBE EXTERNAL LOCATION {name}" # Sprawdzamy istnienie przed próbą CREATE
+        )
 
-    # Te metody są teraz mniej istotne, ponieważ StructureBuilder zajmuje się Unity Catalog.
-    # Tabele zewnętrzne w Unity Catalog odwołują się do External Locations,
-    # a nie bezpośrednio do pełnych ścieżek abfss://...
-    # Metody Persistera będą nadal używać pełnych ścieżek abfss://... dla opcji 'path',
-    # ale będą one podlegać pod External Locations.
     def get_full_table_location(self, layer: ETLLayer, base_table_name: str) -> str:
         """
         Zwraca pełną ścieżkę ADLS Gen2 dla danej warstwy i bazowej nazwy tabeli.
-        Używane przez Persistera do opcji 'path' w saveAsTable.
+        Ta metoda jest używana przez Persistera do opcji 'path' w saveAsTable,
+        która nadal wymaga pełnej ścieżki abfss://.
         """
         if layer == ETLLayer.BRONZE:
             return f"{self.config.get_bronze_location()}{base_table_name}/"
@@ -189,11 +169,10 @@ class StructureBuilder:
     def get_external_location_name(self, layer: ETLLayer) -> str:
         """
         Zwraca nazwę External Location w Unity Catalog dla danej warstwy.
-        Przydatne, jeśli kiedykolwiek będziesz potrzebować odwoływać się do EL z kodu.
+        Ta nazwa jest używana, gdy tworzysz tabele zewnętrzne w Unity Catalog
+        (np. CREATE TABLE ... LOCATION 'adl://...').
         """
-        if layer == ETLLayer.RAW:
-            return self.external_location_raw
-        elif layer == ETLLayer.BRONZE:
+        if layer == ETLLayer.BRONZE:
             return self.external_location_bronze
         elif layer == ETLLayer.SILVER:
             return self.external_location_silver

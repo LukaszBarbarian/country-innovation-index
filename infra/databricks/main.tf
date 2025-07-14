@@ -22,6 +22,17 @@ resource "azurerm_databricks_workspace" "this" {
 # }
 
 
+resource "azurerm_role_assignment" "adf_databricks_contributor_role" {
+  # Scope to Databricks Workspace ID
+  scope                = azurerm_databricks_workspace.this.id
+  role_definition_name = "Contributor"
+  principal_id         = var.azure_data_factory_managed_identity_principal_id # <-- NOWA ZMIENNA WEJŚCIOWA
+  
+  depends_on = [
+    azurerm_databricks_workspace.this
+  ]
+}
+
 resource "azurerm_user_assigned_identity" "databricks_adls_mi" {
   name                = "${var.project_prefix}-${var.environment}-databricks-adls-mi"
   resource_group_name = var.resource_group_name

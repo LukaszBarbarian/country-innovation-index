@@ -57,3 +57,8 @@ variable "key_vault_uri" {
   description = "The URI of the Azure Key Vault to link with Databricks secret scope."
   type        = string
 }
+
+variable "azure_data_factory_managed_identity_principal_id" {
+  description = "The Principal ID of the Azure Data Factory managed identity to grant Contributor role on Databricks Workspace."
+  type        = string
+}

@@ -137,5 +137,7 @@ module "databricks" {
 
   key_vault_id          = azurerm_key_vault.main_keyvault.id
   key_vault_uri         = azurerm_key_vault.main_keyvault.vault_uri
+  azure_data_factory_managed_identity_principal_id = module.adf.adf_principal_id 
+
 
 }
