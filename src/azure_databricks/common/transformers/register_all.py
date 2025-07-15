@@ -1,3 +1,3 @@
-from azure_databricks.domain_transformers.who_countries_transformers import WHO_Countries_RawToBronzeTransformer
+from src.azure_databricks.domain_transformers.who_countries_transformers import WHO_Countries_RawToBronzeTransformer
 
 print("Wszystkie transformatory zostały załadowane i zarejestrowane w TransformerRegistry.")

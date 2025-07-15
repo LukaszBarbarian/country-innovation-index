@@ -2,12 +2,12 @@
 
 from typing import Dict, Type, Any, Optional
 from pyspark.sql import SparkSession
-from azure_databricks.common.persister.persister import Persister
-from azure_databricks.common.reader.reader import DataReader
-from azure_databricks.common.configuration.config import ProjectConfig
-from azure_databricks.common.enums.etl_layers import ETLLayer
-from azure_databricks.common.transformers.base_data_transformer import BaseDataTransformer
-from azure_databricks.common.factories.transformer_registry import TransformerRegistry
+from src.azure_databricks.common.persister.persister import Persister
+from src.azure_databricks.common.reader.reader import DataReader
+from src.azure_databricks.common.configuration.config import ProjectConfig
+from src.azure_databricks.common.enums.etl_layers import ETLLayer
+from src.azure_databricks.common.transformers.base_data_transformer import BaseDataTransformer
+from src.azure_databricks.common.factories.transformer_registry import TransformerRegistry
 
 class TransformerFactory:
     def __init__(self, spark: SparkSession, persister: Persister, data_reader: DataReader, config: ProjectConfig):

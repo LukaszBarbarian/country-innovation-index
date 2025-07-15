@@ -2,9 +2,9 @@
 
 from typing import Dict, Type, Any, Callable
 from pyspark.sql import SparkSession
-from azure_databricks.common.enums.etl_layers import ETLLayer
-from azure_databricks.common.enums.domain_source import DomainSource
-from azure_databricks.common.transformers.base_data_transformer import BaseDataTransformer
+from src.azure_databricks.common.enums.etl_layers import ETLLayer
+from src.azure_databricks.common.enums.domain_source import DomainSource
+from src.azure_databricks.common.transformers.base_data_transformer import BaseDataTransformer
 
 class TransformerRegistry:
     _registry: Dict[str, Type[BaseDataTransformer]] = {}

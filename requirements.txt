@@ -12,3 +12,4 @@ azure-keyvault-secrets
 setuptools
 wheel
 delta
+delta-spark

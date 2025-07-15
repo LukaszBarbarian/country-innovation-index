@@ -4,10 +4,10 @@ from delta.tables import DeltaTable
 from pyspark.sql import SparkSession, DataFrame
 from typing import Any, Dict, Optional, List
 
-from azure_databricks.common.configuration.config import ProjectConfig
-from azure_databricks.common.enums.etl_layers import ETLLayer
-from azure_databricks.common.enums.write_mode import WriteMode
-from azure_databricks.common.structures.structure_builder import StructureBuilder
+from src.azure_databricks.common.configuration.config import ProjectConfig
+from src.azure_databricks.common.enums.etl_layers import ETLLayer
+from src.azure_databricks.common.enums.write_mode import WriteMode
+from src.azure_databricks.common.structures.structure_builder import StructureBuilder
 
 class Persister:
     def __init__(self, spark: SparkSession, config: ProjectConfig, structure_builder: StructureBuilder):

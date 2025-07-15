@@ -1,8 +1,8 @@
 from typing import Any
 from dataclasses import dataclass
 from pyspark.sql import SparkSession
+from src.azure_databricks.common.enums.env import Env
 
-# --- Twoja Klasa Secrets (bez zmian) ---
 class Secrets:
     @classmethod
     def get_secret(cls, dbutils_obj, secret_scope: str, secret_key: str):
@@ -11,7 +11,7 @@ class Secrets:
         except Exception as e:
             raise ValueError(f"Nie udało się pobrać sekretu '{secret_key}' z zakresu '{secret_scope}'. Sprawdź uprawnienia i istnienie sekretu. Błąd: {e}")
 
-# --- Twoja Klasa bazowa Config (bez zmian) ---
+
 @dataclass
 class BaseCloudConfig:
     dbutils_obj: Any
@@ -51,41 +51,30 @@ class BaseCloudConfig:
         return f"abfss://{self._RAW_CONTAINER_PREFIX}@{self.datalake_storage_account_name}.dfs.core.windows.net/"
 
 
-# ProjectConfig teraz dziedziczy z BaseCloudConfig
+
 class ProjectConfig(BaseCloudConfig): 
-    def __init__(self, dbutils_obj: Any, spark_session: SparkSession, env: str = "dev"):
-        # Wywołujemy konstruktor klasy bazowej
+    def __init__(self, dbutils_obj: Any, spark_session: SparkSession, env: Env):
         super().__init__(dbutils_obj=dbutils_obj, spark_session=spark_session)
-        
-        self.env = env # np. "dev", "test", "prod"
+        self.env = env
+        self.base_data_lake_path = self._get_base_data_lake_path()
 
-        # BaseCloudConfig ma już properties do pobierania ścieżek kontenerów.
-        # Możesz nadal mieć base_data_lake_path jeśli chcesz to dynamicznie zmieniać na inne ścieżki
-        # niż te zdefiniowane w BaseCloudConfig.
-        self.base_data_lake_path = self._get_base_data_lake_path() # Nadal używamy tej metody, jeśli potrzebne jest bardziej złożone mapowanie ścieżek
-
-        # Konfiguracja dla Unity Catalog
         self.unity_catalog_name = self._get_unity_catalog_name() 
 
         self._configure_spark_session()
         print(f"ProjectConfig zainicjowany dla środowiska '{self.env}'.")
 
     def _get_base_data_lake_path(self) -> str:
-        # Możesz użyć atrybutów z BaseCloudConfig (np. self.BRONZE_CONTAINER),
-        # ale jeśli chcesz jedną bazową ścieżkę do dynamicznego tworzenia,
-        # to ta metoda nadal ma sens.
-        if self.env == "dev":
-            # Przykład pobierania bezpośrednio z sekretów, jeśli chcesz inną logikę niż BaseCloudConfig
+        if self.env == Env.DEV:
             return Secrets.get_secret(self.dbutils_obj, self.DATABRICKS_SECRET_SCOPE, "datalake-dev-path") 
-        elif self.env == "prod":
+        elif self.env == Env.PROD:
             return Secrets.get_secret(self.dbutils_obj, self.DATABRICKS_SECRET_SCOPE, "datalake-prod-path") 
         else:
-            return f"abfss://devdata@{self.datalake_storage_account_name}.dfs.core.windows.net/" # Domyślna ścieżka dla innych środowisk
-        
+            raise
+
     def _get_unity_catalog_name(self) -> str:
-        if self.env == "dev":
+        if self.env == Env.DEV:
             return "main" 
-        elif self.env == "prod":
+        elif self.env == Env.PROD:
             return "prod_catalog" 
         else:
             return "dev_catalog" 

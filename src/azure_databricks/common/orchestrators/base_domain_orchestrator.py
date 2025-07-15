@@ -4,13 +4,13 @@ from pyspark.sql import SparkSession
 from typing import Any, Dict, Optional
 from abc import ABC, abstractmethod
 
-from azure_databricks.common.configuration.config import ProjectConfig
-from azure_databricks.common.persister.persister import Persister
-from azure_databricks.common.reader.reader import DataReader
-from azure_databricks.common.structures.structure_builder import StructureBuilder
-from azure_databricks.common.factories.transformer_factory import TransformerFactory 
-from azure_databricks.common.enums.etl_layers import ETLLayer 
-from azure_databricks.common.enums.env import Env
+from src.azure_databricks.common.configuration.config import ProjectConfig
+from src.azure_databricks.common.persister.persister import Persister
+from src.azure_databricks.common.reader.reader import DataReader
+from src.azure_databricks.common.structures.structure_builder import StructureBuilder
+from src.azure_databricks.common.factories.transformer_factory import TransformerFactory 
+from src.azure_databricks.common.enums.etl_layers import ETLLayer 
+from src.azure_databricks.common.enums.env import Env
 
 class BaseDomainOrchestrator(ABC):
     def __init__(self, 

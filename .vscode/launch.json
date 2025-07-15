@@ -1,6 +1,7 @@
 {
     "version": "0.2.0",
     "configurations": [
+        // Twoja istniejąca konfiguracja Azure Functions
         {
             "name": "Attach to Python Functions",
             "type": "debugpy",
@@ -10,6 +11,18 @@
                 "port": 9091
             },
             "preLaunchTask": "func: host start"
+        },
+        // ----------- NOWA KONFIGURACJA DLA DATABRICKS CONNECT -----------
+        {
+            "name": "Python: Debug Databricks",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}", // Uruchamia aktualnie otwarty plik
+            "console": "integratedTerminal",
+            "justMyCode": false, // Dobra praktyka, jeśli chcesz wchodzić w kod bibliotek
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}" // Dostosuj tę ścieżkę do Twojej struktury
+            }
         }
     ]
 }

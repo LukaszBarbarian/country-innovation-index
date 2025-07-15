@@ -4,11 +4,11 @@ from pyspark.sql import DataFrame
 from pyspark.sql.functions import col, lit, current_timestamp
 from typing import Any, Dict, Optional
 
-from azure_databricks.common.transformers.base_data_transformer import BaseDataTransformer
-from azure_databricks.common.enums.file_format import FileFormat
-from azure_databricks.common.enums.etl_layers import ETLLayer
-from azure_databricks.common.enums.domain_source import DomainSource # <-- Dodany import
-from azure_databricks.common.factories.transformer_registry import TransformerRegistry
+from src.azure_databricks.common.transformers.base_data_transformer import BaseDataTransformer
+from src.azure_databricks.common.enums.file_format import FileFormat
+from src.azure_databricks.common.enums.etl_layers import ETLLayer
+from src.azure_databricks.common.enums.domain_source import DomainSource # <-- Dodany import
+from src.azure_databricks.common.factories.transformer_registry import TransformerRegistry
 
 # --- ZAKTUALIZOWANY DEKORATOR ---
 @TransformerRegistry.register_transformer_decorator(
