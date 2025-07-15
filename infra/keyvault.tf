@@ -30,16 +30,14 @@ resource "azurerm_key_vault_access_policy" "terraform_access" {
   object_id    = data.azurerm_client_config.current.object_id # Bardziej dynamiczne niż hardkodowanie
 
   secret_permissions = [
-    "Get",  # Potrzebne do sprawdzenia istnienia sekretu (jak w Twoim błędzie)
-    "List", # Dobrze mieć do zarządzania
-    "Set",  # Potrzebne do tworzenia/aktualizowania sekretów
-    "Delete", # Potrzebne do usuwania sekretów
-    "Recover", # Potrzebne do odzyskiwania usuniętych sekretów (soft-delete)
-    "Purge" # Potrzebne do trwałego usuwania (jeśli soft-delete jest włączone)
+    "Get",
+    "List",
+    "Set",
   ]
-  # Możesz dodać key_permissions i certificate_permissions, jeśli potrzebujesz zarządzać nimi.
-  # key_permissions         = ["Get", "List", "Create", "Delete", "Encrypt", "Decrypt"]
-  # certificate_permissions = ["Get", "List", "Create", "Delete"]
+  
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 
