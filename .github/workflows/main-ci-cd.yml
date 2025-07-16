@@ -14,7 +14,7 @@ env:
   PYTHON_VERSION: '3.12'
   FUNCTION_APP_OS: linux
   TERRAFORM_DIR: ./infra
-  FUNCTION_CODE_DIR: ./src/functions
+  FUNCTION_CODE_DIR: ./
   # Zdefiniuj ścieżkę do pliku ZIP. Ustawiamy go w katalogu głównym repozytorium.
   AZURE_FUNCTION_APP_PACKAGE_NAME: 'function_app_package.zip' # Tylko nazwa pliku
   AZURE_FUNCTION_APP_PACKAGE_FULL_PATH: '${{ github.workspace }}/function_app_package.zip' # Pełna ścieżka
