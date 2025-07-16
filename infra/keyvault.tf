@@ -15,7 +15,7 @@ resource "azurerm_key_vault" "main_keyvault" {
     Project     = var.project_prefix
     Purpose     = "Secrets"
   }
-
+}
   resource "azurerm_key_vault_access_policy" "terraform_access" {
   key_vault_id = azurerm_key_vault.main_keyvault.id
   tenant_id    = data.azurerm_client_config.current.tenant_id
