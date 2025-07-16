@@ -1,7 +1,7 @@
 # functions/api_factory/factory.py
 from typing import Type, Dict
-from ..api_client.base import ApiClient
-from ...shared.enums.api_type import ApiType
+from src.functions.bronze_ingestion.api_client.base import ApiClient
+from src.functions.common.enums.api_type import ApiType
 from typing import Type, TypeVar, Dict
 
 

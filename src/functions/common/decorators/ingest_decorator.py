@@ -6,10 +6,10 @@ import azure.functions as func
 from functools import wraps
 import json # <--- DODAJ TEN IMPORT
 from typing import Callable, Awaitable
-from bronze_ingestion.api_factory.types import ApiType
-from bronze_ingestion.api_factory.factory import ApiFactory
-from bronze_ingestion.api_client.base import ApiClient, ApiResponse
-from common.storage_account.bronze_storage_manager import BronzeStorageManager
+from src.functions.common.enums.api_type import ApiType
+from src.functions.bronze_ingestion.api_factory.base import ApiFactory
+from src.functions.bronze_ingestion.api_client.base import ApiClient, ApiResponse
+from src.functions.common.storage_account.bronze_storage_manager import BronzeStorageManager
 
 def ingest_data_pipeline(api_type: ApiType):
     def decorator(func_to_decorate: Callable[[func.HttpRequest], Awaitable[tuple[dict, str] | func.HttpResponse]]):
