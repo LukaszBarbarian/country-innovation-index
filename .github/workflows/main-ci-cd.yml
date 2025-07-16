@@ -55,13 +55,25 @@ jobs:
 
     - name: Terraform Plan
       id: plan
-      run: terraform plan -no-color -input=false -out=tfplan
-      working-directory: ${{ env.TERRAFORM_DIR }}
-      continue-on-error: true
+      run: |
+        # Uruchamiamy planowanie i zapisujemy wynik do zmiennej.
+        # W zależności od wyjścia, ustawiamy zmienną w GitHub Actions.
+        terraform plan -no-color -input=false -out=tfplan > plan_output.txt
+        PLAN_OUTPUT=$(cat plan_output.txt)
+        echo "$PLAN_OUTPUT"
 
+        if grep -q "No changes. Your infrastructure matches the configuration." plan_output.txt; then
+          echo "::set-output name=has_changes::false"
+        else
+          echo "::set-output name=has_changes::true"
+        fi
+      working-directory: ${{ env.TERRAFORM_DIR }}
+
+    # --- Zmodyfikowany krok Terraform Apply ---
     - name: Terraform Apply
       id: apply
-      if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.plan.outcome == 'success' }}
+      # Zmieniamy warunek na sprawdzanie, czy plan wykrył zmiany
+      if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.plan.outputs.has_changes == 'true' }}
       run: terraform apply -input=false -auto-approve tfplan
       working-directory: ${{ env.TERRAFORM_DIR }}
 
