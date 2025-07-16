@@ -15,50 +15,65 @@ resource "azurerm_key_vault" "main_keyvault" {
     Project     = var.project_prefix
     Purpose     = "Secrets"
   }
-  
-  # WAŻNE: Usuń blok 'access_policy' Z TEGO MIEJSCA, jeśli był!
-  # Nie powinien już być w tym zasobie, jeśli używasz oddzielnego azurerm_key_vault_access_policy.
-}
 
-
-
-# --- Polityka dostępu dla Terraform (aby mógł zapisywać sekrety) ---
-resource "azurerm_key_vault_access_policy" "terraform_access" {
-  key_vault_id = azurerm_key_vault.main_keyvault.id
-  tenant_id    = data.azurerm_client_config.current.tenant_id
-  # Użyj object_id bieżącego użytkownika/Service Principal, który uruchamia Terraform
-  object_id    = data.azurerm_client_config.current.object_id # Bardziej dynamiczne niż hardkodowanie
-
-  secret_permissions = [
-    "Get",
-    "List",
-    "Set",
-  ]
-  
-  lifecycle {
-    prevent_destroy = false
+  # --- Kluczowa zmiana: Wbudowana polityka dostępu ---
+  # Użycie tego bloku jest bardziej niezawodne, ponieważ jest stosowane
+  # w tym samym momencie co tworzenie Key Vault.
+  access_policy {
+    tenant_id = data.azurerm_client_config.current.tenant_id
+    object_id = data.azurerm_client_config.current.object_id
+    
+    secret_permissions = [
+      "Get",
+      "List",
+      "Set",
+      "Delete",
+      "Purge",
+      "Recover",
+    ]
   }
+
+  # Ważne: Usunięcie oddzielnego zasobu access_policy, ponieważ jest teraz wbudowany
+  # Ten zasób staje się zbędny!
 }
 
+# --- Polityka dostępu dla Terraform (Zasób jest teraz niepotrzebny) ---
+# Skomentuj lub usuń ten blok!
+# resource "azurerm_key_vault_access_policy" "terraform_access" {
+#  key_vault_id = azurerm_key_vault.main_keyvault.id
+#  tenant_id    = data.azurerm_client_config.current.tenant_id
+#  object_id    = data.azurerm_client_config.current.object_id
+#
+#  secret_permissions = [
+#    "Get",
+#    "List",
+#    "Set",
+#  ]
+#
+#  lifecycle {
+#    prevent_destroy = false
+#  }
+# }
 
+# ... (Pozostałe sekrety) ...
 resource "azurerm_key_vault_secret" "databricks_access_connector_id_secret" {
   name         = "databricks-access-connector-id"
-  # TUTAJ JEST ZMIANA: Odwołujemy się do outputu modułu databricks
   value        = module.databricks.databricks_access_connector_id
   key_vault_id = azurerm_key_vault.main_keyvault.id
   content_type = "text/plain"
   depends_on   = [
-    azurerm_key_vault_access_policy.terraform_access,
-    # Ważne: Zmieniamy zależność z zasobu na output modułu
+    # Zmieniamy zależność, aby wskazywała na główny zasób Key Vault
+    azurerm_key_vault.main_keyvault,
     module.databricks.databricks_access_connector_id
   ]
 }
 
-# ... (pozostałe sekrety, np. dla nazwy konta storage, które już są poprawne) ...
 resource "azurerm_key_vault_secret" "datalake_storage_account_name_secret" {
   name         = "datalake-storage-account-name"
   value        = azurerm_storage_account.sadatalake.name
   key_vault_id = azurerm_key_vault.main_keyvault.id
   content_type = "text/plain"
-  depends_on   = [azurerm_key_vault_access_policy.terraform_access]
+  depends_on   = [
+    azurerm_key_vault.main_keyvault
+  ]
 }
