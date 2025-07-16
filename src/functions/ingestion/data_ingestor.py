@@ -1,11 +1,11 @@
 # src/ingestion/data_ingestor.py
 import logging
-from ..common.models.ingestion_context import IngestionContext
-from .api_clients.api_client_factory import ApiClientFactory
-from .processors.base_data_processor import BaseDataProcessor
-from .processors.json_data_processor import JsonDataProcessor # Importuj potrzebne procesory
-from ..common.storage.bronze_storage_manager import BronzeStorageManager
-from ..common.config_manager import ConfigManager # Importujemy ConfigManager
+from src.functions.common.models.ingestion_context import IngestionContext
+from src.functions.ingestion.api_clients.api_client_factory import ApiClientFactory
+from src.functions.ingestion.processors.base_data_processor import BaseDataProcessor
+from src.functions.ingestion.processors.json_data_processor import JsonDataProcessor
+from src.functions.common.storage_account.bronze_storage_manager import BronzeStorageManager
+from src.functions.common.config.config_manager import ConfigManager
 
 logger = logging.getLogger(__name__)
 

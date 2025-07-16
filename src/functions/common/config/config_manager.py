@@ -2,6 +2,7 @@
 import os
 import json
 import logging
+from typing import Dict, Optional
 # from azure.keyvault.secrets import SecretClient
 # from azure.identity import DefaultAzureCredential # Jeśli używasz Managed Identity
 

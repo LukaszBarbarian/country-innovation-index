@@ -1,5 +1,5 @@
 # src/ingestion/api_clients/api_client_factory.py
-from typing import Type
+from typing import Type, Dict, Any
 from .base_api_client import ApiClient
 from .who_api_client import WhoApiClient
 # from .worldbank_api_client import WorldBankApiClient # Jeśli dodasz
