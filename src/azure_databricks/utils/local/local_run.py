@@ -22,9 +22,9 @@ os.environ["PATH"] = f'{os.environ["PATH"]};{os.environ["HADOOP_HOME"]}/bin'
 # Importy Twojego kodu
 from src.azure_databricks.common.enums.etl_layers import ETLLayer
 from src.azure_databricks.common.enums.env import Env
-from src.azure_databricks.common.configuration.local_config import LocalConfig
+from src.azure_databricks.utils.local.local_config import LocalConfig
 from src.azure_databricks.common.orchestrators.main_orchestrator import MainETLOrchestrator
-from src.azure_databricks.utils.local_dbutils import LocalDbUtils
+from src.azure_databricks.utils.local.local_dbutils import LocalDbUtils
 
 # Upewnij się, że te importy są na miejscu, aby dekoratory działały!
 import src.azure_databricks.common.orchestrators.register_all_domain_orchestrators

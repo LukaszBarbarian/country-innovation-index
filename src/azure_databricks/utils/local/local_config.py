@@ -2,6 +2,7 @@ from typing import Any
 from pyspark.sql import SparkSession
 from src.azure_databricks.common.configuration.config import ProjectConfig
 from src.azure_databricks.common.enums.env import Env
+from src.azure_databricks.common.persister.persister import Persister
 
 class LocalConfig(ProjectConfig):
     """
@@ -43,3 +44,22 @@ class LocalConfig(ProjectConfig):
         środowisku nie używamy Unity Catalog.
         """
         print("Pominięto konfigurację katalogu Unity Catalog. To jest środowisko lokalne.")
+
+
+
+
+class LocalPersister(Persister):
+    def __init__(self, spark, config, structure_builder):
+        super().__init__(spark, config, structure_builder)
+
+    def _get_full_table_details(self, etl_layer, base_table_name):
+        pass
+
+    def persist_to_bronze(self, df, base_table_name, mode, partition_cols = None):
+        pass
+
+    def persist_to_gold(self, df, base_table_name, mode, partition_cols = None, merge_keys = None):
+        pass
+
+    def persist_to_silver(self, df, base_table_name, mode, partition_cols = None, merge_keys = None):
+        pass

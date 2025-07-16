@@ -35,7 +35,6 @@ class DataReader:
         print(f"Odczytuję dane z '{path}' w formacie '{file_format.value}' z opcjami: {options}")
         return reader.load(path)
 
-    # Możesz dodać inne metody odczytu, np. read_streaming_data, read_from_jdbc itp.
-    # def read_streaming_data(self, path: str, file_format: FileFormat, options: Optional[Dict[str, Any]] = None) -> DataFrame:
-    #     # ... logika odczytu strumieniowego ...
-    #     pass
+
+    def read_streaming_data(self, path: str, file_format: FileFormat, options: Optional[Dict[str, Any]] = None) -> DataFrame:
+        pass

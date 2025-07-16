@@ -13,7 +13,9 @@ from src.azure_databricks.common.enums.domain_source import DomainSource
 from src.azure_databricks.common.orchestrators.domain_orchestrator_registry import DomainOrchestratorRegistry 
 from src.azure_databricks.common.orchestrators.base_domain_orchestrator import BaseDomainOrchestrator
 from src.azure_databricks.common.enums.env import Env
-
+from src.azure_databricks.utils.local.local_config import LocalPersister
+from src.azure_databricks.utils.local.local_structure_builder import LocalStrucrtureBuilder
+from src.azure_databricks.common.orchestrators.provider_factory.provider_factory import ProviderFactory
 
 import src.azure_databricks.common.orchestrators.register_all_domain_orchestrators 
 
@@ -24,9 +26,11 @@ class MainETLOrchestrator:
         self.env = env
         self.config = config
         
-        self.structure_builder = StructureBuilder(self.spark, self.dbutils, self.config)
-        self.persister = Persister(spark=self.spark, config=self.config, structure_builder=self.structure_builder)
-        self.data_reader = DataReader(spark=self.spark, config=self.config)
+        provider_factory = ProviderFactory(self.spark, self.dbutils, self.config, self.env)
+
+        self.structure_builder = provider_factory.get_structure_builder()
+        self.persister = provider_factory.get_persister()
+        self.data_reader = provider_factory.get_data_reader()
         
         print(f"MainETLOrchestrator zainicjowany dla środowiska '{self.env}'.")
 
