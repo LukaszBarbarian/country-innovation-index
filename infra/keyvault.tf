@@ -16,44 +16,20 @@ resource "azurerm_key_vault" "main_keyvault" {
     Purpose     = "Secrets"
   }
 
-  # --- Kluczowa zmiana: Wbudowana polityka dostępu ---
-  # Użycie tego bloku jest bardziej niezawodne, ponieważ jest stosowane
-  # w tym samym momencie co tworzenie Key Vault.
-  access_policy {
-    tenant_id = data.azurerm_client_config.current.tenant_id
-    object_id = data.azurerm_client_config.current.object_id
-    
-    secret_permissions = [
-      "Get",
-      "List",
-      "Set",
-      "Delete",
-      "Purge",
-      "Recover",
-    ]
-  }
+  resource "azurerm_key_vault_access_policy" "terraform_access" {
+  key_vault_id = azurerm_key_vault.main_keyvault.id
+  tenant_id    = data.azurerm_client_config.current.tenant_id
+  object_id    = data.azurerm_client_config.current.object_id
 
-  # Ważne: Usunięcie oddzielnego zasobu access_policy, ponieważ jest teraz wbudowany
-  # Ten zasób staje się zbędny!
+  secret_permissions = [
+    "Get",
+    "List",
+    "Set",
+    "Delete",
+    "Purge",
+    "Recover",
+  ]
 }
-
-# --- Polityka dostępu dla Terraform (Zasób jest teraz niepotrzebny) ---
-# Skomentuj lub usuń ten blok!
-# resource "azurerm_key_vault_access_policy" "terraform_access" {
-#  key_vault_id = azurerm_key_vault.main_keyvault.id
-#  tenant_id    = data.azurerm_client_config.current.tenant_id
-#  object_id    = data.azurerm_client_config.current.object_id
-#
-#  secret_permissions = [
-#    "Get",
-#    "List",
-#    "Set",
-#  ]
-#
-#  lifecycle {
-#    prevent_destroy = false
-#  }
-# }
 
 # ... (Pozostałe sekrety) ...
 resource "azurerm_key_vault_secret" "databricks_access_connector_id_secret" {
