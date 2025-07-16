@@ -1,10 +1,10 @@
 import azure.functions as func
 import logging
-from src.functions.common.decorators.ingest_decorator import ingest_data_pipeline 
-from src.functions.common.enums.api_type import ApiType
-from src.functions.bronze_ingestion.api_handlers.who_handlers import prepare_who_ingestion_params
-from src.functions.bronze_ingestion.api_factory.base import ApiFactory
-from src.functions.bronze_ingestion.api_client.who_api_client import WhoApiClient
+from common.decorators.ingest_decorator import ingest_data_pipeline 
+from common.enums.api_type import ApiType
+from bronze_ingestion.api_handlers.who_handlers import prepare_who_ingestion_params
+from bronze_ingestion.api_factory.base import ApiFactory
+from bronze_ingestion.api_client.who_api_client import WhoApiClient
 
 
 
