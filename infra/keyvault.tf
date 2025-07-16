@@ -30,16 +30,15 @@ resource "azurerm_key_vault" "main_keyvault" {
     "Recover",
   ]
 }
-
-# ... (Pozostałe sekrety) ...
 resource "azurerm_key_vault_secret" "databricks_access_connector_id_secret" {
   name         = "databricks-access-connector-id"
   value        = module.databricks.databricks_access_connector_id
   key_vault_id = azurerm_key_vault.main_keyvault.id
   content_type = "text/plain"
-  depends_on   = [
-    # Zmieniamy zależność, aby wskazywała na główny zasób Key Vault
+
+  depends_on = [
     azurerm_key_vault.main_keyvault,
+    azurerm_key_vault_access_policy.terraform_access, # <-- dodane
     module.databricks.databricks_access_connector_id
   ]
 }
@@ -49,7 +48,9 @@ resource "azurerm_key_vault_secret" "datalake_storage_account_name_secret" {
   value        = azurerm_storage_account.sadatalake.name
   key_vault_id = azurerm_key_vault.main_keyvault.id
   content_type = "text/plain"
-  depends_on   = [
-    azurerm_key_vault.main_keyvault
+
+  depends_on = [
+    azurerm_key_vault.main_keyvault,
+    azurerm_key_vault_access_policy.terraform_access # <-- dodane
   ]
 }
