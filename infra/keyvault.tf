@@ -36,7 +36,7 @@ resource "azurerm_key_vault_access_policy" "terraform_access" {
   ]
   
   lifecycle {
-    prevent_destroy = true
+    prevent_destroy = false
   }
 }
 
