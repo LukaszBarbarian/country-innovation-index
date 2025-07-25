@@ -5,8 +5,8 @@ from pyspark.sql import SparkSession, DataFrame
 from typing import Any, Dict, Optional, List
 
 from src.azure_databricks.common.configuration.config import ProjectConfig
-from src.azure_databricks.common.enums.etl_layers import ETLLayer
-from src.azure_databricks.common.enums.write_mode import WriteMode
+from src.common.enums.etl_layers import ETLLayer
+from src.common.enums.write_mode import WriteMode
 from src.azure_databricks.common.structures.structure_builder import StructureBuilder
 
 class Persister:

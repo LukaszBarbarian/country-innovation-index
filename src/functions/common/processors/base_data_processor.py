@@ -1,7 +1,7 @@
 # src/ingestion/processors/base_data_processor.py
 from abc import ABC, abstractmethod
 from typing import Any
-from src.functions.common.storage_account.bronze_storage_manager import BronzeStorageManager
+from src.common.storage_account.bronze_storage_manager import BronzeStorageManager
 from src.functions.common.models.ingestion_context import IngestionContext
 
 class BaseDataProcessor(ABC):

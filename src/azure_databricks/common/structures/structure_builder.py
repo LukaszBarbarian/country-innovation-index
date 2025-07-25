@@ -2,7 +2,7 @@ from pyspark.sql import SparkSession
 from typing import Optional, List, Any
 
 from src.azure_databricks.common.configuration.config import ProjectConfig
-from src.azure_databricks.common.enums.etl_layers import ETLLayer
+from src.common.enums.etl_layers import ETLLayer
 
 class StructureBuilder:
     def __init__(self, spark: SparkSession, dbutils_obj: Any, config: ProjectConfig):

@@ -9,8 +9,8 @@ from src.azure_databricks.common.persister.persister import Persister
 from src.azure_databricks.common.reader.reader import DataReader
 from src.azure_databricks.common.structures.structure_builder import StructureBuilder
 from src.azure_databricks.common.factories.transformer_factory import TransformerFactory 
-from src.azure_databricks.common.enums.etl_layers import ETLLayer 
-from src.azure_databricks.common.enums.env import Env
+from src.common.enums.etl_layers import ETLLayer 
+from src.common.enums.env import Env
 
 class BaseDomainOrchestrator(ABC):
     def __init__(self, 

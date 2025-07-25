@@ -3,7 +3,7 @@
 from pyspark.sql import SparkSession, DataFrame
 from typing import Any, Dict, Optional
 
-from src.azure_databricks.common.enums.file_format import FileFormat
+from src.common.enums.file_format import FileFormat
 from src.azure_databricks.common.configuration.config import ProjectConfig # Jeśli potrzebujesz dostępu do configa
 
 class DataReader:

@@ -5,9 +5,9 @@ from pyspark.sql.functions import col, lit, current_timestamp
 from typing import Any, Dict, Optional
 
 from src.azure_databricks.common.transformers.base_data_transformer import BaseDataTransformer
-from src.azure_databricks.common.enums.file_format import FileFormat
-from src.azure_databricks.common.enums.etl_layers import ETLLayer
-from src.azure_databricks.common.enums.domain_source import DomainSource # <-- Dodany import
+from src.common.enums.file_format import FileFormat
+from src.common.enums.etl_layers import ETLLayer
+from src.common.enums.domain_source import DomainSource # <-- Dodany import
 from src.azure_databricks.common.factories.transformer_registry import TransformerRegistry
 
 # --- ZAKTUALIZOWANY DEKORATOR ---

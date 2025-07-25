@@ -1,9 +1,9 @@
 # azure_databricks/orchestrators/domain_orchestrators/who_orchestrator.py
 
 from src.azure_databricks.common.orchestrators.base_domain_orchestrator import BaseDomainOrchestrator
-from src.azure_databricks.common.enums.etl_layers import ETLLayer
+from src.common.enums.etl_layers import ETLLayer
 from src.azure_databricks.common.orchestrators.domain_orchestrator_registry import DomainOrchestratorRegistry
-from src.azure_databricks.common.enums.domain_source import DomainSource
+from src.common.enums.domain_source import DomainSource
 
 @DomainOrchestratorRegistry.register_orchestrator_decorator(
     domain_source=DomainSource.WHO,

@@ -1,8 +1,8 @@
 # azure_databricks/factories/domain_orchestrator_registry.py
 
 from typing import Dict, Type, Any, Callable, List
-from src.azure_databricks.common.enums.domain_source import DomainSource
-from src.azure_databricks.common.enums.etl_layers import ETLLayer # Import ETLLayer
+from src.common.enums.domain_source import DomainSource
+from src.common.enums.etl_layers import ETLLayer # Import ETLLayer
 from src.azure_databricks.common.orchestrators.base_domain_orchestrator import BaseDomainOrchestrator
 
 class DomainOrchestratorRegistry:

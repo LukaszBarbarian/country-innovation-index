@@ -2,8 +2,8 @@
 
 from typing import Dict, Type, Any, Callable
 from pyspark.sql import SparkSession
-from src.azure_databricks.common.enums.etl_layers import ETLLayer
-from src.azure_databricks.common.enums.domain_source import DomainSource
+from src.common.enums.etl_layers import ETLLayer
+from src.common.enums.domain_source import DomainSource
 from src.azure_databricks.common.transformers.base_data_transformer import BaseDataTransformer
 
 class TransformerRegistry:

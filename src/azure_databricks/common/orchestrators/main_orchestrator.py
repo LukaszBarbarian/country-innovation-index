@@ -8,11 +8,11 @@ from src.azure_databricks.common.configuration.config import ProjectConfig
 from src.azure_databricks.common.persister.persister import Persister
 from src.azure_databricks.common.reader.reader import DataReader
 from src.azure_databricks.common.structures.structure_builder import StructureBuilder
-from src.azure_databricks.common.enums.etl_layers import ETLLayer 
-from src.azure_databricks.common.enums.domain_source import DomainSource 
+from src.common.enums.etl_layers import ETLLayer 
+from src.common.enums.domain_source import DomainSource 
 from src.azure_databricks.common.orchestrators.domain_orchestrator_registry import DomainOrchestratorRegistry 
 from src.azure_databricks.common.orchestrators.base_domain_orchestrator import BaseDomainOrchestrator
-from src.azure_databricks.common.enums.env import Env
+from src.common.enums.env import Env
 from src.azure_databricks.utils.local.local_config import LocalPersister
 from src.azure_databricks.utils.local.local_structure_builder import LocalStrucrtureBuilder
 from src.azure_databricks.common.orchestrators.provider_factory.provider_factory import ProviderFactory

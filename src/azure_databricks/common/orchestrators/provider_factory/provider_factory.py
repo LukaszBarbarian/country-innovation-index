@@ -2,7 +2,7 @@ from typing import Any
 from pyspark.sql import SparkSession
 
 # Importy klas dla obu środowisk
-from src.azure_databricks.common.enums.env import Env
+from src.common.enums.env import Env
 from src.azure_databricks.common.configuration.config import ProjectConfig
 from src.azure_databricks.common.persister.persister import Persister
 from src.azure_databricks.common.reader.reader import DataReader

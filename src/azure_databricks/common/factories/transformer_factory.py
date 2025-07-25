@@ -5,7 +5,7 @@ from pyspark.sql import SparkSession
 from src.azure_databricks.common.persister.persister import Persister
 from src.azure_databricks.common.reader.reader import DataReader
 from src.azure_databricks.common.configuration.config import ProjectConfig
-from src.azure_databricks.common.enums.etl_layers import ETLLayer
+from src.common.enums.etl_layers import ETLLayer
 from src.azure_databricks.common.transformers.base_data_transformer import BaseDataTransformer
 from src.azure_databricks.common.factories.transformer_registry import TransformerRegistry
 

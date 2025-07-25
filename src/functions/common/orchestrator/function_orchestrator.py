@@ -3,12 +3,10 @@ import azure.functions as func
 import logging
 import json
 
-from ..common.models.ingestion_context import IngestionContext
-from ..ingestion.data_ingestor import DataIngestor
-from ..common.config_manager import ConfigManager
-from ..common.logging_config import setup_logging # Ustawienie logowania
+from src.functions.common.models.ingestion_context import IngestionContext
+from src.functions.common.ingestor.data_ingestor import DataIngestor
+from src.functions.common.config.config_manager import ConfigManager
 
-setup_logging()
 logger = logging.getLogger(__name__)
 
 app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)

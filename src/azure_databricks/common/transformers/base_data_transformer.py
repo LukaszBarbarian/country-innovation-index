@@ -6,11 +6,11 @@ from abc import ABC, abstractmethod
 
 from src.azure_databricks.common.persister.persister import Persister
 from src.azure_databricks.common.configuration.config import ProjectConfig
-from src.azure_databricks.common.enums.etl_layers import ETLLayer
-from src.azure_databricks.common.enums.file_format import FileFormat
-from src.azure_databricks.common.enums.write_mode import WriteMode
+from src.common.enums.etl_layers import ETLLayer
+from src.common.enums.file_format import FileFormat
+from src.common.enums.write_mode import WriteMode
 from src.azure_databricks.common.reader.reader import DataReader
-from src.azure_databricks.common.enums.domain_source import DomainSource # <-- Dodany import
+from src.common.enums.domain_source import DomainSource # <-- Dodany import
 
 class BaseDataTransformer(ABC):
     def __init__(self,

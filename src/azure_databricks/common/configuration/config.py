@@ -1,7 +1,7 @@
 from typing import Any
 from dataclasses import dataclass
 from pyspark.sql import SparkSession
-from src.azure_databricks.common.enums.env import Env
+from src.common.enums.env import Env
 
 class Secrets:
     @classmethod
