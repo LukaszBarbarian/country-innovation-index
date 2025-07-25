@@ -3,20 +3,21 @@ import azure.functions as func
 import logging
 import json
 import os
-from azure.storage.queue import QueueClient
-
 from src.functions.common.models.ingestion_context import IngestionContext
 from src.functions.common.ingestor.data_ingestor import DataIngestor
 from src.functions.common.config.config_manager import ConfigManager
+from src.common.storage_account.queue_storage_manager import QueueStorageManager
 
 logger = logging.getLogger(__name__)
 
 app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 
+QUEUE_NAME = "ingest-queue"
 
-
+@app.function_name(name="EnqueueTask")
 @app.route(route="enqueueTask", methods=["POST"])
-def enqueue_task(req: func.HttpRequest) -> func.HttpResponse:
+def EnqueueTask(req: func.HttpRequest) -> func.HttpResponse:
+
     try:
         req_body = req.get_json()
     except ValueError:
@@ -34,14 +35,9 @@ def enqueue_task(req: func.HttpRequest) -> func.HttpResponse:
         )
 
     try:
-        queue_client = QueueClient.from_connection_string(
-            conn_str=os.environ["AzureWebJobsStorage"],
-            queue_name="ingest-queue"  # nazwa Twojej kolejki
-        )
-        queue_client.create_queue()  # jeśli nie istnieje
-
+        queue_manager = QueueStorageManager(queue_name=QUEUE_NAME)
         message = json.dumps(req_body)
-        queue_client.send_message(message)
+        queue_manager.send_message(message_content=message)
 
         return func.HttpResponse("Task enqueued successfully.", status_code=200)
 
@@ -56,12 +52,8 @@ def enqueue_task(req: func.HttpRequest) -> func.HttpResponse:
 
 
 @app.function_name(name="IngestFromQueue")
-@app.queue_trigger(arg_name="msg", queue_name="ingest-queue", connection="AzureWebJobsStorage")
-async def ingest_from_queue(msg: func.QueueMessage) -> None:
-    from src.functions.common.models.ingestion_context import IngestionContext
-    from src.functions.common.ingestor.data_ingestor import DataIngestor
-    from src.functions.common.config.config_manager import ConfigManager
-
+@app.queue_trigger(arg_name="msg", queue_name=QUEUE_NAME, connection="AzureWebJobsStorage")
+def ingest_from_queue(msg: func.QueueMessage) -> None:
     config = ConfigManager()
     data_ingestor = DataIngestor(config)
 
@@ -72,6 +64,7 @@ async def ingest_from_queue(msg: func.QueueMessage) -> None:
             dataset_name=task["dataset_name"],
             api_request_payload=task.get("api_request_payload", {})
         )
-        await data_ingestor.ingest(ingestion_context)
+        
+        data_ingestor.ingest(ingestion_context)
     except Exception as e:
         logger.exception(f"Error ingesting data from queue: {e}")

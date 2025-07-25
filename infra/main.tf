@@ -50,39 +50,10 @@ resource "azurerm_storage_account" "sa_functions" {
   }
 }
 
-### 2a. Storage Account dla Kolejki (NOWY ZASÓB)
-# Dedykowane konto storage dla kolejek, aby oddzielić je od plików Function App
-resource "azurerm_storage_account" "sa_queue" {
-  name                     = local.queue_storage_account_name_final
-  resource_group_name      = azurerm_resource_group.rg_functions.name
-  location                 = azurerm_resource_group.rg_functions.location
-  account_tier             = "Standard"
-  account_replication_type = "LRS" # Możesz dostosować replikację
-  account_kind             = "StorageV2" # Wymagane dla kolejek
-  min_tls_version          = "TLS1_2"
-
-  tags = {
-    Environment = var.environment
-    Project     = var.project_prefix
-    Purpose     = "Queue Storage"
-  }
-}
-
-### 2b. Azure Storage Queue (NOWY ZASÓB)
-# Definicja samej kolejki w ramach konta storage
+### 2a. Azure Storage Queue (używa tego samego SA co Function App)
 resource "azurerm_storage_queue" "message_queue" {
   name                 = local.queue_name_final
-  storage_account_name = azurerm_storage_account.sa_queue.name
-}
-
-### 2c. Nadanie uprawnień dla Function App do Kolejki (NOWY ZASÓB)
-# Nadanie Function App roli 'Storage Queue Data Contributor' do zarządzania wiadomościami w kolejce
-resource "azurerm_role_assignment" "function_app_queue_contributor" {
-  scope                = azurerm_storage_account.sa_queue.id
-  role_definition_name = "Storage Queue Data Contributor"
-  principal_id         = azurerm_function_app.main_function_app.identity[0].principal_id # Zakładając, że Function App ma włączoną tożsamość zarządzaną
-  # Jeśli Twoja funkcja nie ma włączonej tożsamości zarządzanej, będziesz musiał ją włączyć.
-  # Możesz dodać `identity { type = "SystemAssigned" }` do zasobu `azurerm_function_app`.
+  storage_account_name = azurerm_storage_account.sa_functions.name
 }
 
 
