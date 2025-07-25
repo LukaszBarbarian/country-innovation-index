@@ -113,11 +113,7 @@ resource "azurerm_function_app" "main_function_app" {
     AzureWebJobsStorage               = azurerm_storage_account.sa_functions.primary_connection_string
     FUNCTIONS_EXTENSION_VERSION       = "~4"                                              # Wersja rozszerzenia funkcji (dla blueprintów)
     "AzureWebJobsFeatureFlags"        = "EnableWorkerIndexing"                            # Włącz indexowanie workerów dla Python V2 (blueprinty)
-    # Dodaj connection string do nowej kolejki
-    AzureWebJobsStorageQueue          = azurerm_storage_account.sa_queue.primary_connection_string # Connection string do konta storage z kolejką
-    # Nazwa kolejki, do której funkcja będzie się odwoływać
     QUEUE_NAME                        = azurerm_storage_queue.message_queue.name
-    # WEBSITE_RUN_FROM_PACKAGE nie jest tutaj ustawiany, zostanie ustawiony automatycznie przez az functionapp deployment source config-zip
   }
 
   tags = {
