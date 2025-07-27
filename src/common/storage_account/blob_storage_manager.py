@@ -3,11 +3,11 @@
 import logging
 from typing import Any, Union, Dict, Literal, Optional
 from azure.storage.blob import BlobServiceClient, ContainerClient
-from azure.core.exceptions import ResourceNotFoundError # Dodane dla specyficznej obsługi błędów
-import json # Dodane dla obsługi JSON
-
-# WAŻNE: Upewnij się, że ta ścieżka importu jest poprawna w Twoim projekcie.
+from azure.core.exceptions import ResourceNotFoundError
+import json
 from src.common.storage_account.manager_base import AzureClientManagerBase
+from src.common.storage_metadata_file_builder.base_storage_path_builder import BaseStoragePathBuilder
+from src.common.storage_metadata_file_builder.default_storage_metadata_file_builder import DefaultStoragePathBuilder
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +17,9 @@ class BlobStorageManager(AzureClientManagerBase[BlobServiceClient, ContainerClie
     Implementuje metody abstrakcyjne z AzureClientManagerBase dla Blob Storage.
     Zawiera generyczne metody wgrywania i pobierania blobów.
     """
-    def __init__(self, container_name: str, connection_string_setting_name: str = "AzureWebJobsStorage"):
+    def __init__(self, 
+                 container_name: str, 
+                 connection_string_setting_name: str = "AzureWebJobsStorage"):
         """
         Inicjalizuje menedżera Blob Storage.
 
@@ -31,6 +33,7 @@ class BlobStorageManager(AzureClientManagerBase[BlobServiceClient, ContainerClie
             connection_string_setting_name=connection_string_setting_name,
             base_url_suffix=".blob.core.windows.net"
         )
+
         logger.info(f"BlobStorageManager initialized for container: {self.resource_name}")
 
     def _create_service_client_from_connection_string(self, connection_string: str) -> BlobServiceClient:
@@ -48,7 +51,7 @@ class BlobStorageManager(AzureClientManagerBase[BlobServiceClient, ContainerClie
                     data_content: Union[Dict[str, Any], str, bytes], 
                     blob_name: str,     
                     overwrite: bool = True
-                   ) -> str:
+                   ) -> int:
         """
         Wgrywa zawartość danych do określonej ścieżki bloba w kontenerze.
         

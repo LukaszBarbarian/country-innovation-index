@@ -1,27 +1,22 @@
 # src/common/models/ingestion_context.py
 from datetime import datetime
 from typing import Dict, Any, Optional
-from src.common.enums.file_format import FileFormat
 from src.common.enums.domain_source import DomainSource
 
 class IngestionContext:
     def __init__(self,
-                 api_name: str,
+                 api_name_str: str,
                  dataset_name: str,
                  api_request_payload: Dict[str, Any],
                  raw_api_response: Optional[Any] = None,
                  api_response_status_code: Optional[int] = None,
-                 file_format: Optional[FileFormat] = None,
-                 target_blob_path: Optional[str] = None,
                  ingestion_timestamp: Optional[datetime] = None):
                  
-        self.api_name = self.map_api_name_to_domain_source(api_name.upper())
+        self.domain_source = self.map_api_name_to_domain_source(api_name_str.upper())
         self.dataset_name = dataset_name
         self.api_request_payload = api_request_payload
         self.raw_api_response = raw_api_response
         self.api_response_status_code = api_response_status_code
-        self.file_format = file_format
-        self.target_blob_path = target_blob_path
         self.ingestion_timestamp = ingestion_timestamp if ingestion_timestamp else datetime.utcnow()
 
     def map_api_name_to_domain_source(self, api_name_str: str) -> DomainSource:
@@ -41,8 +36,3 @@ class IngestionContext:
         self.raw_api_response = response
         self.api_response_status_code = status_code
 
-    def set_file_format(self, file_format: FileFormat):
-        self.file_format = file_format
-
-    def set_target_blob_path(self, path: str):
-        self.target_blob_path = path

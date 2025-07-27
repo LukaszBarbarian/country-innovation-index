@@ -12,12 +12,15 @@ logger = logging.getLogger(__name__)
 
 app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 
-QUEUE_NAME = "ingest-queue"
+
+QUEUE_NAME = os.getenv("QUEUE_NAME")
+EVENT_GRID_TOPIC_ENDPOINT = os.environ.get('EVENTGRID_TOPIC_ENDPOINT')
+
 
 @app.function_name(name="EnqueueTask")
 @app.route(route="enqueueTask", methods=["POST"])
 def EnqueueTask(req: func.HttpRequest) -> func.HttpResponse:
-
+    
     try:
         req_body = req.get_json()
     except ValueError:
