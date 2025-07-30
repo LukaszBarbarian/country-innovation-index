@@ -12,11 +12,13 @@ class BaseLayerContext:
     """
     def __init__(self,
                  correlation_id: str,
+                 queue_message_id: str,
                  domain_source: DomainSource,
                  etl_layer: ETLLayer,
                  ingestion_time_utc: Optional[datetime] = None):
         
         self.correlation_id = correlation_id
+        self.queue_message_id = queue_message_id
         self.domain_source = domain_source
         self.etl_layer = etl_layer
         self.ingestion_time_utc = ingestion_time_utc if ingestion_time_utc is not None else datetime.utcnow()
