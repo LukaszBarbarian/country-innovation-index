@@ -143,27 +143,6 @@
 					"variableName": "aggregatedResultsString",
 					"value": "@concat('[', join(variables('bronzeIngestionResults'), ','), ']')"
 				}
-			},
-			{
-				"name": "repack-bronze-ingestion-results_copy1",
-				"type": "SetVariable",
-				"dependsOn": [
-					{
-						"activity": "repack-bronze-ingestion-results",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"policy": {
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"variableName": "aggregatedResultsString",
-					"value": "@concat('[', join(variables('bronzeIngestionResults'), ','), ']')"
-				}
 			}
 		],
 		"variables": {
@@ -174,6 +153,9 @@
 				"type": "Array"
 			},
 			"aggregatedResultsString": {
+				"type": "String"
+			},
+			"test": {
 				"type": "String"
 			}
 		},
