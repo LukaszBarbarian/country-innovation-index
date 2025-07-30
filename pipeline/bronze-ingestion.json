@@ -142,7 +142,7 @@
 				"typeProperties": {
 					"variableName": "aggregatedResults",
 					"value": {
-						"value": "@variables('bronzeIngestionResults')",
+						"value": "@string(variables('bronzeIngestionResults'))\n",
 						"type": "Expression"
 					}
 				}
