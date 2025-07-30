@@ -142,7 +142,7 @@
 				"typeProperties": {
 					"variableName": "aggregatedResultsString",
 					"value": {
-						"value": "@concat('[', join(variables('bronzeIngestionResults'), ','), ']')",
+						"value": "@concat('[', join(variables('bronzeIngestionResults'), ','), ']')\n",
 						"type": "Expression"
 					}
 				}
