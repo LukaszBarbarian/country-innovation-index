@@ -86,7 +86,10 @@
 							"userProperties": [],
 							"typeProperties": {
 								"functionName": "IngestNow",
-								"body": "@json(replace(string(item()), '{', concat('{\"correlation_id\":\"', variables('batch_correlation_id'), '\",')))\n",
+								"body": {
+									"value": "@{\n    json(\n        {\n            'correlation_id': variables('batch_correlation_id'),\n            'queue_message_id': guid(),\n            'api_config_payload': item()\n        }\n    )\n}",
+									"type": "Expression"
+								},
 								"method": "POST"
 							},
 							"linkedServiceName": {
