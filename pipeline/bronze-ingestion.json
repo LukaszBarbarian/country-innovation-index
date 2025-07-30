@@ -119,6 +119,23 @@
 						}
 					]
 				}
+			},
+			{
+				"name": "repack-",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "foreach-ingestion",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": []
 			}
 		],
 		"variables": {
