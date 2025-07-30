@@ -121,6 +121,7 @@ resource "azurerm_function_app" "main_function_app" {
     "AzureWebJobsFeatureFlags"        = "EnableWorkerIndexing"                            # Włącz indexowanie workerów dla Python V2 (blueprinty)
     QUEUE_NAME                        = azurerm_storage_queue.message_queue.name
     DATA_LAKE_STORAGE_ACCOUNT_NAME = azurerm_storage_account.sadatalake.name
+    NOBELPRIZE_API_BASE_URL = "https://api.nobelprize.org/2.1/"
 
   }
 
