@@ -66,6 +66,10 @@
 				],
 				"userProperties": [],
 				"typeProperties": {
+					"items": {
+						"value": "@activity('config-api-loader').output.value",
+						"type": "Expression"
+					},
 					"activities": [
 						{
 							"name": "ingestion-now",
@@ -78,7 +82,42 @@
 								"secureOutput": false,
 								"secureInput": false
 							},
-							"userProperties": []
+							"userProperties": [],
+							"typeProperties": {
+								"functionName": "IngestNow",
+								"body": {
+									"items": "@activity('configs-loader').output\n",
+									"activities": [
+										{
+											"name": "ingest-now",
+											"type": "AzureFunctionActivity",
+											"dependsOn": [],
+											"policy": {
+												"timeout": "0.12:00:00",
+												"retry": 0,
+												"retryIntervalInSeconds": 30,
+												"secureOutput": false,
+												"secureInput": false
+											},
+											"userProperties": [],
+											"typeProperties": {
+												"functionName": "IngestNow",
+												"body": "@json(replace(string(item()), '{', concat('{\"correlation_id\":\"', variables('batch_correlation_id'), '\",')))\n",
+												"method": "POST"
+											},
+											"linkedServiceName": {
+												"referenceName": "azure_function_linked_service",
+												"type": "LinkedServiceReference"
+											}
+										}
+									]
+								},
+								"method": "POST"
+							},
+							"linkedServiceName": {
+								"referenceName": "azure_function_linked_service",
+								"type": "LinkedServiceReference"
+							}
 						}
 					]
 				}
