@@ -121,7 +121,7 @@
 				}
 			},
 			{
-				"name": "repack-",
+				"name": "repack-bronze-ingestion-results",
 				"type": "SetVariable",
 				"dependsOn": [
 					{
@@ -135,7 +135,14 @@
 					"secureOutput": false,
 					"secureInput": false
 				},
-				"userProperties": []
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "aggregatedResults",
+					"value": {
+						"value": "@variables('bronzeIngestionResults')",
+						"type": "Expression"
+					}
+				}
 			}
 		],
 		"variables": {
@@ -144,6 +151,9 @@
 			},
 			"bronzeIngestionResults": {
 				"type": "Array"
+			},
+			"aggregatedResults": {
+				"type": "String"
 			}
 		},
 		"folder": {
