@@ -140,7 +140,7 @@
 				},
 				"userProperties": [],
 				"typeProperties": {
-					"variableName": "aggregatedResults",
+					"variableName": "aggregatedResultsString ",
 					"value": {
 						"value": "@string(variables('bronzeIngestionResults'))\n",
 						"type": "Expression"
@@ -155,7 +155,7 @@
 			"bronzeIngestionResults": {
 				"type": "Array"
 			},
-			"aggregatedResults": {
+			"aggregatedResultsString ": {
 				"type": "String"
 			}
 		},
