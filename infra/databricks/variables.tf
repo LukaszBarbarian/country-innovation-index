@@ -41,6 +41,11 @@ variable "bronze_container_name" {
   type        = string
 }
 
+variable "config_container_name" {
+  description = "The name of the Config container in the Storage Account."
+  type        = string
+}
+
 variable "silver_container_name" {
   description = "The name of the Silver container in the Storage Account."
   type        = string

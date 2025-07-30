@@ -2,7 +2,7 @@ from enum import Enum
 
 
 class DomainSource(Enum):
-    PATENTS = "patents"
-    NOBELPRIZE = "nobelprize"
-    WORLDBANK = "worldbank"
+    PATENTS = "PATENTS"
+    NOBELPRIZE = "NOBELPRIZE"
+    WORLDBANK = "WORLDBANK"
     

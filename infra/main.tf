@@ -56,6 +56,12 @@ resource "azurerm_storage_queue" "message_queue" {
   storage_account_name = azurerm_storage_account.sa_functions.name
 }
 
+resource "azurerm_role_assignment" "function_app_blob_data_contributor" {
+  scope                = azurerm_storage_account.sa_functions.id
+  role_definition_name = "Storage Blob Data Contributor"
+  principal_id         = azurerm_function_app.main_function_app.identity[0].principal_id
+}
+
 
 ### 3. App Service Plan
 # Określa środowisko hostingu (np. zużycie, dedykowane) i system operacyjny
@@ -114,6 +120,8 @@ resource "azurerm_function_app" "main_function_app" {
     FUNCTIONS_EXTENSION_VERSION       = "~4"                                              # Wersja rozszerzenia funkcji (dla blueprintów)
     "AzureWebJobsFeatureFlags"        = "EnableWorkerIndexing"                            # Włącz indexowanie workerów dla Python V2 (blueprinty)
     QUEUE_NAME                        = azurerm_storage_queue.message_queue.name
+    DATA_LAKE_STORAGE_ACCOUNT_NAME = azurerm_storage_account.sadatalake.name
+
   }
 
   tags = {
@@ -132,23 +140,41 @@ module "adf" {
   function_app_url          = azurerm_function_app.main_function_app.default_hostname
 }
 
-module "databricks" {
-  source                  = "./databricks"
+# module "databricks" {
+#   source                  = "./databricks"
 
-  # Przekazywanie wymaganych zmiennych do modułu databricks
-  databricks_name         = "${var.project_prefix}-${var.environment}-ws"
-  resource_group_name     = azurerm_resource_group.rg_functions.name # Referencja do RG zdefiniowanego w tym module
-  location                = var.location
-  project_prefix          = var.project_prefix
-  environment             = var.environment
+#   # Przekazywanie wymaganych zmiennych do modułu databricks
+#   databricks_name         = "${var.project_prefix}-${var.environment}-ws"
+#   resource_group_name     = azurerm_resource_group.rg_functions.name # Referencja do RG zdefiniowanego w tym module
+#   location                = var.location
+#   project_prefix          = var.project_prefix
+#   environment             = var.environment
 
-  # Przekazywanie informacji o Storage Account z modułu głównego do modułu databricks
-  storage_account_name    = azurerm_storage_account.sadatalake.name
-  storage_account_id      = azurerm_storage_account.sadatalake.id
-  bronze_container_name   = azurerm_storage_container.container_bronze.name # Pamiętaj o container_bronze
-  silver_container_name   = azurerm_storage_container.container_silver.name # Pamiętaj o container_bronze
+#   # Przekazywanie informacji o Storage Account z modułu głównego do modułu databricks
+#   storage_account_name    = azurerm_storage_account.sadatalake.name
+#   storage_account_id      = azurerm_storage_account.sadatalake.id
+#   bronze_container_name   = azurerm_storage_container.container_bronze.name # Pamiętaj o container_bronze
+#   silver_container_name   = azurerm_storage_container.container_silver.name # Pamiętaj o container_bronze
 
-  key_vault_id            = azurerm_key_vault.main_keyvault.id
-  key_vault_uri           = azurerm_key_vault.main_keyvault.vault_uri
-  azure_data_factory_managed_identity_principal_id = module.adf.adf_principal_id
-}
+#   key_vault_id            = azurerm_key_vault.main_keyvault.id
+#   key_vault_uri           = azurerm_key_vault.main_keyvault.vault_uri
+#   azure_data_factory_managed_identity_principal_id = module.adf.adf_principal_id
+# }
+
+# resource "azurerm_eventgrid_topic" "ingestion_topic" {
+#   name                = "${var.project_prefix}-${var.environment}-ingestion-topic"
+#   location            = azurerm_resource_group.rg_functions.location
+#   resource_group_name = azurerm_resource_group.rg_functions.name
+
+#   tags = {
+#     Environment = var.environment
+#     Project     = var.project_prefix
+#   }
+# }
+
+
+# resource "azurerm_role_assignment" "function_app_event_grid_publisher" {
+#   scope                = azurerm_eventgrid_topic.ingestion_topic.id
+#   role_definition_name = "EventGrid Data Sender"
+#   principal_id         = azurerm_function_app.main_function_app.identity[0].principal_id
+# }

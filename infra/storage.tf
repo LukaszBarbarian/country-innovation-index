@@ -12,6 +12,21 @@ resource "azurerm_storage_account" "sadatalake" { # Zmieniona nazwa zmiennej lok
   }
 }
 
+resource "azurerm_role_assignment" "function_app_data_lake_contributor" {
+  # Scope: Konto Data Lake Storage
+  scope                = azurerm_storage_account.sadatalake.id
+  # Rola, która pozwala na zapisywanie i modyfikowanie danych w blobach
+  role_definition_name = "Storage Blob Data Contributor"
+  # Principal ID tożsamości zarządzanej Twojej Function App
+  principal_id         = azurerm_function_app.main_function_app.identity[0].principal_id
+}
+
+resource "azurerm_storage_container" "container_configs" {
+  name                  = "configs"
+  storage_account_name  = azurerm_storage_account.sadatalake.name
+  container_access_type = "private" # Domyślnie prywatny
+}
+
 # Kontener (system plików/folder) dla warstwy Bronze
 resource "azurerm_storage_container" "container_bronze" {
   name                  = "bronze"

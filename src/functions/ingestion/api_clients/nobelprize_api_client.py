@@ -1,17 +1,17 @@
 # src/ingestion/api_clients/nobel_prize_api_client.py
 
-from src.functions.common.api_clients.base_api_client import ApiClient
+from src.common.api_clients.base_api_client import ApiClient
 from typing import Dict, Any, AsyncGenerator, List 
 import logging
 import httpx 
 
-from src.functions.common.api_clients.api_client_registry import ApiClientRegistry
+from src.common.registers.api_client_registry import ApiClientRegistry
 from src.common.enums.domain_source import DomainSource
 
 logger = logging.getLogger(__name__)
 
-# Rejestracja pod wartością Enum, aby fabryka mogła odnaleźć tę klasę
-@ApiClientRegistry.register(DomainSource.NOBELPRIZE.value) 
+
+@ApiClientRegistry.register(DomainSource.NOBELPRIZE) 
 class NobelPrizeApiClient(ApiClient):
     """
     Klient API dla źródła danych Nobel Prize, obsługujący paginację typu offset/limit.

@@ -39,14 +39,21 @@ output "data_lake_storage_account_name" {
   value       = azurerm_storage_account.sadatalake.name
 }
 
+output "configs_container_name" {
+  description = "The name of the Config layer container."
+  value       = azurerm_storage_container.container_configs.name
+}
+
 output "bronze_container_name" {
   description = "The name of the Bronze layer container."
   value       = azurerm_storage_container.container_bronze.name
 }
+
 output "silver_container_name" {
   description = "The name of the Silver layer container."
   value       = azurerm_storage_container.container_silver.name
 }
+
 output "gold_container_name" {
   description = "The name of the Gold layer container."
   value       = azurerm_storage_container.container_gold.name
