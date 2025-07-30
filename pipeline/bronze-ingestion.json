@@ -112,7 +112,7 @@
 							"typeProperties": {
 								"variableName": "bronzeIngestionResults",
 								"value": {
-									"value": "@activity('ingestion-now').output.response",
+									"value": "@activity('ingestion-now').output",
 									"type": "Expression"
 								}
 							}
