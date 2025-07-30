@@ -111,7 +111,10 @@
 							"userProperties": [],
 							"typeProperties": {
 								"variableName": "bronzeIngestionResults",
-								"value": "[]"
+								"value": {
+									"value": "@activity('ingestion-now').output.response",
+									"type": "Expression"
+								}
 							}
 						}
 					]
