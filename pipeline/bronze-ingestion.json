@@ -1,0 +1,139 @@
+{
+	"name": "bronze-ingestion",
+	"properties": {
+		"activities": [
+			{
+				"name": "batch-correlation-id",
+				"type": "SetVariable",
+				"dependsOn": [],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "batch_correlation_id",
+					"value": "@concat('cor-', pipeline().RunId)\n"
+				}
+			},
+			{
+				"name": "config-api-loader",
+				"type": "Lookup",
+				"dependsOn": [
+					{
+						"activity": "batch-correlation-id",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "JsonSource",
+						"storeSettings": {
+							"type": "AzureBlobStorageReadSettings",
+							"recursive": true,
+							"enablePartitionDiscovery": false
+						},
+						"formatSettings": {
+							"type": "JsonReadSettings"
+						}
+					},
+					"dataset": {
+						"referenceName": "config_apis",
+						"type": "DatasetReference"
+					},
+					"firstRowOnly": false
+				}
+			},
+			{
+				"name": "foreach-ingestion",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "config-api-loader",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('config-api-loader').output.value",
+						"type": "Expression"
+					},
+					"activities": [
+						{
+							"name": "ingestion-now",
+							"type": "AzureFunctionActivity",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"functionName": "IngestNow",
+								"body": {
+									"value": "@{\n    json(concat(\n        '{',\n            '\"correlation_id\":\"', variables('batch_correlation_id'), '\",',\n            '\"queue_message_id\":\"', guid(), '\",',\n            '\"api_config_payload\":', string(item()),\n        '}'\n    ))\n}\n",
+									"type": "Expression"
+								},
+								"method": "POST"
+							},
+							"linkedServiceName": {
+								"referenceName": "azure_function_linked_service",
+								"type": "LinkedServiceReference"
+							}
+						},
+						{
+							"name": "bronze-ingestion-results",
+							"type": "AppendVariable",
+							"dependsOn": [
+								{
+									"activity": "ingestion-now",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "bronzeIngestionResults",
+								"value": {
+									"value": "@activity('ingestion-now').output.response",
+									"type": "Expression"
+								}
+							}
+						}
+					]
+				}
+			}
+		],
+		"variables": {
+			"batch_correlation_id": {
+				"type": "String"
+			},
+			"bronzeIngestionResults": {
+				"type": "Array"
+			}
+		},
+		"folder": {
+			"name": "cv-demo1/bronze"
+		},
+		"annotations": [],
+		"lastPublishTime": "2025-07-11T12:51:04Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}
