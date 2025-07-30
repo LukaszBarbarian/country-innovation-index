@@ -3,19 +3,30 @@
 	"properties": {
 		"activities": [
 			{
-				"name": "Set variable1",
+				"name": "batch-correlation-id",
 				"type": "SetVariable",
 				"dependsOn": [],
 				"policy": {
 					"secureOutput": false,
 					"secureInput": false
 				},
-				"userProperties": []
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "batch_correlation_id",
+					"value": "@concat('cor-', pipeline().RunId)\n"
+				}
 			},
 			{
-				"name": "Lookup1",
+				"name": "config-api-loader",
 				"type": "Lookup",
-				"dependsOn": [],
+				"dependsOn": [
+					{
+						"activity": "batch-correlation-id",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
 				"policy": {
 					"timeout": "0.12:00:00",
 					"retry": 0,
@@ -24,8 +35,19 @@
 					"secureInput": false
 				},
 				"userProperties": []
+			},
+			{
+				"name": "ForEach1",
+				"type": "ForEach",
+				"dependsOn": [],
+				"userProperties": []
 			}
 		],
+		"variables": {
+			"batch_correlation_id": {
+				"type": "String"
+			}
+		},
 		"folder": {
 			"name": "cv-demo1/bronze"
 		},
