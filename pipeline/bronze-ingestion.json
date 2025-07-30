@@ -141,10 +141,7 @@
 				"userProperties": [],
 				"typeProperties": {
 					"variableName": "aggregatedResultsString",
-					"value": {
-						"value": "@concat('[', join(variables('bronzeIngestionResults'), ','), ']')",
-						"type": "Expression"
-					}
+					"value": "@concat('[', join(variables('bronzeIngestionResults'), ','), ']')"
 				}
 			}
 		],
