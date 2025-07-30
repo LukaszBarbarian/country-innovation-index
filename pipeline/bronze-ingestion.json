@@ -98,10 +98,21 @@
 							}
 						},
 						{
-							"name": "bronze-ongestionResults ",
+							"name": "bronze-ingestion-results",
 							"type": "AppendVariable",
-							"dependsOn": [],
-							"userProperties": []
+							"dependsOn": [
+								{
+									"activity": "ingestion-now",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "bronzeIngestionResults",
+								"value": ""
+							}
 						}
 					]
 				}
@@ -110,6 +121,9 @@
 		"variables": {
 			"batch_correlation_id": {
 				"type": "String"
+			},
+			"bronzeIngestionResults": {
+				"type": "Array"
 			}
 		},
 		"folder": {
