@@ -111,7 +111,7 @@
 							"userProperties": [],
 							"typeProperties": {
 								"variableName": "bronzeIngestionResults",
-								"value": ""
+								"value": "[]"
 							}
 						}
 					]
