@@ -96,6 +96,12 @@
 								"referenceName": "azure_function_linked_service",
 								"type": "LinkedServiceReference"
 							}
+						},
+						{
+							"name": "bronze-ongestionResults ",
+							"type": "AppendVariable",
+							"dependsOn": [],
+							"userProperties": []
 						}
 					]
 				}
