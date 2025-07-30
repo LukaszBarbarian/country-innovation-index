@@ -13,7 +13,10 @@
 				"userProperties": [],
 				"typeProperties": {
 					"variableName": "batch_correlation_id",
-					"value": "@concat('cor-', pipeline().RunId)\n"
+					"value": {
+						"value": "@concat('cor-', pipeline().RunId)\n",
+						"type": "Expression"
+					}
 				}
 			},
 			{
