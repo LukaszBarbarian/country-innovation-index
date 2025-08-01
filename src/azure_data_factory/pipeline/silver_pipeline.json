@@ -1,27 +1,6 @@
 {
 	"name": "silver_pipeline",
 	"properties": {
-		"activities": [
-			{
-				"name": "Custom1",
-				"type": "Custom",
-				"dependsOn": [],
-				"policy": {
-					"timeout": "0.12:00:00",
-					"retry": 0,
-					"retryIntervalInSeconds": 30,
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"referenceObjects": {
-						"linkedServices": [],
-						"datasets": []
-					}
-				}
-			}
-		],
 		"parameters": {
 			"p_ingestion_results": {
 				"type": "object"
