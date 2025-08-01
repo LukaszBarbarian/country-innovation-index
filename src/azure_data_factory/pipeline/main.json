@@ -22,13 +22,13 @@
 				}
 			},
 			{
-				"name": "silver_pip",
+				"name": "silver_pipeline",
 				"type": "ExecutePipeline",
 				"dependsOn": [
 					{
 						"activity": "bronze_pipeline",
 						"dependencyConditions": [
-							"Succeeded"
+							"Completed"
 						]
 					}
 				],
@@ -41,9 +41,16 @@
 				}
 			},
 			{
-				"name": "Execute Pipeline3",
+				"name": "gold_pipeline",
 				"type": "ExecutePipeline",
-				"dependsOn": [],
+				"dependsOn": [
+					{
+						"activity": "silver_pipeline",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
 				"policy": {
 					"secureInput": false
 				},
