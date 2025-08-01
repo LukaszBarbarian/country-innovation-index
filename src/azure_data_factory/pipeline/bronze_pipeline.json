@@ -59,7 +59,11 @@
 								"secureOutput": false,
 								"secureInput": false
 							},
-							"userProperties": []
+							"userProperties": [],
+							"linkedServiceName": {
+								"referenceName": "AzureFunction1",
+								"type": "LinkedServiceReference"
+							}
 						}
 					]
 				}
