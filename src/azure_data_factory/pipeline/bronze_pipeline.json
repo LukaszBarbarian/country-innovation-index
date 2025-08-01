@@ -114,10 +114,8 @@
 				},
 				"userProperties": [],
 				"typeProperties": {
-					"variableName": "ingest-response-aggregated",
-					"value": [
-						""
-					]
+					"variableName": "tttttt",
+					"value": ""
 				}
 			}
 		],
@@ -136,6 +134,9 @@
 			},
 			"ingest-response-aggregated": {
 				"type": "Array"
+			},
+			"tttttt": {
+				"type": "String"
 			}
 		},
 		"annotations": []
