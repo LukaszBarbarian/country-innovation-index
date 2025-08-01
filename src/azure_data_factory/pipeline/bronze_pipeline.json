@@ -91,10 +91,14 @@
 							"userProperties": [],
 							"typeProperties": {
 								"variableName": "ingest-response-aggregated",
-								"value": {
-									"value": "{\n  \"status\": activity('ingest').output.status,\n  \"correlationId\": activity('ingest').output.correlationId,\n  \"queueMessageId\": activity('ingest').output.queueMessageId,\n  \"apiName\": activity('ingest').output.apiName,\n  \"datasetName\": activity('ingest').output.datasetName,\n  \"layerName\": activity('ingest').output.layerName,\n  \"message\": activity('ingest').output.message,\n  \"apiResponseStatusCode\": activity('ingest').output.apiResponseStatusCode,\n  \"outputPath\": activity('ingest').output.outputPath\n}\n",
-									"type": "Expression"
-								}
+								"value": ""
+							},
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
 							}
 						}
 					]
