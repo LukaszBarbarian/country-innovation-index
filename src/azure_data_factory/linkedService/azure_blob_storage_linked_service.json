@@ -1,0 +1,11 @@
+{
+	"name": "azure_blob_storage_linked_service",
+	"properties": {
+		"annotations": [],
+		"type": "AzureBlobStorage",
+		"typeProperties": {
+			"serviceEndpoint": "https://demosurdevdatalake4418sa.blob.core.windows.net/",
+			"accountKind": "StorageV2"
+		}
+	}
+}
