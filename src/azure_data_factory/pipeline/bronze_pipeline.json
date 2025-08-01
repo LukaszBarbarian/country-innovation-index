@@ -91,7 +91,7 @@
 							"userProperties": [],
 							"typeProperties": {
 								"variableName": "ingest-response-aggregated",
-								"value": "1"
+								"value": "\"1\""
 							}
 						}
 					]
