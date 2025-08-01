@@ -117,7 +117,7 @@
 				},
 				"userProperties": [],
 				"typeProperties": {
-					"variableName": "set-pipeline-output",
+					"variableName": "",
 					"value": {
 						"value": "@variables('ingest-response-aggregated')\n\n",
 						"type": "Expression"
