@@ -78,7 +78,7 @@
 							}
 						},
 						{
-							"name": "Append variable1",
+							"name": "append-ingestion-response",
 							"type": "AppendVariable",
 							"dependsOn": [
 								{
