@@ -71,10 +71,6 @@
 									"type": "Expression"
 								},
 								"method": "POST"
-							},
-							"linkedServiceName": {
-								"referenceName": "azure_functions_ingest_linked_service",
-								"type": "LinkedServiceReference"
 							}
 						}
 					]
