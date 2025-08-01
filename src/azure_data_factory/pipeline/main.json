@@ -74,7 +74,10 @@
 				"userProperties": [],
 				"typeProperties": {
 					"variableName": "correlation_id",
-					"value": "@concat('cor-', pipeline().RunId)\n"
+					"value": {
+						"value": "@pipeline().RunId\n",
+						"type": "Expression"
+					}
 				}
 			}
 		],
