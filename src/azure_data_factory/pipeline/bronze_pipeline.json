@@ -117,11 +117,22 @@
 				},
 				"userProperties": [],
 				"typeProperties": {
-					"variableName": "",
-					"value": {
-						"value": "@variables('ingest-response-aggregated')\n\n",
-						"type": "Expression"
-					}
+					"variableName": "pipelineReturnValue",
+					"value": [
+						{
+							"key": "pipeline-output",
+							"value": {
+								"type": "Array",
+								"content": [
+									{
+										"type": "String",
+										"content": "@variables('ingest-response-aggregated')"
+									}
+								]
+							}
+						}
+					],
+					"setSystemVariable": true
 				}
 			}
 		],
