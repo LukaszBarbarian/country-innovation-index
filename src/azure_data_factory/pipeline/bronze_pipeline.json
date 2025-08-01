@@ -114,9 +114,6 @@
 			"ingest-response": {
 				"type": "String"
 			},
-			"set-ingest-array": {
-				"type": "Array"
-			},
 			"ingest-response-aggregated": {
 				"type": "Array"
 			}
