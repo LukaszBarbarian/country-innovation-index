@@ -16,36 +16,36 @@ class BronzeContext(BaseLayerContext):
     def __init__(self,
                  api_name_str: str,
                  dataset_name: str,
-                 api_request_payload: Dict[str, Any],
+                 api_request_payload: Dict[str, Any], # To jest specyficzne dla API
                  raw_api_response: Optional[Any] = None,
                  api_response_status_code: Optional[int] = None,
                  ingestion_date_utc: Optional[datetime] = None,
                  correlation_id: Optional[str] = None,
-                 queue_message_id: str = None, # Upewnij się, że to może być None (Optional[str]) jeśli to przychodzi z ADF jako string
-                 file_info: Optional[FileInfo] = None
-                ):
+                 queue_message_id: Optional[str] = None,
+                 file_info: Optional[FileInfo] = None,
+                 api_config_payload: Optional[Dict[str, Any]] = None # Zmieniono typ na Dict[str, Any]
+                 ):
         
-        # Generowanie UUID dla correlation_id i queue_message_id, jeśli nie zostały podane
-        # Te wartości będą nadpisywane, jeśli przyjdą z payloadu
         _correlation_id = correlation_id if correlation_id is not None else str(uuid.uuid4())
         _queue_message_id = queue_message_id if queue_message_id is not None else str(uuid.uuid4())
 
-        mapped_domain_source = self._map_api_name_to_domain_source(api_name_str.upper())
+        self.domain_source = self._map_api_name_to_domain_source(api_name_str.upper())
         
         super().__init__(
             correlation_id=_correlation_id,
             queue_message_id=_queue_message_id,
-            domain_source=mapped_domain_source,
             etl_layer=ETLLayer.BRONZE,
-            ingestion_time_utc=ingestion_date_utc if ingestion_date_utc is not None else datetime.utcnow()
+            ingestion_time_utc=ingestion_date_utc if ingestion_date_utc is not None else datetime.utcnow(),
+            processing_config_payload=api_config_payload 
         )
 
         self.api_name_str = api_name_str
         self.dataset_name = dataset_name
-        self.api_request_payload = api_request_payload
+        self.api_request_payload = api_request_payload 
         self.raw_api_response = raw_api_response
         self.api_response_status_code = api_response_status_code
         self.file_info = file_info
+
 
     def _map_api_name_to_domain_source(self, api_name_str: str) -> DomainSource:
         """
@@ -88,37 +88,29 @@ class BronzeContext(BaseLayerContext):
           }
         }
         """
-        # 1. Walidacja kluczy najwyższego poziomu
         if "api_config_payload" not in payload:
             raise ValueError("Payload must contain 'api_config_payload' key.")
         
-        api_config_payload = payload["api_config_payload"]
+        api_config_payload_from_input = payload["api_config_payload"] # Zmieniono nazwę zmiennej
 
-        # 2. Walidacja kluczy w api_config_payload
         required_api_config_fields = ["api_name", "dataset_name"]
-        if not all(field in api_config_payload for field in required_api_config_fields):
-            missing_fields = [f for f in required_api_config_fields if f not in api_config_payload]
+        if not all(field in api_config_payload_from_input for field in required_api_config_fields):
+            missing_fields = [f for f in required_api_config_fields if f not in api_config_payload_from_input]
             raise ValueError(f"Missing required fields in 'api_config_payload': {', '.join(missing_fields)}")
 
-        # 3. Wyciągnięcie wartości z payloadu
         correlation_id = payload.get("correlation_id")
         queue_message_id = payload.get("queue_message_id")
         
-        # Jeśli correlation_id lub queue_message_id nie zostały podane w payloadzie
-        # (co jest możliwe, jeśli ADF ich nie ustawia domyślnie, ale my to robimy)
-        # to __init__ je wygeneruje.
-        # Jeśli przyszły z ADF jako "null", to też zostaną potraktowane jako None.
+        api_name_str = api_config_payload_from_input["api_name"]
+        dataset_name = api_config_payload_from_input["dataset_name"]
+        api_request_payload = api_config_payload_from_input.get("api_request_payload", {})
 
-        api_name_str = api_config_payload["api_name"]
-        dataset_name = api_config_payload["dataset_name"]
-        api_request_payload = api_config_payload.get("api_request_payload", {}) # Upewnij się, że to słownik
-
-        # 4. Utworzenie i zwrócenie instancji BronzeContext
         return cls(
             api_name_str=api_name_str,
             dataset_name=dataset_name,
             api_request_payload=api_request_payload,
             correlation_id=correlation_id,
             queue_message_id=queue_message_id,
-            ingestion_date_utc=datetime.utcnow() # Zawsze ustawiaj bieżącą datę UTC
+            api_config_payload=api_config_payload_from_input, # Przekazujemy cały api_config_payload jako processing_config_payload
+            ingestion_date_utc=datetime.utcnow()
         )

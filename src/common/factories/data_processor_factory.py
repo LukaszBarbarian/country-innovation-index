@@ -6,7 +6,7 @@ from src.common.enums.domain_source import DomainSource
 from src.common.factories.base_factory import BaseFactoryFromRegistry
 from src.common.registers.base_registry import BaseRegistry
 
-from src.functions.ingestion.processors.nobelprize_processor import NobelPrizeProcessor
+from src.bronze.ingestion.processors.nobelprize_processor import NobelPrizeProcessor
 
 
 class DataProcessorFactory(BaseFactoryFromRegistry[DomainSource, BaseDataProcessor]):

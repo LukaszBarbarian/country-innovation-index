@@ -1,9 +1,8 @@
 # src/common/context/base_layer_context.py
 
-from datetime import datetime
-from typing import Optional, Any
 from src.common.enums.etl_layers import ETLLayer
-from src.common.enums.domain_source import DomainSource
+from datetime import datetime
+from typing import Optional, Any, Dict
 
 class BaseLayerContext:
     """
@@ -13,12 +12,12 @@ class BaseLayerContext:
     def __init__(self,
                  correlation_id: str,
                  queue_message_id: str,
-                 domain_source: DomainSource,
                  etl_layer: ETLLayer,
-                 ingestion_time_utc: Optional[datetime] = None):
+                 ingestion_time_utc: Optional[datetime] = None,
+                 processing_config_payload: Optional[Dict[str, Any]] = None): # Dodano nowy argument
         
         self.correlation_id = correlation_id
         self.queue_message_id = queue_message_id
-        self.domain_source = domain_source
         self.etl_layer = etl_layer
         self.ingestion_time_utc = ingestion_time_utc if ingestion_time_utc is not None else datetime.utcnow()
+        self.processing_config_payload = processing_config_payload if processing_config_payload is not None else {} # Ustawienie pustego słownika domyślnie
