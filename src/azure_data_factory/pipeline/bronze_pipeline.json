@@ -66,6 +66,10 @@
 							"userProperties": [],
 							"typeProperties": {
 								"functionName": "ingestNow",
+								"body": {
+									"value": "@item()",
+									"type": "Expression"
+								},
 								"method": "POST"
 							},
 							"linkedServiceName": {
