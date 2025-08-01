@@ -94,8 +94,10 @@
 							},
 							"userProperties": [],
 							"typeProperties": {
-								"variableName": "ingest-response",
-								"value": ""
+								"variableName": "set-ingest-response",
+								"value": [
+									""
+								]
 							}
 						}
 					]
@@ -114,6 +116,9 @@
 		"variables": {
 			"ingest-response": {
 				"type": "String"
+			},
+			"set-ingest-response": {
+				"type": "Array"
 			}
 		},
 		"annotations": []
