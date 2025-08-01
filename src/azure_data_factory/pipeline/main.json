@@ -3,9 +3,16 @@
 	"properties": {
 		"activities": [
 			{
-				"name": "Execute Pipeline1",
+				"name": "bronze_pipeline",
 				"type": "ExecutePipeline",
-				"dependsOn": [],
+				"dependsOn": [
+					{
+						"activity": "init-correlation-id",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
 				"policy": {
 					"secureInput": false
 				},
@@ -15,9 +22,16 @@
 				}
 			},
 			{
-				"name": "Execute Pipeline2",
+				"name": "silver_pip",
 				"type": "ExecutePipeline",
-				"dependsOn": [],
+				"dependsOn": [
+					{
+						"activity": "bronze_pipeline",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
 				"policy": {
 					"secureInput": false
 				},
@@ -46,9 +60,18 @@
 					"secureOutput": false,
 					"secureInput": false
 				},
-				"userProperties": []
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "correlation_id",
+					"value": "@concat('cor-', pipeline().RunId)\n"
+				}
 			}
 		],
+		"variables": {
+			"correlation_id": {
+				"type": "String"
+			}
+		},
 		"annotations": []
 	}
 }
