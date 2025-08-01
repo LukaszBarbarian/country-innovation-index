@@ -60,8 +60,16 @@
 								"secureInput": false
 							},
 							"userProperties": [],
+							"typeProperties": {
+								"functionName": "ingestNow",
+								"body": {
+									"value": "@item()",
+									"type": "Expression"
+								},
+								"method": "POST"
+							},
 							"linkedServiceName": {
-								"referenceName": "AzureFunction1",
+								"referenceName": "azure_functions_ingest_linked_service",
 								"type": "LinkedServiceReference"
 							}
 						}
