@@ -92,7 +92,7 @@
 							"typeProperties": {
 								"variableName": "set-ingest-response",
 								"value": {
-									"value": "@item()",
+									"value": "@activity('ingest').output.body",
 									"type": "Expression"
 								}
 							}
