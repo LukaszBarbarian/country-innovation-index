@@ -78,8 +78,8 @@
 							}
 						},
 						{
-							"name": "set-ingest-response-agg",
-							"type": "SetVariable",
+							"name": "Append variable1",
+							"type": "AppendVariable",
 							"dependsOn": [
 								{
 									"activity": "ingestion-now",
@@ -88,17 +88,10 @@
 									]
 								}
 							],
-							"policy": {
-								"secureOutput": false,
-								"secureInput": false
-							},
 							"userProperties": [],
 							"typeProperties": {
 								"variableName": "ingest-response-aggregated",
-								"value": {
-									"value": "@activity('ingestion-now').output",
-									"type": "Expression"
-								}
+								"value": "1"
 							}
 						}
 					]
