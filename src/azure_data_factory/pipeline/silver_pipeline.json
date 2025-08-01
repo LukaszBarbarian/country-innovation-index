@@ -1,6 +1,11 @@
 {
 	"name": "silver_pipeline",
 	"properties": {
+		"parameters": {
+			"p_correlation_id": {
+				"type": "string"
+			}
+		},
 		"annotations": []
 	}
 }
