@@ -22,7 +22,13 @@
 						"referenceName": "bronze_pipeline",
 						"type": "PipelineReference"
 					},
-					"waitOnCompletion": true
+					"waitOnCompletion": true,
+					"parameters": {
+						"p_correlation_id": {
+							"value": "@variables('correlation_id')",
+							"type": "Expression"
+						}
+					}
 				}
 			},
 			{
