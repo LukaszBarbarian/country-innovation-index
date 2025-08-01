@@ -3,80 +3,19 @@
 	"properties": {
 		"activities": [
 			{
-				"name": "batch-correlation-id",
-				"type": "SetVariable",
-				"dependsOn": [],
-				"policy": {
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"variableName": "batch_correlation_id",
-					"value": {
-						"value": "@concat('cor-', pipeline().RunId)\n",
-						"type": "Expression"
-					}
-				}
-			},
-			{
-				"name": "config-api-loader",
-				"type": "Lookup",
-				"dependsOn": [
-					{
-						"activity": "batch-correlation-id",
-						"dependencyConditions": [
-							"Completed"
-						]
-					}
-				],
-				"policy": {
-					"timeout": "0.12:00:00",
-					"retry": 0,
-					"retryIntervalInSeconds": 30,
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"source": {
-						"type": "JsonSource",
-						"storeSettings": {
-							"type": "AzureBlobStorageReadSettings",
-							"recursive": true,
-							"enablePartitionDiscovery": false
-						},
-						"formatSettings": {
-							"type": "JsonReadSettings"
-						}
-					},
-					"dataset": {
-						"referenceName": "config_apis",
-						"type": "DatasetReference"
-					},
-					"firstRowOnly": false
-				}
-			},
-			{
-				"name": "foreach-ingestion",
+				"name": "who-foreach",
 				"type": "ForEach",
-				"dependsOn": [
-					{
-						"activity": "config-api-loader",
-						"dependencyConditions": [
-							"Completed"
-						]
-					}
-				],
+				"dependsOn": [],
 				"userProperties": [],
 				"typeProperties": {
 					"items": {
-						"value": "@activity('config-api-loader').output.value",
+						"value": "@pipeline().parameters.inputArray",
 						"type": "Expression"
 					},
+					"isSequential": true,
 					"activities": [
 						{
-							"name": "ingestion-now",
+							"name": "whoingest",
 							"type": "AzureFunctionActivity",
 							"dependsOn": [],
 							"policy": {
@@ -88,9 +27,9 @@
 							},
 							"userProperties": [],
 							"typeProperties": {
-								"functionName": "IngestNow",
+								"functionName": "whoingest",
 								"body": {
-									"value": "@{\n    json(concat(\n        '{',\n            '\"correlation_id\":\"', variables('batch_correlation_id'), '\",',\n            '\"queue_message_id\":\"', guid(), '\",',\n            '\"api_config_payload\":', string(item()),\n        '}'\n    ))\n}\n",
+									"value": "@json(concat('{ \"', item().paramName, '\": \"', item().paramValue, '\" }'))",
 									"type": "Expression"
 								},
 								"method": "POST"
@@ -99,64 +38,24 @@
 								"referenceName": "azure_function_linked_service",
 								"type": "LinkedServiceReference"
 							}
-						},
-						{
-							"name": "bronze-ingestion-results",
-							"type": "AppendVariable",
-							"dependsOn": [
-								{
-									"activity": "ingestion-now",
-									"dependencyConditions": [
-										"Succeeded"
-									]
-								}
-							],
-							"userProperties": [],
-							"typeProperties": {
-								"variableName": "bronzeIngestionResults",
-								"value": {
-									"value": "@json(concat(\n  '{',\n  '\"status\":\"', string(activity('ingestion-now').output.status), '\",',\n  '\"correlationId\":\"', string(activity('ingestion-now').output.correlationId), '\",',\n  '\"queueMessageId\":\"', string(activity('ingestion-now').output.queueMessageId), '\",',\n  '\"apiName\":\"', string(activity('ingestion-now').output.apiName), '\",',\n  '\"datasetName\":\"', string(activity('ingestion-now').output.datasetName), '\",',\n  '\"layerName\":\"', string(activity('ingestion-now').output.layerName), '\",',\n  '\"message\":\"', string(activity('ingestion-now').output.message), '\",',\n  '\"apiResponseStatusCode\":', string(activity('ingestion-now').output.apiResponseStatusCode), ',',\n  '\"outputPath\":\"', string(activity('ingestion-now').output.outputPath), '\"',\n  if(contains(activity('ingestion-now').output, 'errorDetails'),\n    concat(', \"errorDetails\":\"', string(activity('ingestion-now').output.errorDetails), '\"'),\n    ''\n  ),\n  '}'\n))\n",
-									"type": "Expression"
-								}
-							}
 						}
 					]
 				}
-			},
-			{
-				"name": "repack-bronze-ingestion-results",
-				"type": "SetVariable",
-				"dependsOn": [
-					{
-						"activity": "foreach-ingestion",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"policy": {
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"variableName": "aggregatedResultsString",
-					"value": "@concat('[', join(variables('bronzeIngestionResults'), ','), ']')"
-				}
 			}
 		],
-		"variables": {
-			"batch_correlation_id": {
-				"type": "String"
-			},
-			"bronzeIngestionResults": {
-				"type": "Array"
-			},
-			"aggregatedResultsString": {
-				"type": "String"
-			},
-			"test": {
-				"type": "String"
+		"parameters": {
+			"inputArray": {
+				"type": "String",
+				"defaultValue": [
+					{
+						"paramName": "indicator",
+						"paramValue": "WHOSIS_000001"
+					},
+					{
+						"paramName": "dimension",
+						"paramValue": "all"
+					}
+				]
 			}
 		},
 		"folder": {
