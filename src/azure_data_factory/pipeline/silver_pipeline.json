@@ -3,8 +3,8 @@
 	"properties": {
 		"activities": [
 			{
-				"name": "Script1",
-				"type": "Script",
+				"name": "Custom1",
+				"type": "Custom",
 				"dependsOn": [],
 				"policy": {
 					"timeout": "0.12:00:00",
@@ -15,8 +15,10 @@
 				},
 				"userProperties": [],
 				"typeProperties": {
-					"scripts": [],
-					"scriptBlockExecutionTimeout": "02:00:00"
+					"referenceObjects": {
+						"linkedServices": [],
+						"datasets": []
+					}
 				}
 			}
 		],
