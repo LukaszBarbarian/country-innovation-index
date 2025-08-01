@@ -3,7 +3,7 @@
 	"properties": {
 		"activities": [
 			{
-				"name": "load-config",
+				"name": "load-pipeline-config",
 				"type": "Lookup",
 				"dependsOn": [],
 				"policy": {
@@ -13,12 +13,36 @@
 					"secureOutput": false,
 					"secureInput": false
 				},
-				"userProperties": []
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "JsonSource",
+						"storeSettings": {
+							"type": "AzureBlobStorageReadSettings",
+							"recursive": true,
+							"enablePartitionDiscovery": false
+						},
+						"formatSettings": {
+							"type": "JsonReadSettings"
+						}
+					},
+					"dataset": {
+						"referenceName": "dev_pipeline_payload",
+						"type": "DatasetReference"
+					}
+				}
 			},
 			{
 				"name": "ForEach1",
 				"type": "ForEach",
-				"dependsOn": [],
+				"dependsOn": [
+					{
+						"activity": "load-pipeline-config",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
 				"userProperties": []
 			}
 		],
