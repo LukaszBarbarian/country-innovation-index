@@ -29,7 +29,7 @@
 							"type": "Expression"
 						},
 						"p_ingestion_payload": {
-							"value": "@activity('load-pipeline-payloads').output.value",
+							"value": "@activity('load-ingestion-payloads').output.value",
 							"type": "Expression"
 						}
 					}
