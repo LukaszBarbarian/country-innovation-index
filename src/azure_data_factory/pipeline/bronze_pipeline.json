@@ -78,27 +78,17 @@
 							}
 						},
 						{
-							"name": "set-ingest-response",
-							"type": "SetVariable",
+							"name": "set-",
+							"type": "AppendVariable",
 							"dependsOn": [
 								{
 									"activity": "ingest",
 									"dependencyConditions": [
-										"Succeeded"
+										"Completed"
 									]
 								}
 							],
-							"policy": {
-								"secureOutput": false,
-								"secureInput": false
-							},
-							"userProperties": [],
-							"typeProperties": {
-								"variableName": "set-ingest-response",
-								"value": [
-									""
-								]
-							}
+							"userProperties": []
 						}
 					]
 				}
