@@ -1,9 +1,9 @@
 {
 	"name": "demosur-dev-df",
-	"properties": {
-		"globalConfigurations": {
-			"PipelineBillingEnabled": "false"
-		}
-	},
-	"location": "northeurope"
+	"location": "northeurope",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "860b005a-5b32-4742-b6c5-fdb2c790b4a3",
+		"tenantId": "67588551-f9a5-4ebf-a9ab-1127b3c81420"
+	}
 }
