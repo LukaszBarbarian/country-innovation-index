@@ -67,13 +67,13 @@
 							"typeProperties": {
 								"functionName": "ingestNow",
 								"body": {
-									"value": "@item()",
+									"value": "@{\n    json(concat(\n        '{',\n            '\"correlation_id\":\"', pipeline().parameters.p_correlation_id, '\",',\n            '\"queue_message_id\":\"', guid(), '\",',\n            '\"api_config_payload\":', string(item()),\n        '}'\n    ))\n}\n",
 									"type": "Expression"
 								},
 								"method": "POST"
 							},
 							"linkedServiceName": {
-								"referenceName": "azure_functions_ingest_linked_service",
+								"referenceName": "azure_function_linked_service",
 								"type": "LinkedServiceReference"
 							}
 						}
