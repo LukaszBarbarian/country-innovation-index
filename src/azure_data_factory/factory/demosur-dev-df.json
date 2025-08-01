@@ -1,0 +1,9 @@
+{
+	"name": "demosur-dev-df",
+	"properties": {
+		"globalConfigurations": {
+			"PipelineBillingEnabled": "false"
+		}
+	},
+	"location": "northeurope"
+}
