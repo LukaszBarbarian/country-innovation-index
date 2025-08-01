@@ -103,7 +103,7 @@
 				"type": "string",
 				"defaultValue": "dev"
 			},
-			"p_bronze_payload": {
+			"p_ingestion_payload": {
 				"type": "array"
 			}
 		},

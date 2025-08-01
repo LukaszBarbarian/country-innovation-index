@@ -27,6 +27,10 @@
 						"p_correlation_id": {
 							"value": "@variables('correlation_id')",
 							"type": "Expression"
+						},
+						"p_ingestion_payload": {
+							"value": "@activity('load-pipeline-payloads').output.value",
+							"type": "Expression"
 						}
 					}
 				}
@@ -36,7 +40,7 @@
 				"type": "SetVariable",
 				"dependsOn": [
 					{
-						"activity": "load-pipeline-payloads",
+						"activity": "load-ingestion-payloads",
 						"dependencyConditions": [
 							"Succeeded"
 						]
@@ -85,7 +89,7 @@
 				}
 			},
 			{
-				"name": "load-pipeline-payloads",
+				"name": "load-ingestion-payloads",
 				"type": "Lookup",
 				"dependsOn": [],
 				"policy": {
