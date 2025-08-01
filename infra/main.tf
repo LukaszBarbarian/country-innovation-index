@@ -141,6 +141,19 @@ module "adf" {
   function_app_url          = azurerm_function_app.main_function_app.default_hostname
 }
 
+
+resource "azurerm_role_assignment" "adf_datalake_contributor" {
+  scope                = azurerm_storage_account.sadatalake.id
+  role_definition_name = "Storage Blob Data Contributor"
+  principal_id         = module.adf.adf_principal_id
+  
+  # Upewnij się, że przypisanie roli zależy od obu zasobów
+  depends_on = [
+    azurerm_storage_account.sadatalake,
+    module.adf
+  ]
+}
+
 # module "databricks" {
 #   source                  = "./databricks"
 
