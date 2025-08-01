@@ -91,7 +91,10 @@
 							"userProperties": [],
 							"typeProperties": {
 								"variableName": "ingest-response-aggregated",
-								"value": "@activity('ingest').output.Response"
+								"value": {
+									"value": "@activity('ingest').output.message",
+									"type": "Expression"
+								}
 							},
 							"policy": {
 								"timeout": "0.12:00:00",
