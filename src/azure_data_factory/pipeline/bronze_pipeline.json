@@ -9,7 +9,7 @@
 				"userProperties": [],
 				"typeProperties": {
 					"items": {
-						"value": "@pipeline().parameters.p_bronze_payload",
+						"value": "@pipeline().parameters.p_ingestion_payload",
 						"type": "Expression"
 					},
 					"isSequential": false,
