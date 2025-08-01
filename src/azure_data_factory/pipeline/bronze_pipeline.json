@@ -117,7 +117,7 @@
 				},
 				"userProperties": [],
 				"typeProperties": {
-					"variableName": "ingest-final-response",
+					"variableName": "set-pipeline-output",
 					"value": {
 						"value": "@variables('ingest-response-aggregated')\n\n",
 						"type": "Expression"
@@ -141,7 +141,7 @@
 			"ingest-response-aggregated": {
 				"type": "Array"
 			},
-			"ingest-final-response": {
+			"set-pipeline-output": {
 				"type": "Array"
 			}
 		},
