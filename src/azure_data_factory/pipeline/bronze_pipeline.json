@@ -46,6 +46,10 @@
 				],
 				"userProperties": [],
 				"typeProperties": {
+					"items": {
+						"value": "@activity('load-pipeline-payloads').output",
+						"type": "Expression"
+					},
 					"isSequential": false,
 					"activities": [
 						{
