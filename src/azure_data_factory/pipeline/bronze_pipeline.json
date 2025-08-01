@@ -53,7 +53,7 @@
 					"isSequential": false,
 					"activities": [
 						{
-							"name": "ingest",
+							"name": "ingestion-now",
 							"type": "AzureFunctionActivity",
 							"dependsOn": [],
 							"policy": {
@@ -82,7 +82,7 @@
 							"type": "AppendVariable",
 							"dependsOn": [
 								{
-									"activity": "ingest",
+									"activity": "ingestion-now",
 									"dependencyConditions": [
 										"Completed"
 									]
@@ -91,10 +91,7 @@
 							"userProperties": [],
 							"typeProperties": {
 								"variableName": "ingest-response-aggregated",
-								"value": {
-									"value": "@activity('ingest').output",
-									"type": "Expression"
-								}
+								"value": "@activity('ingest').output.Response"
 							},
 							"policy": {
 								"timeout": "0.12:00:00",
