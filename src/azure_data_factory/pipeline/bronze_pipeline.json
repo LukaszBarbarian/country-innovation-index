@@ -78,31 +78,21 @@
 							}
 						},
 						{
-							"name": "set-ingest-response",
-							"type": "AppendVariable",
+							"name": "set-ingest-response-agg",
+							"type": "SetVariable",
 							"dependsOn": [
 								{
 									"activity": "ingestion-now",
 									"dependencyConditions": [
-										"Completed"
+										"Succeeded"
 									]
 								}
 							],
-							"userProperties": [],
-							"typeProperties": {
-								"variableName": "ingest-response-aggregated",
-								"value": {
-									"value": "@json(string(activity('ingestion-now').output.value))",
-									"type": "Expression"
-								}
-							},
 							"policy": {
-								"timeout": "0.12:00:00",
-								"retry": 0,
-								"retryIntervalInSeconds": 30,
 								"secureOutput": false,
 								"secureInput": false
-							}
+							},
+							"userProperties": []
 						}
 					]
 				}
