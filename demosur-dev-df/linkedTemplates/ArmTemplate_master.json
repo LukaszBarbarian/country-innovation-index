@@ -1,0 +1,63 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"type": "string",
+			"metadata": "Data Factory name",
+			"defaultValue": "demosur-dev-df"
+		},
+		"azure_function_linked_service_functionKey": {
+			"type": "secureString",
+			"metadata": "Secure string for 'functionKey' of 'azure_function_linked_service'"
+		},
+		"azure_blob_storage_linked_service_properties_typeProperties_serviceEndpoint": {
+			"type": "string",
+			"defaultValue": "https://demosurdevdatalake4418sa.blob.core.windows.net/"
+		},
+		"azure_function_linked_service_properties_typeProperties_functionAppUrl": {
+			"type": "string",
+			"defaultValue": "https://demosurdevfunc4418.azurewebsites.net"
+		},
+		"containerUri": {
+			"type": "string",
+			"metadata": "URI to storage account containing linked ARM templates"
+		},
+		"containerSasToken": {
+			"type": "string",
+			"metadata": "Sas token to storage account containing linked ARM templates"
+		}
+	},
+	"variables": {
+		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
+	},
+	"resources": [
+		{
+			"name": "demosur-dev-df_ArmTemplate_0",
+			"type": "Microsoft.Resources/deployments",
+			"apiVersion": "2024-03-01",
+			"properties": {
+				"mode": "incremental",
+				"templateLink": {
+					"uri": "[concat(parameters('containerUri'), '/ArmTemplate_0.json', parameters('containerSasToken'))]",
+					"contentVersion": "1.0.0.0"
+				},
+				"parameters": {
+					"factoryName": {
+						"value": "[parameters('factoryName')]"
+					},
+					"azure_function_linked_service_functionKey": {
+						"value": "[parameters('azure_function_linked_service_functionKey')]"
+					},
+					"azure_blob_storage_linked_service_properties_typeProperties_serviceEndpoint": {
+						"value": "[parameters('azure_blob_storage_linked_service_properties_typeProperties_serviceEndpoint')]"
+					},
+					"azure_function_linked_service_properties_typeProperties_functionAppUrl": {
+						"value": "[parameters('azure_function_linked_service_properties_typeProperties_functionAppUrl')]"
+					}
+				}
+			},
+			"dependsOn": []
+		}
+	]
+}
