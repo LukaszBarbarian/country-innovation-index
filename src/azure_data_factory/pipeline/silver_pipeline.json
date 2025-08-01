@@ -1,6 +1,11 @@
 {
 	"name": "silver_pipeline",
 	"properties": {
+		"parameters": {
+			"p_ingestion_results ": {
+				"type": "string"
+			}
+		},
 		"annotations": []
 	}
 }

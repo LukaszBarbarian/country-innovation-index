@@ -120,7 +120,7 @@
 					"variableName": "pipelineReturnValue",
 					"value": [
 						{
-							"key": "pipeline-output",
+							"key": "bronze_outputs",
 							"value": {
 								"type": "Array",
 								"content": [
