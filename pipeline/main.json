@@ -1,0 +1,61 @@
+{
+	"name": "main",
+	"properties": {
+		"activities": [
+			{
+				"name": "bronze_pipeline",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "init-correlation-id",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "bronze_pipeline",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true,
+					"parameters": {
+						"p_correlation_id": {
+							"value": "@variables('correlation_id')",
+							"type": "Expression"
+						}
+					}
+				}
+			},
+			{
+				"name": "init-correlation-id",
+				"type": "SetVariable",
+				"dependsOn": [],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "correlation_id",
+					"value": {
+						"value": "@pipeline().RunId\n",
+						"type": "Expression"
+					}
+				}
+			}
+		],
+		"variables": {
+			"correlation_id": {
+				"type": "String"
+			}
+		},
+		"annotations": [],
+		"lastPublishTime": "2025-08-01T14:28:24Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}
