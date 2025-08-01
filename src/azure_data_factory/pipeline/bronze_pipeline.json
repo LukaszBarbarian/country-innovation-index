@@ -67,7 +67,7 @@
 							"typeProperties": {
 								"functionName": "ingestNow",
 								"body": {
-									"value": "@json(concat('{\\\"correlation_id\\\":\\\"', pipeline().parameters.p_correlation_id, '\\\",\\\"queue_message_id\\\":\\\"', string(item().queueMessage.messageId), '\\\",\\\"api_config_payload\\\":', string(item()), '}'))",
+									"value": "@{\n    json(concat(\n        '{',\n            '\"correlation_id\":\"', pipeline().parameters.p_correlation_id, '\",',\n            '\"queue_message_id\":\"', guid(), '\",',\n            '\"api_config_payload\":', string(item()),\n        '}'\n    ))\n}\n",
 									"type": "Expression"
 								},
 								"method": "POST"
