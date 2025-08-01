@@ -3,44 +3,13 @@
 	"properties": {
 		"activities": [
 			{
-				"name": "load-pipeline-payloads",
-				"type": "Lookup",
-				"dependsOn": [],
-				"policy": {
-					"timeout": "0.12:00:00",
-					"retry": 0,
-					"retryIntervalInSeconds": 30,
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"source": {
-						"type": "JsonSource",
-						"storeSettings": {
-							"type": "AzureBlobStorageReadSettings",
-							"recursive": false,
-							"enablePartitionDiscovery": false
-						},
-						"formatSettings": {
-							"type": "JsonReadSettings"
-						}
-					},
-					"dataset": {
-						"referenceName": "dev_pipeline_payload",
-						"type": "DatasetReference"
-					},
-					"firstRowOnly": false
-				}
-			},
-			{
 				"name": "foreach-ingestion",
 				"type": "ForEach",
 				"dependsOn": [],
 				"userProperties": [],
 				"typeProperties": {
 					"items": {
-						"value": "@activity('load-pipeline-payloads').output.value",
+						"value": "@pipeline().parameters.p_bronze_payload",
 						"type": "Expression"
 					},
 					"isSequential": false,
@@ -135,7 +104,7 @@
 				"defaultValue": "dev"
 			},
 			"p_bronze_payload": {
-				"type": "object"
+				"type": "array"
 			}
 		},
 		"variables": {
