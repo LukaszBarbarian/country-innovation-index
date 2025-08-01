@@ -76,6 +76,27 @@
 								"referenceName": "azure_function_linked_service",
 								"type": "LinkedServiceReference"
 							}
+						},
+						{
+							"name": "set-ingest-response",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "ingest",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "ingest-response",
+								"value": ""
+							}
 						}
 					]
 				}
@@ -88,6 +109,11 @@
 			"p_env": {
 				"type": "string",
 				"defaultValue": "dev"
+			}
+		},
+		"variables": {
+			"ingest-response": {
+				"type": "String"
 			}
 		},
 		"annotations": []
