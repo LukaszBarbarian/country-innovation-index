@@ -3,13 +3,51 @@
 	"properties": {
 		"activities": [
 			{
+				"name": "load-pipeline-payloads",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "JsonSource",
+						"storeSettings": {
+							"type": "AzureBlobStorageReadSettings",
+							"recursive": false,
+							"enablePartitionDiscovery": false
+						},
+						"formatSettings": {
+							"type": "JsonReadSettings"
+						}
+					},
+					"dataset": {
+						"referenceName": "dev_pipeline_payload",
+						"type": "DatasetReference"
+					},
+					"firstRowOnly": false
+				}
+			},
+			{
 				"name": "foreach-ingestion",
 				"type": "ForEach",
-				"dependsOn": [],
+				"dependsOn": [
+					{
+						"activity": "load-pipeline-payloads",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
 				"userProperties": [],
 				"typeProperties": {
 					"items": {
-						"value": "@pipeline().parameters.p_ingestion_payload",
+						"value": "@activity('load-pipeline-payloads').output.value",
 						"type": "Expression"
 					},
 					"isSequential": false,
@@ -79,19 +117,11 @@
 				},
 				"userProperties": [],
 				"typeProperties": {
-					"variableName": "pipelineReturnValue",
-					"value": [
-						{
-							"key": "bronze_outputs",
-							"value": {
-								"type": "Object",
-								"content": [
-									"@variables('ingest-response-aggregated')"
-								]
-							}
-						}
-					],
-					"setSystemVariable": true
+					"variableName": "ingest-final-response",
+					"value": {
+						"value": "@variables('ingest-response-aggregated')\n\n",
+						"type": "Expression"
+					}
 				}
 			}
 		],
@@ -102,9 +132,6 @@
 			"p_env": {
 				"type": "string",
 				"defaultValue": "dev"
-			},
-			"p_ingestion_payload": {
-				"type": "array"
 			}
 		},
 		"variables": {
@@ -114,10 +141,12 @@
 			"ingest-response-aggregated": {
 				"type": "Array"
 			},
-			"set-pipeline-output": {
+			"ingest-final-response": {
 				"type": "Array"
 			}
 		},
-		"annotations": []
-	}
+		"annotations": [],
+		"lastPublishTime": "2025-08-01T14:28:24Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
 }

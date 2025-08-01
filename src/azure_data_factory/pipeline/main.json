@@ -3,7 +3,7 @@
 	"properties": {
 		"activities": [
 			{
-				"name": "bronze-pipeline",
+				"name": "bronze_pipeline",
 				"type": "ExecutePipeline",
 				"dependsOn": [
 					{
@@ -27,10 +27,6 @@
 						"p_correlation_id": {
 							"value": "@variables('correlation_id')",
 							"type": "Expression"
-						},
-						"p_ingestion_payload": {
-							"value": "@activity('load-ingestion-payloads').output.value",
-							"type": "Expression"
 						}
 					}
 				}
@@ -38,14 +34,7 @@
 			{
 				"name": "init-correlation-id",
 				"type": "SetVariable",
-				"dependsOn": [
-					{
-						"activity": "load-ingestion-payloads",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
+				"dependsOn": [],
 				"policy": {
 					"secureOutput": false,
 					"secureInput": false
@@ -58,66 +47,6 @@
 						"type": "Expression"
 					}
 				}
-			},
-			{
-				"name": "silver-pipeline",
-				"type": "ExecutePipeline",
-				"dependsOn": [
-					{
-						"activity": "bronze-pipeline",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"policy": {
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"pipeline": {
-						"referenceName": "silver_pipeline",
-						"type": "PipelineReference"
-					},
-					"waitOnCompletion": true,
-					"parameters": {
-						"p_ingestion_results": {
-							"value": "@activity('bronze-pipeline').output.properties.returnValue",
-							"type": "Expression"
-						}
-					}
-				}
-			},
-			{
-				"name": "load-ingestion-payloads",
-				"type": "Lookup",
-				"dependsOn": [],
-				"policy": {
-					"timeout": "0.12:00:00",
-					"retry": 0,
-					"retryIntervalInSeconds": 30,
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"source": {
-						"type": "JsonSource",
-						"storeSettings": {
-							"type": "AzureBlobStorageReadSettings",
-							"recursive": false,
-							"enablePartitionDiscovery": false
-						},
-						"formatSettings": {
-							"type": "JsonReadSettings"
-						}
-					},
-					"dataset": {
-						"referenceName": "dev_pipeline_payload",
-						"type": "DatasetReference"
-					},
-					"firstRowOnly": false
-				}
 			}
 		],
 		"variables": {
@@ -125,6 +54,8 @@
 				"type": "String"
 			}
 		},
-		"annotations": []
-	}
+		"annotations": [],
+		"lastPublishTime": "2025-08-01T14:28:24Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
 }
