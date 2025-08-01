@@ -115,7 +115,10 @@
 				"userProperties": [],
 				"typeProperties": {
 					"variableName": "tttttt",
-					"value": ""
+					"value": {
+						"value": "@variables('ingest-response-aggregated')\n\n",
+						"type": "Expression"
+					}
 				}
 			}
 		],
