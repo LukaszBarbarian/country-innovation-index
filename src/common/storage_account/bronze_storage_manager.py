@@ -32,8 +32,11 @@ class BronzeStorageManager(BlobStorageManager):
             logger.warning(f"FileInfo specifies container '{file_info.container_name}', but manager is for '{self.DEFAULT_CONTAINER_NAME}'. Using manager's default.")
         
         try:
-            # Używamy asynchronicznej metody upload_blob z klasy bazowej
-            # self.client to już ContainerClient dla "bronze"
+            folder_path = "/".join(file_info.full_path_in_container.split("/")[:-1]) + "/"
+            if await self.blob_with_same_payload_hash_exists(folder_path, file_info.payload_hash):
+                logger.info(f"File with payload_hash {file_info.payload_hash} already exists in {folder_path}. Skipping upload.")
+                return 0
+
             await self.upload_blob( # Wywołanie metody z klasy bazowej
                 data_content=file_content_bytes, 
                 blob_name=file_info.full_path_in_container, # To jest już "ścieżka/do/pliku.json"

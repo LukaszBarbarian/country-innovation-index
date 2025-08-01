@@ -77,18 +77,29 @@ class BronzeOrchestrator(BaseOrchestrator):
             final_output_path = file_info.url 
             api_response_status_code = context.api_response_status_code
 
-       
-            return OrchestratorResult(
-                status="COMPLETED",
-                correlation_id=context.correlation_id,
-                queue_message_id=context.queue_message_id,
-                api_name=context.api_name_str,
-                dataset_name=context.dataset_name,
-                layer_name="Bronze", 
-                message="API data successfully processed and stored to Bronze.",
-                output_path=final_output_path, # Używamy pobranej ścieżki
-                api_response_status_code=api_response_status_code # Używamy pobranego statusu
-            )
+            if file_info.file_size_bytes == 0:
+                return OrchestratorResult(
+                    status="SKIPPED",
+                    correlation_id=context.correlation_id,
+                    queue_message_id=context.queue_message_id,
+                    api_name=context.api_name_str,
+                    dataset_name=context.dataset_name,
+                    layer_name="Bronze",
+                    message=f"File with payload_hash {file_info.payload_hash} already exists. Upload skipped.",
+                    output_path=None,  # brak nowego pliku
+                    api_response_status_code=api_response_status_code)
+            else:
+                return OrchestratorResult(
+                    status="COMPLETED",
+                    correlation_id=context.correlation_id,
+                    queue_message_id=context.queue_message_id,
+                    api_name=context.api_name_str,
+                    dataset_name=context.dataset_name,
+                    layer_name="Bronze", 
+                    message="API data successfully processed and stored to Bronze.",
+                    output_path=final_output_path, # Używamy pobranej ścieżki
+                    api_response_status_code=api_response_status_code # Używamy pobranego statusu
+                )
 
         except Exception as e:
             logger.error(f"Error in BronzeOrchestrator for {context.api_name_str}: {e}")

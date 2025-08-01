@@ -147,3 +147,25 @@ class BlobStorageManager(AzureClientManagerBase[BlobServiceClient, ContainerClie
         # Dodatkowo, jeśli chcesz zamknąć BlobServiceClient, musisz go przechowywać w klasie bazowej
         if hasattr(self, '_service_client') and self._service_client:
             await self._service_client.close()
+
+
+
+    async def blob_with_same_payload_hash_exists(self, folder_path: str, payload_hash: str) -> bool:
+            """
+            Sprawdza, czy w folderze (prefix) jest blob z tagiem payload_hash równym podanemu.
+            folder_path powinien być ścieżką, np. "folder1/folder2/".
+            """
+            try:
+                # Lista blobów z prefixem folderu
+                blobs = self.client.list_blobs(name_starts_with=folder_path, include=["tags"])
+                async for blob in blobs:
+                    # Pobierz tagi blobu (async iterator zwraca BlobProperties z tagami)
+                    # blob.tags to dict {str: str}
+                    tags = blob.tags
+                    if tags and tags.get("payload_hash") == payload_hash:
+                        logger.info(f"Found existing blob '{blob.name}' with the same payload_hash: {payload_hash}")
+                        return True
+                return False
+            except Exception as e:
+                logger.error(f"Error checking blobs for payload_hash '{payload_hash}': {e}", exc_info=True)
+                raise            

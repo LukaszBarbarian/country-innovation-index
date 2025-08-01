@@ -10,6 +10,7 @@ class FileInfo:
     storage_account_name: str = ""
     file_size_bytes: Optional[int] = None
     url: Optional[str] = None
+    payload_hash: str = ""
     
     domain_source: str = ""
     dataset_name: str = ""

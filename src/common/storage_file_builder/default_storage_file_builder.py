@@ -55,7 +55,8 @@ class DefaultStorageFileBuilder(BaseStorageFileBuilder):
             dataset_name=context.dataset_name,
             ingestion_date=context.ingestion_time_utc.strftime("%Y-%m-%d"),
             correlation_id=context.correlation_id,
-            blob_tags=blob_tags
+            blob_tags=blob_tags,
+            payload_hash=payload_hash
         )
 
         return {
