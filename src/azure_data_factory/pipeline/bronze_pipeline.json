@@ -92,7 +92,7 @@
 							"typeProperties": {
 								"variableName": "ingest-response-aggregated",
 								"value": {
-									"value": "@json(concat(\n  '{',\n  '\"status\":\"', string(activity('ingest').output.status), '\",',\n  '\"correlationId\":\"', string(activity('ingest').output.correlationId), '\",',\n  '\"queueMessageId\":\"', string(activity('ingest').output.queueMessageId), '\",',\n  '\"apiName\":\"', string(activity('ingest').output.apiName), '\",',\n  '\"datasetName\":\"', string(activity('ingest').output.datasetName), '\",',\n  '\"layerName\":\"', string(activity('ingest').output.layerName), '\",',\n  '\"message\":\"', string(activity('ingest').output.message), '\",',\n  '\"apiResponseStatusCode\":', string(activity('ingest').output.apiResponseStatusCode), ',',\n  '\"outputPath\":\"', string(activity('ingest').output.outputPath), '\"',\n  if(contains(activity('ingest').output, 'errorDetails'),\n    concat(', \"errorDetails\":\"', string(activity('ingest').output.errorDetails), '\"'),\n    ''\n  ),\n  '}'\n))\n",
+									"value": "[object Object]",
 									"type": "Expression"
 								}
 							}
