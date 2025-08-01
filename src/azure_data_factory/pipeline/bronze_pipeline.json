@@ -92,7 +92,13 @@
 								"secureOutput": false,
 								"secureInput": false
 							},
-							"userProperties": []
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "ingest-response-aggregated",
+								"value": [
+									""
+								]
+							}
 						}
 					]
 				}
