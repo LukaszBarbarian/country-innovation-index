@@ -122,12 +122,9 @@
 						{
 							"key": "bronze_outputs",
 							"value": {
-								"type": "Array",
+								"type": "Object",
 								"content": [
-									{
-										"type": "String",
-										"content": "@variables('ingest-response-aggregated')"
-									}
+									"@variables('ingest-response-aggregated')"
 								]
 							}
 						}
