@@ -3,8 +3,8 @@
 	"properties": {
 		"activities": [
 			{
-				"name": "Notebook1",
-				"type": "DatabricksNotebook",
+				"name": "Script1",
+				"type": "Script",
 				"dependsOn": [],
 				"policy": {
 					"timeout": "0.12:00:00",
@@ -13,7 +13,11 @@
 					"secureOutput": false,
 					"secureInput": false
 				},
-				"userProperties": []
+				"userProperties": [],
+				"typeProperties": {
+					"scripts": [],
+					"scriptBlockExecutionTimeout": "02:00:00"
+				}
 			}
 		],
 		"parameters": {
