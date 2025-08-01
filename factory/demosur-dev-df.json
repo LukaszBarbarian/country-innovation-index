@@ -1,0 +1,9 @@
+{
+	"name": "demosur-dev-df",
+	"location": "northeurope",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "c4198f85-0dac-4f35-8445-0757655c2cba",
+		"tenantId": "67588551-f9a5-4ebf-a9ab-1127b3c81420"
+	}
+}
