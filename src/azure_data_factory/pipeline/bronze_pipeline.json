@@ -90,7 +90,7 @@
 							],
 							"userProperties": [],
 							"typeProperties": {
-								"variableName": "set-ingest-response",
+								"variableName": "ingest-response-aggregated",
 								"value": {
 									"value": "@activity('ingest').output",
 									"type": "Expression"
@@ -115,6 +115,9 @@
 				"type": "String"
 			},
 			"set-ingest-array": {
+				"type": "Array"
+			},
+			"ingest-response-aggregated": {
 				"type": "Array"
 			}
 		},
