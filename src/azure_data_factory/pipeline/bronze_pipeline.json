@@ -95,9 +95,10 @@
 							"userProperties": [],
 							"typeProperties": {
 								"variableName": "ingest-response-aggregated",
-								"value": [
-									""
-								]
+								"value": {
+									"value": "@activity('ingestion-now').output",
+									"type": "Expression"
+								}
 							}
 						}
 					]
