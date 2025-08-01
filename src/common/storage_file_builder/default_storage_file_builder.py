@@ -79,7 +79,7 @@ class DefaultStorageFileBuilder(BaseStorageFileBuilder):
         Generuje ścieżkę i nazwę pliku, używając hasha payloadu,
         co zapewnia unikalność dla danego dnia i payloadu.
         """
-        file_name = f"{context.dataset_name}_{payload_hash}.{file_extension}"
+        file_name = f"{context.dataset_name}_{context.correlation_id}_{payload_hash}.{file_extension}"
         
         blob_path = f"{context.domain_source.value}/{context.ingestion_time_utc.strftime('%Y/%m/%d')}/{file_name}"
         
