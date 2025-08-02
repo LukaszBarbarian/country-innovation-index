@@ -1,7 +1,7 @@
 # src/ingestion/data_ingestor.py
 
 import logging
-from src.common.contexts.bronze_context import BronzeContext
+from src.bronze.contexts.bronze_context import BronzeContext
 from src.common.factories.api_client_factory import ApiClientFactory
 from src.common.factories.data_processor_factory import DataProcessorFactory
 from src.common.storage_account.bronze_storage_manager import BronzeStorageManager
@@ -51,7 +51,8 @@ class BronzeOrchestrator(BaseOrchestrator):
                     queue_message_id=context.queue_message_id,
                     api_name=context.api_name_str,
                     dataset_name=context.dataset_name,
-                    layer_name="Bronze",
+                    layer_name=context.etl_layer.value,
+                    env=context.env,
                     message="No records fetched, skipping file save.",
                     output_path=None,
                     api_response_status_code=context.api_response_status_code
@@ -84,7 +85,8 @@ class BronzeOrchestrator(BaseOrchestrator):
                     queue_message_id=context.queue_message_id,
                     api_name=context.api_name_str,
                     dataset_name=context.dataset_name,
-                    layer_name="Bronze",
+                    layer_name=context.etl_layer.value,
+                    env=context.env.value,
                     message=f"File with payload_hash {file_info.payload_hash} already exists. Upload skipped.",
                     output_path=None,  # brak nowego pliku
                     api_response_status_code=api_response_status_code)
@@ -95,7 +97,8 @@ class BronzeOrchestrator(BaseOrchestrator):
                     queue_message_id=context.queue_message_id,
                     api_name=context.api_name_str,
                     dataset_name=context.dataset_name,
-                    layer_name="Bronze", 
+                    layer_name=context.etl_layer.value, 
+                    env=context.env,
                     message="API data successfully processed and stored to Bronze.",
                     output_path=final_output_path, # Używamy pobranej ścieżki
                     api_response_status_code=api_response_status_code # Używamy pobranego statusu
@@ -118,7 +121,8 @@ class BronzeOrchestrator(BaseOrchestrator):
                 queue_message_id=context.queue_message_id,
                 api_name=context.api_name_str,
                 dataset_name=context.dataset_name,
-                layer_name="Bronze", 
+                layer_name=context.etl_layer.value, 
+                env=context.env,
                 message=f"Bronze orchestration failed: {str(e)}",
                 output_path=final_output_path, # Będzie None, jeśli błąd nastąpił przed uploadem, lub URL jeśli po
                 api_response_status_code=api_response_status_code, # Używamy pobranego statusu

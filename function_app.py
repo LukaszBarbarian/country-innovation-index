@@ -4,10 +4,9 @@ import logging
 import json
 import os
 import uuid
-import traceback # Upewnij się, że jest zaimportowany
-from typing import Optional, Dict # Dodaj Dict do importów
-
-from src.common.contexts.bronze_context import BronzeContext
+import traceback
+from typing import Optional, Dict
+from src.bronze.contexts.bronze_payload_parser import BronzePayloadParser
 from src.common.models.orchestrator_result import OrchestratorResult
 from src.common.orchestrators.bronze_orchestrator import BronzeOrchestrator
 from src.common.config.config_manager import ConfigManager
@@ -35,6 +34,8 @@ async def ingest_now(req: func.HttpRequest) -> func.HttpResponse:
     queue_message_id: str = 'UNKNOWN'
     api_name: str = 'UNKNOWN'
     dataset_name: str = 'UNKNOWN'
+    env: str = 'UNKNOWN'
+    etl_layer: str = "UNKNOWN"
     
     result: Optional[OrchestratorResult] = None # Zmienna do przechowywania wyniku z orkiestratora
 
@@ -49,35 +50,43 @@ async def ingest_now(req: func.HttpRequest) -> func.HttpResponse:
             status_code=400,
             mimetype="application/json")
     
-    # --- Główny blok try-except dla całej logiki biznesowej ---
     try:
-        # Próba utworzenia BronzeContext - walidacja struktury payloadu ADF
         try:
-            bronze_context = BronzeContext.from_payload(payload=payload)
+            bronze_context = BronzePayloadParser().parse(payload)
             
             correlation_id = bronze_context.correlation_id 
             queue_message_id = bronze_context.queue_message_id 
+            env = bronze_context.env
+            etl_layer = bronze_context.etl_layer
             api_name = bronze_context.api_name_str 
             dataset_name = bronze_context.dataset_name 
 
         except ValueError as ve:
             logger.error(f"Missing or invalid data in ADF payload: {ve}. Payload: {payload}")
-            # Pobieramy ID z surowego payloadu, jeśli są dostępne
             correlation_id = payload.get('correlation_id', 'UNKNOWN')
             queue_message_id = payload.get('queue_message_id', 'UNKNOWN')
+            env = payload.get('env', 'UNKNOWN')
+            etl_layer = payload.get('etl_layer', 'UNKNOWN')
             
-            # Zwracamy błąd HTTP, ponieważ payload jest niepoprawny dla kontekstu
             return func.HttpResponse(
                 json.dumps({
                     "status": "FAILED",
                     "correlationId": correlation_id,
                     "queueMessageId": queue_message_id,
+                    "etlLayer" : etl_layer,
+                    "env" : env,
                     "message": f"Invalid payload structure: {str(ve)}"
                 }),
                 status_code=400,
                 mimetype="application/json")
 
-        logger.info(f"Invoking Bronze Orchestrator for API: {api_name}, Dataset: {dataset_name}, Correlation ID: {correlation_id}, Queue Message ID: {queue_message_id}")
+        logger.info(f"""Invoking Bronze Orchestrator for API: {api_name},
+                    Dataset: {dataset_name}, 
+                    Correlation ID: {correlation_id}, 
+                    Queue Message ID: {queue_message_id},
+                    ETL Layer: {etl_layer},
+                    Env: {env}
+                    """)
 
         # Wywołanie BronzeOrchestrator i odebranie OrchestratorResult
         result = await bronze_orchestrator.run(bronze_context) 
@@ -101,7 +110,6 @@ async def ingest_now(req: func.HttpRequest) -> func.HttpResponse:
         if result.is_failed and result.error_details:
             response_body["errorDetails"] = result.error_details
 
-        logger.info(f"IngestNow returning status {result.status} for Correlation ID: {correlation_id}, Queue Message ID: {queue_message_id}")
         return func.HttpResponse(
             json.dumps(response_body),
             status_code=http_status_code,
@@ -109,25 +117,27 @@ async def ingest_now(req: func.HttpRequest) -> func.HttpResponse:
         )
     
     except Exception as e:
-        # Obsługa wszelkich innych nieprzewidzianych błędów w głównym bloku logiki
-        logger.exception(f"Unhandled fatal error in IngestNow for Correlation ID: {correlation_id}, Queue Message ID: {queue_message_id}.")
+        logger.exception(f"""Unhandled fatal error in IngestNow for 
+                         Correlation ID: {correlation_id}, 
+                         Queue Message ID: {queue_message_id},
+                         ETL Layer: {etl_layer},
+                         ENV: {env}""")
         
-        # Jeśli 'result' nie został jeszcze utworzony (błąd nastąpił bardzo wcześnie),
-        # tworzymy minimalny OrchestratorResult do zwrócenia
         if result is None: 
             error_details = {
                 "errorType": type(e).__name__,
                 "errorMessage": str(e),
                 "stackTrace": traceback.format_exc()
             }
-            # Upewniamy się, że layer_name jest zdefiniowane
+
             result = OrchestratorResult(
                 status="FAILED",
                 correlation_id=correlation_id, 
                 queue_message_id=queue_message_id,
                 api_name=api_name, # Używamy już pobranych nazw, jeśli są dostępne
                 dataset_name=dataset_name,
-                layer_name=ETLLayer.BRONZE.value, # Użyj wartości enuma
+                layer_name=ETLLayer.BRONZE.value,
+                env=env,
                 message=f"IngestNow function encountered an unhandled error: {str(e)}",
                 error_details=error_details
             )
@@ -141,6 +151,7 @@ async def ingest_now(req: func.HttpRequest) -> func.HttpResponse:
                 "apiName": result.api_name,
                 "datasetName": result.dataset_name,
                 "layerName": result.layer_name,
+                "env": result.env,
                 "message": result.message,
                 "apiResponseStatusCode": result.api_response_status_code,
                 "outputPath": result.output_path,

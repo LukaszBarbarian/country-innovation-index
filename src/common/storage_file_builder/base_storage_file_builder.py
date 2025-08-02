@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from typing import Dict, Any, List
 import uuid
 
-from src.common.contexts.bronze_context import BronzeContext
+from src.bronze.contexts.bronze_context import BronzeContext
 from src.common.models.processed_result import ProcessedResult
 
 

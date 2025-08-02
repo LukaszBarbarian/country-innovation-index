@@ -63,17 +63,3 @@ class LayerRuntimeContext(Generic[LayerContextType]):
         Zwraca payload konfiguracyjny przetwarzania z kontekstu warstwy.
         """
         return self._layer_context.processing_config_payload
-
-    # Możesz usunąć __getattr__ jeśli wolisz jawne właściwości,
-    # lub zostawić, jeśli chcesz obsługiwać dostęp do mniej używanych atrybutów.
-    # Jeśli zostawisz, upewnij się, że nie koliduje z właściwościami.
-    # Ja bym go usunął na rzecz jawnych @property dla kluczowych pól.
-    # def __getattr__(self, name: str) -> Any:
-    #     """
-    #     Umożliwia bezpośredni dostęp do atrybutów z layer_context,
-    #     np. runtime_context.some_field zamiast runtime_context.layer_context.some_field.
-    #     """
-    #     if hasattr(self._layer_context, name):
-    #         return getattr(self._layer_context, name)
-    #     raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}' "
-    #                          f"and no such attribute found in its layer_context.")

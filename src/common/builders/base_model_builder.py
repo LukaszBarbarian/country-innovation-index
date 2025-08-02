@@ -3,7 +3,7 @@
 from abc import ABC, abstractmethod
 from pyspark.sql import DataFrame
 from src.common.contexts.layer_runtime_context import LayerRuntimeContext
-from src.common.contexts.silver_context import SilverContext
+from src.silver.contexts.silver_context import SilverContext
 from typing import TypeVar
 
 LayerContextType = TypeVar("LayerContextType", bound=SilverContext) 

@@ -6,7 +6,7 @@ from typing import Dict, Any, List
 
 from src.common.storage_file_builder.base_storage_file_builder import BaseStorageFileBuilder
 from src.common.models.file_info import FileInfo
-from src.common.contexts.bronze_context import BronzeContext
+from src.bronze.contexts.bronze_context import BronzeContext
 from src.common.models.processed_result import ProcessedResult
 
 

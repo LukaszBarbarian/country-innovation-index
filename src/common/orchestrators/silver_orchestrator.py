@@ -6,7 +6,7 @@ from src.common.factories.model_builder_factory import ModelBuilderFactory
 from src.common.builders.base_model_builder import BaseModelBuilder 
 from src.common.models.orchestrator_result import OrchestratorResult
 from src.common.contexts.layer_runtime_context import LayerRuntimeContext 
-from src.common.contexts.silver_context import SilverContext
+from src.silver.contexts.silver_context import SilverContext
 from src.common.factories.data_reader_factory import DataReaderFactory # Nadal importujemy, bo jej używamy do budowania
 from typing import Any, Dict 
 from src.common.storage_account.silver_storage_manager import SilverStorageManager
@@ -40,7 +40,7 @@ class SilverOrchestrator(BaseOrchestrator):
         correlation_id = runtime_context.correlation_id 
         queue_message_id = runtime_context.queue_message_id
         
-        model_build_instruction = runtime_context.processing_config_payload.get("model_to_build")
+        #model_build_instruction = runtime_context.processing_config_payload.get("model_to_build")
         
         if not model_build_instruction:
             error_msg = "Payload in runtime_context must specify 'model_to_build' for this simplified orchestrator."
