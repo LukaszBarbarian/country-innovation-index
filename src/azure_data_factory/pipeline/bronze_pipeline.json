@@ -3,51 +3,13 @@
 	"properties": {
 		"activities": [
 			{
-				"name": "load-pipeline-payloads",
-				"type": "Lookup",
-				"dependsOn": [],
-				"policy": {
-					"timeout": "0.12:00:00",
-					"retry": 0,
-					"retryIntervalInSeconds": 30,
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"source": {
-						"type": "JsonSource",
-						"storeSettings": {
-							"type": "AzureBlobStorageReadSettings",
-							"recursive": false,
-							"enablePartitionDiscovery": false
-						},
-						"formatSettings": {
-							"type": "JsonReadSettings"
-						}
-					},
-					"dataset": {
-						"referenceName": "dev_pipeline_payload",
-						"type": "DatasetReference"
-					},
-					"firstRowOnly": false
-				}
-			},
-			{
 				"name": "foreach-ingestion",
 				"type": "ForEach",
-				"dependsOn": [
-					{
-						"activity": "load-pipeline-payloads",
-						"dependencyConditions": [
-							"Completed"
-						]
-					}
-				],
+				"dependsOn": [],
 				"userProperties": [],
 				"typeProperties": {
 					"items": {
-						"value": "@activity('load-pipeline-payloads').output.value",
+						"value": "@pipeline().parameters.p_bronze_payload",
 						"type": "Expression"
 					},
 					"isSequential": false,
@@ -99,30 +61,6 @@
 						}
 					]
 				}
-			},
-			{
-				"name": "final-ingestion-results",
-				"type": "SetVariable",
-				"dependsOn": [
-					{
-						"activity": "foreach-ingestion",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"policy": {
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"variableName": "ingest-final-response",
-					"value": {
-						"value": "@variables('ingest-response-aggregated')\n\n",
-						"type": "Expression"
-					}
-				}
 			}
 		],
 		"parameters": {
@@ -132,6 +70,9 @@
 			"p_env": {
 				"type": "string",
 				"defaultValue": "dev"
+			},
+			"p_bronze_payload": {
+				"type": "array"
 			}
 		},
 		"variables": {
@@ -139,9 +80,6 @@
 				"type": "String"
 			},
 			"ingest-response-aggregated": {
-				"type": "Array"
-			},
-			"ingest-final-response": {
 				"type": "Array"
 			}
 		},

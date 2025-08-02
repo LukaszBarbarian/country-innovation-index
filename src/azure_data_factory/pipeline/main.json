@@ -7,7 +7,7 @@
 				"type": "ExecutePipeline",
 				"dependsOn": [
 					{
-						"activity": "init-correlation-id",
+						"activity": "load-bronze-payloads",
 						"dependencyConditions": [
 							"Succeeded"
 						]
@@ -26,6 +26,10 @@
 					"parameters": {
 						"p_correlation_id": {
 							"value": "@variables('correlation_id')",
+							"type": "Expression"
+						},
+						"p_bronze_payload": {
+							"value": "@activity('load-bronze-payloads').output.value",
 							"type": "Expression"
 						}
 					}
@@ -47,11 +51,52 @@
 						"type": "Expression"
 					}
 				}
+			},
+			{
+				"name": "load-bronze-payloads",
+				"type": "Lookup",
+				"dependsOn": [
+					{
+						"activity": "init-correlation-id",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "JsonSource",
+						"storeSettings": {
+							"type": "AzureBlobStorageReadSettings",
+							"recursive": false,
+							"enablePartitionDiscovery": false
+						},
+						"formatSettings": {
+							"type": "JsonReadSettings"
+						}
+					},
+					"dataset": {
+						"referenceName": "dev_pipeline_payload",
+						"type": "DatasetReference"
+					},
+					"firstRowOnly": false
+				}
 			}
 		],
 		"variables": {
 			"correlation_id": {
 				"type": "String"
+			},
+			"test": {
+				"type": "Array"
 			}
 		},
 		"annotations": [],
