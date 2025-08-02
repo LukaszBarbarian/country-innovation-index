@@ -26,8 +26,6 @@ class BronzeStorageManager(BlobStorageManager):
         Używa metody upload_blob z klasy bazowej.
         Zwraca rozmiar zapisanego pliku w bajtach.
         """
-        # Sprawdzamy, czy kontener z FileInfo zgadza się z domyślnym kontenerem managera.
-        # Możesz to pominąć, jeśli zawsze używasz DEFAULT_CONTAINER_NAME.
         if file_info.container_name != self.DEFAULT_CONTAINER_NAME:
             logger.warning(f"FileInfo specifies container '{file_info.container_name}', but manager is for '{self.DEFAULT_CONTAINER_NAME}'. Using manager's default.")
         

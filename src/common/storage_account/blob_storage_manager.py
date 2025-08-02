@@ -11,22 +11,11 @@ from src.common.storage_account.manager_base import AzureClientManagerBase
 logger = logging.getLogger(__name__)
 
 class BlobStorageManager(AzureClientManagerBase[BlobServiceClient, ContainerClient]):
-    """
-    Menedżer do interakcji z Azure Blob Storage dla określonego kontenera.
-    Implementuje metody abstrakcyjne z AzureClientManagerBase dla Blob Storage.
-    Zawiera generyczne metody wgrywania i pobierania blobów.
-    """
+    
     def __init__(self, 
                  container_name: str, 
-                 storage_account_name_setting_name: str = "AzureWebJobsStorage"):
-        """
-        Inicjalizuje menedżera Blob Storage.
-
-        Args:
-            container_name (str): Nazwa kontenera Blob Storage.
-            storage_account_name_setting_name (str): Nazwa ustawienia connection string w ConfigManagerze.
-                                                     Domyślnie "AzureWebJobsStorage".
-        """
+                 storage_account_name_setting_name: str = ""):
+        
         super().__init__(
             resource_name=container_name,
             storage_account_name_setting_name=storage_account_name_setting_name,
@@ -151,21 +140,32 @@ class BlobStorageManager(AzureClientManagerBase[BlobServiceClient, ContainerClie
 
 
     async def blob_with_same_payload_hash_exists(self, folder_path: str, payload_hash: str) -> bool:
-            """
-            Sprawdza, czy w folderze (prefix) jest blob z tagiem payload_hash równym podanemu.
-            folder_path powinien być ścieżką, np. "folder1/folder2/".
-            """
-            try:
-                # Lista blobów z prefixem folderu
-                blobs = self.client.list_blobs(name_starts_with=folder_path, include=["tags"])
-                async for blob in blobs:
-                    # Pobierz tagi blobu (async iterator zwraca BlobProperties z tagami)
-                    # blob.tags to dict {str: str}
-                    tags = blob.tags
-                    if tags and tags.get("payload_hash") == payload_hash:
-                        logger.info(f"Found existing blob '{blob.name}' with the same payload_hash: {payload_hash}")
-                        return True
-                return False
-            except Exception as e:
-                logger.error(f"Error checking blobs for payload_hash '{payload_hash}': {e}", exc_info=True)
-                raise            
+        """
+        Sprawdza, czy w folderze (prefix) jest blob z ciągiem 'payload_hash' w nazwie.
+        
+        Args:
+            folder_path: Ścieżka do folderu, np. "folder1/folder2/".
+            payload_hash: Hash, który ma być wyszukany w nazwie bloba.
+            
+        Returns:
+            True, jeśli blob o pasującej nazwie istnieje, False w przeciwnym wypadku.
+        """
+        try:
+            # Upewnij się, że name_starts_with ma poprawny format
+            prefix = folder_path if folder_path.endswith('/') else folder_path + '/'
+            
+            # Pobieranie blobów z prefixem folderu
+            blobs = self.client.list_blobs(name_starts_with=prefix)
+            
+            async for blob in blobs:
+                # Warunek sprawdzający, czy podany hash znajduje się w nazwie bloba
+                if payload_hash in blob.name:
+                    logger.info(f"Znaleziono istniejący blob '{blob.name}' zawierający hash: {payload_hash}")
+                    return True
+            
+            # Jeśli pętla się zakończyła i nic nie znaleziono
+            return False
+            
+        except Exception as e:
+            logger.error(f"Wystąpił błąd podczas sprawdzania blobów pod kątem hasha '{payload_hash}': {e}", exc_info=True)
+            raise

@@ -25,11 +25,7 @@ class SilverOrchestrator(BaseOrchestrator):
     def __init__(self, config: Any): # Usunięto data_reader_factory z parametrów konstruktora
         super().__init__(config)
 
-        data_reader_factory_config = {
-            "bronze_base_path": config.get("bronze_base_path", "dbfs:/mnt/bronze") # Pobieramy z configu
-        }
-
-        self.data_reader_factory = DataReaderFactory(config=data_reader_factory_config)
+        self.data_reader_factory = DataReaderFactory(config=config)
         
         self.storage_manager = SilverStorageManager()
 
