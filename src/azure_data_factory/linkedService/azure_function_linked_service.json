@@ -1,13 +1,13 @@
 {
 	"name": "azure_function_linked_service",
+	"type": "Microsoft.DataFactory/factories/linkedservices",
 	"properties": {
 		"annotations": [],
 		"type": "AzureFunction",
 		"typeProperties": {
 			"functionAppUrl": "https://demosurdevfunc4418.azurewebsites.net",
-			"authentication": "MSI",
-			"resourceId": "578a2b30-37ae-4ee7-8e17-6e48c391b401"
+			"authentication": "Anonymous",
+			"encryptedCredential": "ew0KICAiVmVyc2lvbiI6ICIyMDE3LTExLTMwIiwNCiAgIlByb3RlY3Rpb25Nb2RlIjogIktleSIsDQogICJTZWNyZXRDb250ZW50VHlwZSI6ICJQbGFpbnRleHQiLA0KICAiQ3JlZGVudGlhbElkIjogIkRBVEFGQUNUT1JZQDAxRUI4MzU2LTVGRjYtNERENy1CNTAyLTdGMTkwQTQzQThEMV83ODFlMTY4Ny0wZDg2LTRiNjQtODlmYy1iYTE0M2MxNzQwMTciDQp9"
 		}
-	},
-	"type": "Microsoft.DataFactory/factories/linkedservices"
+	}
 }
