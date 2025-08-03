@@ -96,6 +96,7 @@ async def ingest_now(req: func.HttpRequest) -> func.HttpResponse:
             "api_name": result.api_name,
             "dataset_name": result.dataset_name,
             "layer_name": result.layer_name, 
+            "env" : result.env,
             "message": result.message,
             "api_response_status_code": result.api_response_status_code,
             "output_path": result.output_path 
