@@ -8,7 +8,7 @@ import traceback
 from typing import Optional, Dict
 from src.bronze.contexts.bronze_payload_parser import BronzePayloadParser
 from src.common.models.orchestrator_result import OrchestratorResult
-from src.common.orchestrators.bronze_orchestrator import BronzeOrchestrator
+from src.bronze.orchestrators.bronze_orchestrator import BronzeOrchestrator
 from src.common.config.config_manager import ConfigManager
 from src.common.enums.etl_layers import ETLLayer # Pamiętaj o imporcie, jeśli używasz enuma
 
@@ -27,8 +27,6 @@ async def ingest_now(req: func.HttpRequest) -> func.HttpResponse:
     config = ConfigManager()
     bronze_orchestrator = BronzeOrchestrator(config=config)
 
-    # Inicjalizacja zmiennych dla obsługi błędów i logowania, 
-    # muszą być dostępne w całym bloku funkcji
     payload: Dict = {}
     correlation_id: str = 'UNKNOWN' 
     queue_message_id: str = 'UNKNOWN'
@@ -37,9 +35,8 @@ async def ingest_now(req: func.HttpRequest) -> func.HttpResponse:
     env: str = 'UNKNOWN'
     etl_layer: str = "UNKNOWN"
     
-    result: Optional[OrchestratorResult] = None # Zmienna do przechowywania wyniku z orkiestratora
+    result: Optional[OrchestratorResult] = None
 
-    # --- Blok try dla parsowania początkowego payloadu JSON ---
     try:
         payload = req.get_json()
         logger.info(f"Received ADF payload: {payload}")
@@ -49,7 +46,7 @@ async def ingest_now(req: func.HttpRequest) -> func.HttpResponse:
             json.dumps({"status": "error", "message": "Invalid JSON body. Expected JSON payload."}),
             status_code=400,
             mimetype="application/json")
-    
+
     try:
         try:
             bronze_context = BronzePayloadParser().parse(payload)
@@ -71,10 +68,10 @@ async def ingest_now(req: func.HttpRequest) -> func.HttpResponse:
             return func.HttpResponse(
                 json.dumps({
                     "status": "FAILED",
-                    "correlationId": correlation_id,
-                    "queueMessageId": queue_message_id,
-                    "etlLayer" : etl_layer,
-                    "env" : env,
+                    "correlation_id": correlation_id,
+                    "queue_message_id": queue_message_id,
+                    "etl_layer": etl_layer,
+                    "env": env,
                     "message": f"Invalid payload structure: {str(ve)}"
                 }),
                 status_code=400,
@@ -88,27 +85,23 @@ async def ingest_now(req: func.HttpRequest) -> func.HttpResponse:
                     Env: {env}
                     """)
 
-        # Wywołanie BronzeOrchestrator i odebranie OrchestratorResult
         result = await bronze_orchestrator.run(bronze_context) 
         
-        # Przygotowanie odpowiedzi HTTP na podstawie OrchestratorResult
         http_status_code = 200 if result.is_success else 500
 
-        # Budowanie ciała odpowiedzi JSON (camelCase dla ADF)
         response_body = {
             "status": result.status,
-            "correlationId": result.correlation_id, 
-            "queueMessageId": result.queue_message_id, 
-            "apiName": result.api_name,
-            "datasetName": result.dataset_name,
-            "layerName": result.layer_name, 
+            "correlation_id": result.correlation_id, 
+            "queue_message_id": result.queue_message_id, 
+            "api_name": result.api_name,
+            "dataset_name": result.dataset_name,
+            "layer_name": result.layer_name, 
             "message": result.message,
-            "apiResponseStatusCode": result.api_response_status_code,
-            "outputPath": result.output_path 
+            "api_response_status_code": result.api_response_status_code,
+            "output_path": result.output_path 
         }
-        # Dodajemy szczegóły błędu tylko wtedy, gdy operacja się nie powiodła
         if result.is_failed and result.error_details:
-            response_body["errorDetails"] = result.error_details
+            response_body["error_details"] = result.error_details
 
         return func.HttpResponse(
             json.dumps(response_body),
@@ -125,16 +118,16 @@ async def ingest_now(req: func.HttpRequest) -> func.HttpResponse:
         
         if result is None: 
             error_details = {
-                "errorType": type(e).__name__,
-                "errorMessage": str(e),
-                "stackTrace": traceback.format_exc()
+                "error_type": type(e).__name__,
+                "error_message": str(e),
+                "stack_trace": traceback.format_exc()
             }
 
             result = OrchestratorResult(
                 status="FAILED",
                 correlation_id=correlation_id, 
                 queue_message_id=queue_message_id,
-                api_name=api_name, # Używamy już pobranych nazw, jeśli są dostępne
+                api_name=api_name,
                 dataset_name=dataset_name,
                 layer_name=ETLLayer.BRONZE.value,
                 env=env,
@@ -142,20 +135,19 @@ async def ingest_now(req: func.HttpRequest) -> func.HttpResponse:
                 error_details=error_details
             )
 
-        # W przypadku błędu zawsze zwracamy status 500
         return func.HttpResponse(
             json.dumps({
                 "status": result.status,
-                "correlationId": result.correlation_id,
-                "queueMessageId": result.queue_message_id,
-                "apiName": result.api_name,
-                "datasetName": result.dataset_name,
-                "layerName": result.layer_name,
+                "correlation_id": result.correlation_id,
+                "queue_message_id": result.queue_message_id,
+                "api_name": result.api_name,
+                "dataset_name": result.dataset_name,
+                "layer_name": result.layer_name,
                 "env": result.env,
                 "message": result.message,
-                "apiResponseStatusCode": result.api_response_status_code,
-                "outputPath": result.output_path,
-                "errorDetails": result.error_details
+                "api_response_status_code": result.api_response_status_code,
+                "output_path": result.output_path,
+                "error_details": result.error_details
             }),
             status_code=500,
             mimetype="application/json"

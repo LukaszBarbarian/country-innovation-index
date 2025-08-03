@@ -5,13 +5,18 @@ import pyspark.sql.functions as F
 from src.common.builders.base_model_builder import BaseModelBuilder
 from src.common.enums.model_type import ModelType
 from src.common.enums.domain_source import DomainSource # Potrzebne do identyfikacji źródeł
-from src.silver.models.country_model import CountryModel
+from src.silver.models.city_model import CityModel
 from typing import List, Type, Dict
 from src.common.registers.model_builder_registry import ModelBuilderRegistry
+from src.silver.builders.country_model_builder import CountryModelBuilder
 
 
-@ModelBuilderRegistry.register(ModelType.COUNTRY)
-class CountryModelBuilder(BaseModelBuilder):
+@ModelBuilderRegistry.register(ModelType.CITY)
+class CityModelBuilder(BaseModelBuilder):
+    def __init__(self, country_builder: CountryModelBuilder):
+        self.country_builder = country_builder
+
+
     def _build(self, runtime_context):
         """
         Główna logika budowania modelu Country.
@@ -23,4 +28,4 @@ class CountryModelBuilder(BaseModelBuilder):
         """
 
         
-        return CountryModel(None)
+        return CityModel(None)

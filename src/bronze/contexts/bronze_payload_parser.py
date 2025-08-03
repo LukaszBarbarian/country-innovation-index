@@ -13,10 +13,7 @@ class BronzePayloadParser(PayloadParser):
         
         api_config_payload_from_input = payload["api_config_payload"]
 
-        required_api_config_fields = ["api_name", "dataset_name"]
-        if not all(field in api_config_payload_from_input for field in required_api_config_fields):
-            missing_fields = [f for f in required_api_config_fields if f not in api_config_payload_from_input]
-            raise ValueError(f"Missing required fields in 'items': {', '.join(missing_fields)}")
+        self._ensure_requires(requires=["api_name", "dataset_name"], payload=api_config_payload_from_input)
 
         correlation_id = main_context.correlation_id
         queue_message_id = main_context.queue_message_id

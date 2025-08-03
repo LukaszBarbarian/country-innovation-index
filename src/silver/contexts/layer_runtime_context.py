@@ -2,7 +2,8 @@
 
 from pyspark.sql import SparkSession
 from src.common.contexts.base_layer_context import BaseLayerContext
-from src.common.enums.etl_layers import ETLLayer # Potrzebujemy importu ETLLayer
+from src.common.enums.etl_layers import ETLLayer
+from src.common.enums.env import Env
 from typing import TypeVar, Generic, Any, Dict
 
 LayerContextType = TypeVar("LayerContextType", bound=BaseLayerContext)
@@ -63,3 +64,8 @@ class LayerRuntimeContext(Generic[LayerContextType]):
         Zwraca payload konfiguracyjny przetwarzania z kontekstu warstwy.
         """
         return self._layer_context.processing_config_payload
+    
+
+    @property
+    def env(self) -> Env:
+        return self._layer_context.env

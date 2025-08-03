@@ -1,10 +1,10 @@
 # src/silver/model_builders/base_model_builder.py (bez zmian w tej klasie względem ostatniej propozycji)
 
 from abc import ABC, abstractmethod
-from pyspark.sql import DataFrame
-from src.common.contexts.layer_runtime_context import LayerRuntimeContext
+from src.silver.contexts.layer_runtime_context import LayerRuntimeContext
 from src.silver.contexts.silver_context import SilverContext
 from typing import TypeVar
+from src.common.models.model import Model
 
 LayerContextType = TypeVar("LayerContextType", bound=SilverContext) 
 
@@ -13,17 +13,19 @@ class BaseModelBuilder(ABC):
         pass
     
     @abstractmethod
-    def build_model(self, runtime_context: LayerRuntimeContext[LayerContextType]) -> DataFrame:
-        pass
+    def _build(self, runtime_context: LayerRuntimeContext[LayerContextType]) -> Model:
+        raise NotImplementedError
 
-    def run(self, runtime_context: LayerRuntimeContext[LayerContextType]) -> DataFrame:
+
+
+    def run(self, runtime_context: LayerRuntimeContext[LayerContextType]) -> Model:
         try:
-            model_df = self.build_model(runtime_context) 
+            model = self._build(runtime_context)
             
-            if model_df.isEmpty() and model_df.schema.isEmpty():
-                return runtime_context.spark.createDataFrame([], schema=model_df.schema) 
+            if model.data.isEmpty() and model.data.schema.isEmpty():
+                return runtime_context.spark.createDataFrame([], schema=model.data.schema) 
 
-            return model_df
+            return model
 
         except Exception as e:
             raise

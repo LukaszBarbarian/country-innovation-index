@@ -4,14 +4,16 @@ import logging
 from src.bronze.contexts.bronze_context import BronzeContext
 from src.common.factories.api_client_factory import ApiClientFactory
 from src.common.factories.data_processor_factory import DataProcessorFactory
-from src.common.storage_account.bronze_storage_manager import BronzeStorageManager
+from src.bronze.storage_manager.bronze_storage_manager import BronzeStorageManager
 from src.common.models.orchestrator_result import OrchestratorResult
-from src.common.storage_file_builder.storage_file_builder_factory import StorageFileBuilderFactory
+from src.common.factories.storage_file_builder_factory import StorageFileBuilderFactory
 from src.common.orchestrators.base_orchestrator import BaseOrchestrator
 from src.common.models.file_info import FileInfo 
 from src.common.models.processed_result import ProcessedResult 
 from typing import List, Optional
 import traceback 
+
+import src.bronze.init.bronze_init 
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +27,7 @@ class BronzeOrchestrator(BaseOrchestrator):
         logger.info(f"Starting ingestion for Dataset: {context.dataset_name} using API identified as: {context.domain_source} with CorrelationId: {context.correlation_id}")
 
         final_output_path: Optional[str] = None 
-        api_response_status_code: Optional[int] = None # Również upewnijmy się, że ten jest zainicjowany
+        api_response_status_code: Optional[int] = None
 
 
         api_client = ApiClientFactory.get_instance(context.domain_source, self.config)
@@ -44,7 +46,7 @@ class BronzeOrchestrator(BaseOrchestrator):
 
             if not all_processed_records_results:
                 logger.info(f"No records fetched for {context.dataset_name} with CorrelationId: {context.correlation_id}. Skipping file save and Event Grid notification.")
-                # Zwróć pomyślny rezultat, ale bez ścieżki pliku
+                
                 return OrchestratorResult(
                     status="COMPLETED",
                     correlation_id=context.correlation_id,

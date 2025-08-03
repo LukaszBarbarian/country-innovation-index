@@ -27,3 +27,8 @@ class BaseLayerContext:
 
 
 
+
+
+    @property
+    def empty(self) -> str:
+        return "N/A"

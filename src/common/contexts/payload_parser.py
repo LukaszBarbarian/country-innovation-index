@@ -10,11 +10,8 @@ class PayloadParser():
 
     def parse(self, payload: Dict[str, Any]) -> BaseLayerContext:
 
-        required_api_config_fields = ["correlation_id", "queue_message_id", "etl_layer", "env"]
-        if not all(field in payload for field in required_api_config_fields):
-            missing_fields = [f for f in required_api_config_fields if f not in payload]
-            raise ValueError(f"Missing required fields in 'payload': {', '.join(missing_fields)}")
-        
+        self._ensure_requires(requires=["correlation_id", "queue_message_id", "etl_layer", "env"], payload=payload)
+                
         return BaseLayerContext(correlation_id=payload.get("correlation_id"),
                                 queue_message_id=payload.get("queue_message_id"),
                                 etl_layer=self._map_etl_layer(payload.get("etl_layer")),
@@ -48,3 +45,9 @@ class PayloadParser():
             raise ValueError(f"Invalid Env name: '{env_str}'. Expected one of: {[e.value for e in Env]}")
         except Exception as e:
             raise RuntimeError(f"An unexpected error occurred during Env layer name mapping: {e}")
+        
+
+    def _ensure_requires(self, requires: list[str], payload: Dict[str, Any]):
+        if not all(field in payload for field in requires):
+            missing_fields = [f for f in requires if f not in payload]
+            raise ValueError(f"Missing required fields in 'payload': {', '.join(missing_fields)}")

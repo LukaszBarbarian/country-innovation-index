@@ -21,7 +21,10 @@ class BaseFactoryFromRegistry(Generic[K, T], ABC):
 
     @classmethod
     def get_instance(cls, key: K, *args: Any, **kwargs: Any) -> T:
+        return BaseFactoryFromRegistry.get_class(key, *args, *kwargs)(*args, **kwargs)
+
+    @classmethod
+    def get_class(cls, key: K, *args: Any, **kwargs: Any) -> T:
         registry = cls.get_registry()
         get_class = registry.get_class if hasattr(registry, "get_class") else registry.get
-        klass = get_class(key)
-        return klass(*args, **kwargs)
+        return get_class(key)
