@@ -11,6 +11,19 @@ class BaseFactoryFromRegistry(Generic[K, T], ABC):
     Bazowa klasa dla fabryk, które korzystają z rejestru do pobierania klas.
     """
 
+# src/functions/common/factory/base_factory_from_registry.py
+
+from typing import TypeVar, Generic, Any, Type
+from abc import ABC, abstractmethod
+
+K = TypeVar("K")  # Typ klucza
+T = TypeVar("T")  # Typ zwracanej instancji
+
+class BaseFactoryFromRegistry(Generic[K, T], ABC):
+    """
+    Bazowa klasa dla fabryk, które korzystają z rejestru do pobierania klas.
+    """
+
     @classmethod
     @abstractmethod
     def get_registry(cls):
@@ -20,11 +33,21 @@ class BaseFactoryFromRegistry(Generic[K, T], ABC):
         raise NotImplementedError
 
     @classmethod
-    def get_instance(cls, key: K, *args: Any, **kwargs: Any) -> T:
-        return BaseFactoryFromRegistry.get_class(key, *args, *kwargs)(*args, **kwargs)
-
-    @classmethod
-    def get_class(cls, key: K, *args: Any, **kwargs: Any) -> T:
+    def get_class(cls, key: K) -> Type[T]:
+        """
+        Zwraca klasę odpowiadającą danemu kluczowi.
+        """
         registry = cls.get_registry()
         get_class = registry.get_class if hasattr(registry, "get_class") else registry.get
-        return get_class(key)
+        klass = get_class(key)
+        if klass is None:
+            raise ValueError(f"Brak klasy zarejestrowanej pod kluczem: {key}")
+        return klass
+
+    @classmethod
+    def get_instance(cls, key: K, *args: Any, **kwargs: Any) -> T:
+        """
+        Tworzy instancję klasy na podstawie klucza.
+        """
+        klass = cls.get_class(key)
+        return klass(*args, **kwargs)

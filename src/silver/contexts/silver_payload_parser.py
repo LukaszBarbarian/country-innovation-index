@@ -8,10 +8,7 @@ class SilverPayloadParser(PayloadParser):
 
         config_payload = payload.get("processing_config_payload", {})
 
-        required_fields = [
-            "status", "apiName", "datasetName", "layerName", "message",
-            "apiResponseStatusCode", "outputPath"
-        ]
+        required_fields = ["status", "api_name", "dataset_name", "layer_name", "message", "api_response_status_code", "output_path"]
 
         self._ensure_requires(requires=required_fields, payload=config_payload)
 
@@ -22,11 +19,11 @@ class SilverPayloadParser(PayloadParser):
             ingestion_time_utc=main_context.ingestion_time_utc,
             processing_config_payload=main_context.processing_config_payload,
             status=config_payload["status"],
-            api_name=config_payload["apiName"],
-            dataset_name=config_payload["datasetName"],
-            layer_name=config_payload["layerName"],
+            api_name=config_payload["api_name"],
+            dataset_name=config_payload["dataset_name"],
+            layer_name=config_payload["layer_name"],
             message=config_payload["message"],
-            api_response_status_code=config_payload["apiResponseStatusCode"],
-            output_path=config_payload["outputPath"],
-            error_details=config_payload.get("errorDetails")
+            api_response_status_code=config_payload["api_response_status_code"],
+            output_path=config_payload["output_path"],
+            error_details=config_payload.get("error_details")
         )

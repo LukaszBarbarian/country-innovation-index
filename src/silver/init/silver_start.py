@@ -16,32 +16,18 @@ import json
 # Ciąg znaków zawierający dane JSON
 json_string = """
 {
-	"status": "COMPLETED",
-	"correlationId": "1",
-	"queueMessageId": "372c2e90-c4f0-4391-a674-27129fa0f7a6",
-	"apiName": "NOBELPRIZE",
-	"datasetName": "nobelPrizes",
-	"layerName": "Bronze",
-	"message": "API data successfully processed and stored to Bronze.",
-	"apiResponseStatusCode": null,
-	"outputPath": "https://demosurdevdatalake4418sa.blob.core.windows.net/bronze/NOBELPRIZE/2025/08/01/nobelPrizes_1_c237f2d9.json",
-	"effectiveIntegrationRuntime": "AutoResolveIntegrationRuntime (North Europe)",
-	"executionDuration": 0,
-	"durationInQueue": {
-		"integrationRuntimeQueue": 0
-	},
-	"billingReference": {
-		"activityType": "ExternalActivity",
-		"billableDuration": [
-			{
-				"meterType": "AzureIR",
-				"duration": 0.016666666666666666,
-				"unit": "Hours"
-			}
-		]
-	}
+    "status": "COMPLETED",
+    "correlation_id": "1",
+    "queue_message_id": "372c2e90-c4f0-4391-a674-27129fa0f7a6",
+    "api_name": "NOBELPRIZE",
+    "dataset_name": "nobelPrizes",
+    "layer_name": "Bronze",
+    "message": "API data successfully processed and stored to Bronze.",
+    "api_response_status_code": null,
+    "output_path": "https://demosurdevdatalake4418sa.blob.core.windows.net/bronze/NOBELPRIZE/2025/08/01/nobelPrizes_1_c237f2d9.json"
 }
 """
+
 
 payload = json.loads(json_string)
 
