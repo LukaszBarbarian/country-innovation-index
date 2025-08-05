@@ -1,15 +1,17 @@
 
 import logging
 from src.silver.contexts.layer_runtime_context import LayerRuntimeContext
+from src.silver.contexts.silver_context import SilverContext
 from src.silver.storage_manager.silver_storage_manager import SilverStorageManager
 from src.common.models.orchestrator_result import OrchestratorResult
 from src.common.orchestrators.base_orchestrator import BaseOrchestrator
-from src.silver.mediators.model_builder_mediator import ModelBuilderMediator
+from src.common.enums.model_type import ModelType
 from typing import List, Optional
 import traceback 
-import injector
-from src.silver.models.model_module import ModelModule
-
+from injector import Injector
+from src.silver.di.silver_module import SilverModule
+from src.common.factories.model_builder_factory import ModelBuilderFactory
+from src.common.models.base_model import BaseModel
 
 import src.silver.init.silver_init 
 
@@ -27,17 +29,15 @@ class SilverOrchestrator(BaseOrchestrator):
         final_output_path: Optional[str] = None 
 
         try:
-            di_injector = injector.Injector([ModelModule()])
-            model_builder_mediator = ModelBuilderMediator(di_injector=di_injector, context=context)
+            di_injector = self.init_di(context)
 
-            mediator_result = await model_builder_mediator.run()
-
-
-
-
-
-
-
+            for model_type in ModelType:
+                builder_class = ModelBuilderFactory.get_class(model_type)
+                model_builder = di_injector.get(builder_class)
+                model = await model_builder.run()
+                
+                
+            print(model)
 
             return OrchestratorResult(
                 status="COMPLETED",
@@ -51,7 +51,7 @@ class SilverOrchestrator(BaseOrchestrator):
 
 
         except Exception as e:
-            logger.error(f"Error in SilverOrchestrator for {context.dataset_name}: {e}")
+            logger.error(f"Error in SilverOrchestrator for {context.correlation_id}: {e}")
             
             error_details = {
                 "errorType": type(e).__name__,
@@ -69,3 +69,9 @@ class SilverOrchestrator(BaseOrchestrator):
                 output_path=final_output_path,
                 error_details=error_details
             )
+        
+
+    
+
+    def init_di(self, context: LayerRuntimeContext) -> Injector:
+        return Injector(SilverModule(context.layer_context, context.spark))

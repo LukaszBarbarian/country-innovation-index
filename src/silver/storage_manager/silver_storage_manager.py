@@ -15,7 +15,7 @@ class SilverStorageManager(BlobStorageManager):
     DEFAULT_CONTAINER_NAME = "silver" # Ustaw domyślną nazwę kontenera
 
     def __init__(self):
-        super().__init__(self.DEFAULT_CONTAINER_NAME)
+        super().__init__(container_name=self.DEFAULT_CONTAINER_NAME, storage_account_name_setting_name="DATA_LAKE_STORAGE_ACCOUNT_NAME")
         logger.info(f"SilverStorageManager initialized for container: {self.resource_name}")
 
     # Przykład metody specyficznej dla Silver (jeśli potrzebna)

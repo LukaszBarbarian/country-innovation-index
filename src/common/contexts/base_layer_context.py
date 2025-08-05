@@ -4,6 +4,7 @@ from src.common.enums.etl_layers import ETLLayer
 from src.common.enums.env import Env
 from datetime import datetime
 from typing import Optional, Any, Dict
+from src.common.utils.cache import Cache
 
 class BaseLayerContext:
     """
@@ -24,9 +25,13 @@ class BaseLayerContext:
         self.env = env
         self.ingestion_time_utc = ingestion_time_utc if ingestion_time_utc is not None else datetime.utcnow()
         self.processing_config_payload = processing_config_payload if processing_config_payload is not None else {}
+        self._cache: Cache = Cache()
 
 
 
+    @property
+    def cache(self) -> Cache:
+        return self._cache
 
 
     @property

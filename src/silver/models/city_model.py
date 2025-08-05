@@ -1,5 +1,5 @@
-from src.common.models.model import Model
+from src.common.models.base_model import BaseModel
 
 
-class CityModel(Model):
+class CityModel(BaseModel):
     pass

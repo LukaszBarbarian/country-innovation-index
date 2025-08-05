@@ -1,7 +1,7 @@
-from src.common.models.model import Model
+from src.common.models.base_model import BaseModel
 from dataclasses import dataclass
 
 
 @dataclass
-class CountryModel(Model):
+class CountryModel(BaseModel):
     pass

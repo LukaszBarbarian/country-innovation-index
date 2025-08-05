@@ -1,31 +1,60 @@
 # src/silver/model_builders/base_model_builder.py (bez zmian w tej klasie względem ostatniej propozycji)
-
+from pyspark.sql import SparkSession
 from abc import ABC, abstractmethod
-from src.silver.contexts.layer_runtime_context import LayerRuntimeContext
-from src.silver.contexts.silver_context import SilverContext
-from typing import TypeVar
-from src.common.models.model import Model
+from injector import inject, Injector
+from src.common.readers.base_data_reader import BaseDataReader
+from src.common.factories.data_reader_factory import DataReaderFactory
+from src.common.enums.domain_source import DomainSource
+from src.common.models.base_model import BaseModel
+from src.common.contexts.base_layer_context import BaseLayerContext
 
-LayerContextType = TypeVar("LayerContextType", bound=SilverContext) 
 
 class BaseModelBuilder(ABC):
-    def __init__(self):
-        pass
+    @inject
+    def __init__(self, spark: SparkSession, injector: Injector, context: BaseLayerContext):
+        self._spark = spark
+        self._injector = injector
+        self._context = context
+
+    def get_reader(self, domain_source: DomainSource) -> BaseDataReader:
+        reader_class = DataReaderFactory.get_class(domain_source)
+        
+        if not issubclass(reader_class, BaseDataReader):
+            raise TypeError(f"Reader class for {domain_source} must be a subclass of BaseDataReader.")
+
+        reader = self._injector.get(reader_class)
+        reader.set_domain_source(domain_source)
+
+        return reader
+
     
+    async def run(self) -> BaseModel:
+        model = await self.build()
+        model = await self.normalize(model)
+        model = await self.enrich(model)
+        model = await self.transform(model)
+
+        return model
+    
+
+
+
     @abstractmethod
-    def _build(self, runtime_context: LayerRuntimeContext[LayerContextType]) -> Model:
+    async def build(self) -> BaseModel:
         raise NotImplementedError
 
 
+    @abstractmethod
+    async def normalize(self, model: BaseModel) -> BaseModel:
+        """Normalizacja danych."""
+        raise NotImplementedError
 
-    def run(self, runtime_context: LayerRuntimeContext[LayerContextType]) -> Model:
-        try:
-            model = self._build(runtime_context)
-            
-            if model.data.isEmpty() and model.data.schema.isEmpty():
-                return runtime_context.spark.createDataFrame([], schema=model.data.schema) 
+    @abstractmethod
+    async def enrich(self, model: BaseModel) -> BaseModel:
+        """Wzbogacanie danych."""
+        raise NotImplementedError
 
-            return model
-
-        except Exception as e:
-            raise
+    @abstractmethod
+    async def transform(self, model: BaseModel) -> BaseModel:
+        """Transformacja danych."""
+        raise NotImplementedError

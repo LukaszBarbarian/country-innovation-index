@@ -6,13 +6,14 @@ from src.common.builders.base_model_builder import BaseModelBuilder
 from src.common.enums.model_type import ModelType
 from src.common.enums.domain_source import DomainSource # Potrzebne do identyfikacji źródeł
 from src.silver.models.country_model import CountryModel
-from typing import List, Type, Dict
+from injector import inject
 from src.common.registers.model_builder_registry import ModelBuilderRegistry
 
 
 @ModelBuilderRegistry.register(ModelType.COUNTRY)
 class CountryModelBuilder(BaseModelBuilder):
-    def _build(self, runtime_context):
+
+    async def build(self):
         """
         Główna logika budowania modelu Country.
         1. Pobiera zarejestrowane readery dla ModelType.COUNTRIES.
@@ -22,5 +23,16 @@ class CountryModelBuilder(BaseModelBuilder):
         5. Wykonuje unifikację i deduplikację, tworząc finalny model.
         """
 
+        country_reader = self.get_reader(DomainSource.NOBELPRIZE)
+        country_data = country_reader.load_data()
         
         return CountryModel(None)
+    
+    async def normalize(self, model):
+        return await super().normalize(model)
+    
+    async def enrich(self, model):
+        return await super().enrich(model)
+    
+    async def transform(self, model):
+        return await super().transform(model)

@@ -8,14 +8,14 @@ from src.common.enums.env import Env
 class OrchestratorResult:
     status: str
     correlation_id: str
-    queue_message_id: str
-    api_name: str
-    dataset_name: str
+    queue_message_id: str    
     layer_name: ETLLayer
     env: Env
     message: str
-    output_path: Optional[str] = None  # Zmieniono z bronze_output_path
-    api_response_status_code: Optional[int] = None # Może być nadal istotne dla debugowania nawet w kolejnych warstwach
+    api_name: Optional[str] = None
+    dataset_name: Optional[str] = None
+    output_path: Optional[str] = None
+    api_response_status_code: Optional[int] = None
     error_details: Optional[Dict[str, Any]] = field(default_factory=dict) 
 
     @property

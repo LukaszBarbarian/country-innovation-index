@@ -37,10 +37,12 @@ class BronzeOrchestrator(BaseOrchestrator):
 
         try:
             async with api_client as client:
-                logger.info(f"Requesting all records from {context.domain_source.value} via its generator...")
-                async for raw_record in client.fetch_all_records(context.api_request_payload):
-                    processed_record_result = data_processor.process(raw_record, context) 
-                    all_processed_records_results.append(processed_record_result)
+                results = await client.fetch_all(context.api_request_payload)
+    
+                for result in results:
+                    for raw_record in result.records:
+                        processed_record_result = data_processor.process(raw_record, context)
+                        all_processed_records_results.append(processed_record_result)
                     
             logger.info(f"Finished fetching all records for {context.dataset_name}. Total records fetched: {len(all_processed_records_results)}")
 
