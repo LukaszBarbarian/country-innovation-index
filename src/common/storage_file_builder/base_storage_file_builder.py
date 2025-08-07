@@ -14,7 +14,6 @@ class BaseStorageFileBuilder(ABC):
     def build_file_output(self, 
                           processed_records_results: ProcessedResult, 
                           context: LayerContext, 
-                          storage_account_name: str, 
                           container_name: str) -> Dict[str, Any]:
         """
         Przyjmuje listę obiektów ProcessedResult i kontekst ingestii.

@@ -1,2 +1,3 @@
-from src.common.orchestrators.api_orchestrator import ApiOrchestrator
-from src.common.orchestrators.static_file_orchestrator import StaticFileOrchestrator
+from src.common.ingestion_strategy.api_ingestion_strategy import ApiIngestionStrategy
+from src.common.ingestion_strategy.static_file_ingestion_strategy import StaticFileIngestionStrategy
+

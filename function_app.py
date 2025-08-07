@@ -80,7 +80,7 @@ async def ingest_now(req: func.HttpRequest) -> func.HttpResponse:
         
         
         result = await OrchestratorFactory\
-            .get_instance(context.domain_source_type, config=config)\
+            .get_instance(ETLLayer.BRONZE, config=config)\
             .run(context)
         
         http_status_code = 200 if result.is_success else 500

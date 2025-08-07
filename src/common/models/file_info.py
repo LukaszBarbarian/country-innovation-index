@@ -7,7 +7,6 @@ class FileInfo:
     container_name: str = ""
     full_path_in_container: str = ""
     file_name: str = ""
-    storage_account_name: str = ""
     file_size_bytes: Optional[int] = None
     payload_hash: str = ""
     

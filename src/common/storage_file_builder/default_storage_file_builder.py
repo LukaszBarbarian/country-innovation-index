@@ -16,7 +16,6 @@ class DefaultStorageFileBuilder(BaseStorageFileBuilder):
     def build_file_output(self, 
                           processed_records_results: ProcessedResult, 
                           context: LayerContext, 
-                          storage_account_name: str, 
                           container_name: str) -> Dict[str, Any]:
 
         # 1. Dane do zapisania
@@ -51,7 +50,6 @@ class DefaultStorageFileBuilder(BaseStorageFileBuilder):
             container_name=container_name,
             full_path_in_container=full_path_in_container,
             file_name=file_name,
-            storage_account_name=storage_account_name,
             file_size_bytes=file_size_bytes,
             domain_source=context.domain_source.value,
             dataset_name=context.dataset_name,

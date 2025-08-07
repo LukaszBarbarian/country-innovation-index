@@ -63,7 +63,7 @@ class LayerRuntimeContext(Generic[LayerContextType]):
         """
         Zwraca payload konfiguracyjny przetwarzania z kontekstu warstwy.
         """
-        return self._layer_context.processing_config_payload
+        return self._layer_context.source_config_payload
     
 
     @property
