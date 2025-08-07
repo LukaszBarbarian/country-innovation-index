@@ -6,34 +6,34 @@ import os
 import uuid
 import traceback
 from typing import Optional, Dict
-from src.bronze.contexts.bronze_payload_parser import BronzePayloadParser
+from src.common.contexts.payload_parser import PayloadParser
+from src.common.enums.env import Env
+from src.common.factories.orchestrator_factory import OrchestratorFactory
 from src.common.models.orchestrator_result import OrchestratorResult
-from src.bronze.orchestrators.bronze_orchestrator import BronzeOrchestrator
 from src.common.config.config_manager import ConfigManager
-from src.common.enums.etl_layers import ETLLayer # Pamiętaj o imporcie, jeśli używasz enuma
+from src.common.enums.etl_layers import ETLLayer
+import src.bronze.init.bronze_init 
+
 
 logger = logging.getLogger(__name__)
 
 app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
-
-QUEUE_NAME = os.getenv("QUEUE_NAME")
-EVENT_GRID_TOPIC_ENDPOINT = os.environ.get('EVENTGRID_TOPIC_ENDPOINT')
-EVENTGRID_TOPIC_RESOURCE_ID = os.environ.get('EVENTGRID_TOPIC_RESOURCE_ID')
 
 
 @app.function_name(name="IngestNow")
 @app.route(route="ingestNow", methods=["POST"])
 async def ingest_now(req: func.HttpRequest) -> func.HttpResponse:
     config = ConfigManager()
-    bronze_orchestrator = BronzeOrchestrator(config=config)
 
     payload: Dict = {}
     correlation_id: str = 'UNKNOWN' 
     queue_message_id: str = 'UNKNOWN'
-    api_name: str = 'UNKNOWN'
+    domain_source: str = 'UNKNOWN'
+    domain_source_type: str = "UNKNOWN"
     dataset_name: str = 'UNKNOWN'
-    env: str = 'UNKNOWN'
-    etl_layer: str = "UNKNOWN"
+    env: Env = Env.UNKNOWN
+    etl_layer: ETLLayer = ETLLayer.UNKNOWN
+    http_status_code = 0
     
     result: Optional[OrchestratorResult] = None
 
@@ -49,14 +49,15 @@ async def ingest_now(req: func.HttpRequest) -> func.HttpResponse:
 
     try:
         try:
-            bronze_context = BronzePayloadParser().parse(payload)
+            context = PayloadParser().parse(payload)
             
-            correlation_id = bronze_context.correlation_id 
-            queue_message_id = bronze_context.queue_message_id 
-            env = bronze_context.env
-            etl_layer = bronze_context.etl_layer
-            api_name = bronze_context.api_name_str 
-            dataset_name = bronze_context.dataset_name 
+            correlation_id = context.correlation_id 
+            queue_message_id = context.queue_message_id 
+            env = context.env
+            etl_layer = context.etl_layer
+            domain_source = context.domain_source.value 
+            domain_source_type = context.domain_source_type.value
+            dataset_name = context.dataset_name 
 
         except ValueError as ve:
             logger.error(f"Missing or invalid data in ADF payload: {ve}. Payload: {payload}")
@@ -76,16 +77,11 @@ async def ingest_now(req: func.HttpRequest) -> func.HttpResponse:
                 }),
                 status_code=400,
                 mimetype="application/json")
-
-        logger.info(f"""Invoking Bronze Orchestrator for API: {api_name},
-                    Dataset: {dataset_name}, 
-                    Correlation ID: {correlation_id}, 
-                    Queue Message ID: {queue_message_id},
-                    ETL Layer: {etl_layer},
-                    Env: {env}
-                    """)
-
-        result = await bronze_orchestrator.run(bronze_context) 
+        
+        
+        result = await OrchestratorFactory\
+            .get_instance(context.domain_source_type, config=config)\
+            .run(context)
         
         http_status_code = 200 if result.is_success else 500
 
@@ -93,14 +89,16 @@ async def ingest_now(req: func.HttpRequest) -> func.HttpResponse:
             "status": result.status,
             "correlation_id": result.correlation_id, 
             "queue_message_id": result.queue_message_id, 
-            "api_name": result.api_name,
+            "domain_source": result.domain_source.value,
+            "domain_source_type" : result.domain_source_type.value,
             "dataset_name": result.dataset_name,
-            "layer_name": result.layer_name, 
+            "layer_name": result.layer_name.value, 
             "env" : result.env.value,
             "message": result.message,
-            "api_response_status_code": result.api_response_status_code,
-            "output_path": result.output_path 
+            "source_response_status_code": result.source_response_status_code,
+            "output_paths": result.output_paths if result.output_paths is not None else []
         }
+
         if result.is_failed and result.error_details:
             response_body["error_details"] = result.error_details
 
@@ -117,6 +115,8 @@ async def ingest_now(req: func.HttpRequest) -> func.HttpResponse:
                          ETL Layer: {etl_layer},
                          ENV: {env}""")
         
+        error_details = None
+
         if result is None: 
             error_details = {
                 "error_type": type(e).__name__,
@@ -124,31 +124,22 @@ async def ingest_now(req: func.HttpRequest) -> func.HttpResponse:
                 "stack_trace": traceback.format_exc()
             }
 
-            result = OrchestratorResult(
-                status="FAILED",
-                correlation_id=correlation_id, 
-                queue_message_id=queue_message_id,
-                api_name=api_name,
-                dataset_name=dataset_name,
-                layer_name=ETLLayer.BRONZE.value,
-                env=env,
-                message=f"IngestNow function encountered an unhandled error: {str(e)}",
-                error_details=error_details
-            )
+            
 
         return func.HttpResponse(
             json.dumps({
-                "status": result.status,
-                "correlation_id": result.correlation_id,
-                "queue_message_id": result.queue_message_id,
-                "api_name": result.api_name,
-                "dataset_name": result.dataset_name,
-                "layer_name": result.layer_name,
-                "env": result.env,
-                "message": result.message,
-                "api_response_status_code": result.api_response_status_code,
-                "output_path": result.output_path,
-                "error_details": result.error_details
+                "status": "FAILED",
+                "correlation_id": correlation_id,
+                "queue_message_id": queue_message_id,
+                "domain_source": domain_source,
+                "domain_source_type": domain_source_type,
+                "dataset_name": dataset_name,
+                "layer_name": etl_layer.value if hasattr(etl_layer, 'value') else etl_layer,
+                "env": env.value if hasattr(env, 'value') else env,
+                "message": f"IngestNow function encountered an unhandled error: {str(e)}",
+                "source_response_status_code": http_status_code,
+                "output_paths": [],  # Zawsze lista, nawet pusta, zamiast output_path
+                "error_details": error_details
             }),
             status_code=500,
             mimetype="application/json"

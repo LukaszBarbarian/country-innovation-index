@@ -1,17 +1,19 @@
 # src/common/storage_metadata_file_builder/base_storage_metadata_file_builder.py
 from abc import ABC, abstractmethod
+import hashlib
+import json
 from typing import Dict, Any, List
 import uuid
 
-from src.bronze.contexts.bronze_context import BronzeContext
+from src.common.contexts.layer_context import LayerContext
 from src.common.models.processed_result import ProcessedResult
 
 
 class BaseStorageFileBuilder(ABC):
     @abstractmethod
     def build_file_output(self, 
-                          processed_records_results: List[ProcessedResult], 
-                          context: BronzeContext, 
+                          processed_records_results: ProcessedResult, 
+                          context: LayerContext, 
                           storage_account_name: str, 
                           container_name: str) -> Dict[str, Any]:
         """
@@ -22,17 +24,21 @@ class BaseStorageFileBuilder(ABC):
         """
         pass
     
-    def _generate_blob_path_and_name(self, context: BronzeContext, file_extension: str):
-        """
-        Generuje pełną ścieżkę do bloba i nazwę pliku, uwzględniając rozszerzenie.
-        Zwraca krotkę (full_path_in_container, file_name).
-        """
-        date_path = context.ingestion_time_utc.strftime("%Y/%m/%d") # Np. 2025/07/29
-        time_component = context.ingestion_time_utc.strftime("%H%M%S") # Np. 094500
 
-        unique_id = str(uuid.uuid4())
-        # Nazwa pliku z correlation_id i rozszerzeniem
-        file_name = f"{context.correlation_id}_{time_component}_{unique_id}.{file_extension.lstrip('.')}"
- 
-        full_path_in_container = f"{context.dataset_name}/{date_path}/{file_name}"
-        return full_path_in_container, file_name
+    def _generate_blob_path_and_name(self, dataset_name: str, correlation_id: str, domain_source: str, file_extension: str, payload_hash: str, ingestion_time_utc: str):
+        
+        file_name = f"{dataset_name}_{correlation_id}_{payload_hash}.{file_extension}"
+        
+        blob_path = f"{domain_source}/{ingestion_time_utc}/{file_name}"
+        
+        return blob_path, file_name
+    
+
+    def _compute_payload_hash(self, api_request_payload: Dict[str, Any]) -> str:
+        """
+        Oblicza hash zapytania na podstawie api_config_payload.
+        """
+        if not api_request_payload:
+            return "nohash"
+        normalized_str = json.dumps(api_request_payload, sort_keys=True)
+        return hashlib.sha256(normalized_str.encode('utf-8')).hexdigest()[:8]    

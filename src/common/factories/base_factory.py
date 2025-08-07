@@ -1,18 +1,5 @@
 # src/functions/common/factory/base_factory_from_registry.py
 
-from typing import TypeVar, Generic, Any
-from abc import ABC, abstractmethod
-
-K = TypeVar("K")  # Typ klucza
-T = TypeVar("T")  # Typ zwracanej instancji
-
-class BaseFactoryFromRegistry(Generic[K, T], ABC):
-    """
-    Bazowa klasa dla fabryk, które korzystają z rejestru do pobierania klas.
-    """
-
-# src/functions/common/factory/base_factory_from_registry.py
-
 from typing import TypeVar, Generic, Any, Type
 from abc import ABC, abstractmethod
 

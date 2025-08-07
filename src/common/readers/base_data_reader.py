@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from pyspark.sql import DataFrame
 from pyspark.sql.session import SparkSession
 from src.common.enums.domain_source import DomainSource
-from src.common.contexts.base_layer_context import BaseLayerContext
+from src.common.contexts.layer_context import LayerContext
 from injector import inject
 
 class BaseDataReader(ABC):
@@ -12,7 +12,7 @@ class BaseDataReader(ABC):
     Zapewnia automatyczne zarządzanie cache'owaniem danych.
     """
     @inject
-    def __init__(self, spark: SparkSession, context: BaseLayerContext):
+    def __init__(self, spark: SparkSession, context: LayerContext):
         self._spark = spark
         self._context = context
 

@@ -1,8 +1,9 @@
 from typing import Callable, Dict, Any, List, Optional
-from src.common.api_clients.base_api_loader import ApiLoader
-from src.common.models.api_result import ApiResult
 import httpx
 import logging
+
+from src.common.clients.api_clients.loaders.base_api_loader import ApiLoader
+from src.common.models.raw_data import RawData
 
 logger = logging.getLogger(__name__)
 
@@ -27,10 +28,10 @@ class PaginationApiLoader(ApiLoader):
         self.default_limit = default_limit
         self.extractor = extractor or (lambda r: [r])
 
-    async def load(self) -> List[ApiResult]:
+    async def load(self) -> List[RawData]:
         offset = self.initial_payload.get(self.page_param, 0)
         limit = self.initial_payload.get(self.limit_param, self.default_limit)
-        all_results: List[ApiResult] = []
+        all_results: List[RawData] = []
 
         while True:
             params = dict(self.initial_payload)
@@ -49,7 +50,15 @@ class PaginationApiLoader(ApiLoader):
                 logger.info(f"No records returned from endpoint {self.endpoint}, stopping pagination.")
                 break
 
-            all_results.append(ApiResult(records=records, endpoint=self.endpoint, url=str(response.url)))
+            all_results.append(RawData(
+                data=records,
+                dataset_name=self.endpoint
+            ))
+
+            if len(records) < limit:
+                logger.info(f"Last page reached at offset {offset}, stopping pagination.")
+                break
+
             offset += limit
 
         return all_results

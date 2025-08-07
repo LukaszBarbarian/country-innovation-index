@@ -6,6 +6,7 @@ from typing import Any, Union, Dict, Literal, Optional
 from azure.storage.blob.aio import BlobServiceClient, ContainerClient, BlobClient 
 from azure.core.exceptions import ResourceNotFoundError, ResourceExistsError 
 import json
+from src.common.models.file_info import FileInfo
 from src.common.storage_account.manager_base import AzureClientManagerBase
 
 logger = logging.getLogger(__name__)
@@ -14,7 +15,7 @@ class BlobStorageManager(AzureClientManagerBase[BlobServiceClient, ContainerClie
     
     def __init__(self, 
                  container_name: str, 
-                 storage_account_name_setting_name: str = ""):
+                 storage_account_name_setting_name: str = "DATA_LAKE_STORAGE_ACCOUNT_NAME"):
         
         super().__init__(
             resource_name=container_name,
@@ -25,39 +26,44 @@ class BlobStorageManager(AzureClientManagerBase[BlobServiceClient, ContainerClie
     def _create_service_client_from_identity(self, account_url: str, credential) -> BlobServiceClient:
         return BlobServiceClient(account_url=account_url, credential=credential)
 
-    def _get_resource_client(self, service_client: BlobServiceClient, container_name: str) -> ContainerClient:
-        return service_client.get_container_client(container_name)
+    def _get_resource_client(self, service_client: BlobServiceClient, resource_name: str) -> ContainerClient:
+        return service_client.get_container_client(resource_name)
 
     async def upload_blob(self, 
-                          data_content: Union[Dict[str, Any], str, bytes], 
-                          blob_name: str, 
+                          file_content_bytes: Union[Dict[str, Any], str, bytes], 
+                          file_info: FileInfo,
                           overwrite: bool = True,
-                          tags: Optional[Dict[str, str]] = None # Zostawiamy tags, ale będziemy go ignorować, jeśli sprawia problem
-                         ) -> str:
+                          tags: Optional[Dict[str, str]] = None
+                         ) -> int:
         
         # Konwersja danych do bajtów, jeśli to konieczne
-        if isinstance(data_content, dict): 
-            content_to_upload = json.dumps(data_content, indent=2).encode('utf-8')
-        elif isinstance(data_content, str):
-            content_to_upload = data_content.encode('utf-8')
-        elif isinstance(data_content, bytes):
-            content_to_upload = data_content
+        if isinstance(file_content_bytes, dict): 
+            content_to_upload = json.dumps(file_content_bytes, indent=2).encode('utf-8')
+        elif isinstance(file_content_bytes, str):
+            content_to_upload = file_content_bytes.encode('utf-8')
+        elif isinstance(file_content_bytes, bytes):
+            content_to_upload = file_content_bytes
         else:
-            logger.error(f"Unsupported data type for upload: {type(data_content)}. Must be dict, str, or bytes.")
-            raise TypeError(f"Unsupported data type for upload: {type(data_content)}. Must be dict, str, or bytes.")
+            logger.error(f"Unsupported data type for upload: {type(file_content_bytes)}. Must be dict, str, or bytes.")
+            raise TypeError(f"Unsupported data type for upload: {type(file_content_bytes)}. Must be dict, str, or bytes.")
+
+        # --- ZMIANA TUTAJ: Ręczna obsługa tworzenia kontenera i istniejącego zasobu ---
+        try:
+            await self.client.create_container()
+        except ResourceExistsError:
+            logger.debug(f"Container '{self.resource_name}' already exists. Skipping creation.")
+        except Exception as container_creation_error:
+            logger.error(f"Unexpected error when creating container '{self.resource_name}': {container_creation_error}", exc_info=True)
+            raise # Rzuć ponownie inne, nieoczekiwane błędy tworzenia kontenera
+        # --- KONIEC ZMIANY ---
 
         try:
-            # --- ZMIANA TUTAJ: Ręczna obsługa tworzenia kontenera i istniejącego zasobu ---
-            try:
-                await self.client.create_container()
-                logger.info(f"Container '{self.resource_name}' created successfully.")
-            except ResourceExistsError:
-                logger.debug(f"Container '{self.resource_name}' already exists. Skipping creation.")
-            except Exception as container_creation_error:
-                logger.error(f"Unexpected error when creating container '{self.resource_name}': {container_creation_error}", exc_info=True)
-                raise # Rzuć ponownie inne, nieoczekiwane błędy tworzenia kontenera
-            # --- KONIEC ZMIANY ---
+            folder_path = "/".join(file_info.full_path_in_container.split("/")[:-1]) + "/"
+            if await self.blob_with_same_payload_hash_exists(folder_path, file_info.payload_hash):
+                logger.info(f"File with payload_hash {file_info.payload_hash} already exists in {folder_path}. Skipping upload.")
+                return 0
 
+            blob_name = file_info.full_path_in_container
             blob_client = self.client.get_blob_client(blob_name)
             
             # --- ZMIANA TUTAJ: Usuwamy parametr 'tags' aby uniknąć błędu "FeatureNotYetSupportedForHierarchicalNamespaceAccounts" ---
@@ -67,10 +73,14 @@ class BlobStorageManager(AzureClientManagerBase[BlobServiceClient, ContainerClie
             # --- KONIEC ZMIANY ---
             
             logger.info(f"Data uploaded successfully to {self.resource_name}/{blob_name}")
-            return f"{self.resource_name}/{blob_name}"
+            
+            return len(file_content_bytes)
         except Exception as e:
-            logger.error(f"Error uploading blob '{blob_name}': {e}", exc_info=True)
-            raise 
+            logger.error(f"Failed to upload file to {file_info.full_path_in_container}: {e}", exc_info=True)
+            raise
+
+    
+
 
     async def download_blob(self, blob_path: str, decode_as: Union[None, Literal['text'], Literal['json']] = None) -> Any:
         """

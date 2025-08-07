@@ -1,12 +1,12 @@
 # src/common/context/layer_runtime_context.py
 
 from pyspark.sql import SparkSession
-from src.common.contexts.base_layer_context import BaseLayerContext
+from src.common.contexts.layer_context import LayerContext
 from src.common.enums.etl_layers import ETLLayer
 from src.common.enums.env import Env
 from typing import TypeVar, Generic, Any, Dict
 
-LayerContextType = TypeVar("LayerContextType", bound=BaseLayerContext)
+LayerContextType = TypeVar("LayerContextType", bound=LayerContext)
 
 class LayerRuntimeContext(Generic[LayerContextType]):
     """
@@ -17,8 +17,8 @@ class LayerRuntimeContext(Generic[LayerContextType]):
     def __init__(self, spark: SparkSession, layer_context: LayerContextType):
         if not isinstance(spark, SparkSession):
             raise TypeError("SparkSession must be provided to LayerRuntimeContext.")
-        if not isinstance(layer_context, BaseLayerContext):
-            raise TypeError("Layer context must be an instance of BaseLayerContext.")
+        if not isinstance(layer_context, LayerContext):
+            raise TypeError("Layer context must be an instance of LayerContext.")
         
         self._spark = spark
         self._layer_context = layer_context

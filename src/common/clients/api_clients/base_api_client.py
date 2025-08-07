@@ -5,7 +5,8 @@ import logging
 from typing import Dict, Any, List, AsyncGenerator
 import httpx
 
-from src.common.models.api_result import ApiResult
+from src.common.contexts.layer_context import LayerContext
+from src.common.models.raw_data import RawData
 
 logger = logging.getLogger(__name__)
 
@@ -37,10 +38,8 @@ class ApiClient(ABC):
 
 
 
+
+
     @abstractmethod
-    async def fetch_all(self, payload: Dict[str, Any]) -> List[ApiResult]:
-        """
-        Główna metoda publiczna: zwraca generator wszystkich rekordów z API,
-        obsługując paginację wewnętrznie, jeśli to konieczne dla danego API.
-        """
-        pass
+    async def fetch_all(self, context: LayerContext) -> List[RawData]:
+        raise NotImplementedError

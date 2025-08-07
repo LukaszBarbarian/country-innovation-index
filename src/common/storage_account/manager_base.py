@@ -66,6 +66,9 @@ class AzureClientManagerBase(ABC, Generic[TServiceClient, TClient]):
             try:
                 credential = DefaultAzureCredential()
                 account_url = f"https://{storage_account_name}{self._base_url_suffix}"
+                self._account_url = account_url
+
+
                 self._service_client = self._create_service_client_from_identity(account_url, credential)
                 logger.info(f"Połączenie za pomocą Azure Identity dla konta {storage_account_name} udane.")
             except Exception as e:
@@ -85,16 +88,27 @@ class AzureClientManagerBase(ABC, Generic[TServiceClient, TClient]):
 
     @property
     def service_client(self) -> TServiceClient:
-        """Zwraca instancję ServiceClient."""
         if not self._service_client:
             logger.warning("ServiceClient był pusty, próba ponownej inicjalizacji.")
             self._initialize_clients()
+        assert self._service_client is not None, "ServiceClient powinien być zainicjalizowany"
         return self._service_client
+
 
     @property
     def client(self) -> TClient:
-        """Zwraca instancję klienta dla przypisanego zasobu (kontenera/kolejki)."""
         if not self._client:
             logger.warning("Client był pusty, próba ponownej inicjalizacji.")
             self._initialize_clients()
+        assert self._client is not None, "Client powinien być zainicjalizowany"
         return self._client
+    
+
+
+    @property
+    def account_url(self) -> str:
+        return self._account_url
+    
+    @property
+    def container_name(self) -> str:
+        return self._resource_name

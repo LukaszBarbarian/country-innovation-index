@@ -1,11 +1,11 @@
-from dataclasses import dataclass
-from typing import Any, Union
+from dataclasses import dataclass, field
+from typing import Any, Dict
 from src.common.enums.file_format import FileFormat
 
 @dataclass
 class ProcessedResult:
     data: Any
     format: FileFormat
-    metadata: dict = None
+    metadata: Dict[str, Any] = field(default_factory=dict)
     blob_name: str = ""
-
+    skip_upload: bool = False

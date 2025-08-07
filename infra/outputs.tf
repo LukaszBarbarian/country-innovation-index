@@ -58,3 +58,9 @@ output "gold_container_name" {
   description = "The name of the Gold layer container."
   value       = azurerm_storage_container.container_gold.name
 }
+
+
+output "manual_container_name" {
+  description = "The name of the Manual layer container."
+  value       = azurerm_storage_container.container_manual.name
+}

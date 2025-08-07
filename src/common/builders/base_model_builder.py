@@ -6,12 +6,12 @@ from src.common.readers.base_data_reader import BaseDataReader
 from src.common.factories.data_reader_factory import DataReaderFactory
 from src.common.enums.domain_source import DomainSource
 from src.common.models.base_model import BaseModel
-from src.common.contexts.base_layer_context import BaseLayerContext
+from src.common.contexts.layer_context import LayerContext
 
 
 class BaseModelBuilder(ABC):
     @inject
-    def __init__(self, spark: SparkSession, injector: Injector, context: BaseLayerContext):
+    def __init__(self, spark: SparkSession, injector: Injector, context: LayerContext):
         self._spark = spark
         self._injector = injector
         self._context = context

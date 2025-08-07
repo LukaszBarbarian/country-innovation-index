@@ -47,3 +47,9 @@ resource "azurerm_storage_container" "container_gold" {
   storage_account_name  = azurerm_storage_account.sadatalake.name
   container_access_type = "private"
 }
+
+resource "azurerm_storage_container" "container_manual" {
+  name                  = "manual"
+  storage_account_name  = azurerm_storage_account.sadatalake.name
+  container_access_type = "private" # Domyślnie prywatny
+}

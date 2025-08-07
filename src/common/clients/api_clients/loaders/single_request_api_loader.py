@@ -1,6 +1,6 @@
 from typing import Callable, Dict, Any, List
 from src.common.api_clients.base_api_loader import ApiLoader
-from src.common.models.api_result import ApiLoaderResult
+from src.common.models.raw_data import ApiLoaderResult
 import httpx
 import logging
 
