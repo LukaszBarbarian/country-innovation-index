@@ -130,7 +130,8 @@
 						"parameters": {
 							"p_layer": "silver"
 						}
-					}
+					},
+					"firstRowOnly": false
 				}
 			},
 			{
@@ -160,7 +161,11 @@
 							"type": "Expression"
 						},
 						"p_payload": {
-							"value": "@json(concat(\n    activity('bronze_pipeline').output,\n    ', \"silver_config\": ',\n    string(activity('load-silver-config').output.firstRow.config_json)\n))",
+							"value": "@activity('bronze_pipeline').output",
+							"type": "Expression"
+						},
+						"p_config": {
+							"value": "@activity('load-silver-config').output",
 							"type": "Expression"
 						}
 					}
