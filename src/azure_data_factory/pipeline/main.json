@@ -7,7 +7,7 @@
 				"type": "ExecutePipeline",
 				"dependsOn": [
 					{
-						"activity": "load-bronze-payloads",
+						"activity": "load-bronze-config",
 						"dependencyConditions": [
 							"Succeeded"
 						]
@@ -28,8 +28,8 @@
 							"value": "@variables('correlation_id')",
 							"type": "Expression"
 						},
-						"p_bronze_payload": {
-							"value": "@activity('load-bronze-payloads').output.value",
+						"p_payload": {
+							"value": "@activity('load-bronze-config').output.value",
 							"type": "Expression"
 						}
 					}
@@ -53,7 +53,7 @@
 				}
 			},
 			{
-				"name": "load-bronze-payloads",
+				"name": "load-bronze-config",
 				"type": "Lookup",
 				"dependsOn": [
 					{
@@ -84,10 +84,86 @@
 						}
 					},
 					"dataset": {
-						"referenceName": "dev_pipeline_payload",
-						"type": "DatasetReference"
+						"referenceName": "dev_load_config",
+						"type": "DatasetReference",
+						"parameters": {
+							"p_layer": "bronze"
+						}
 					},
 					"firstRowOnly": false
+				}
+			},
+			{
+				"name": "load-silver-config",
+				"type": "Lookup",
+				"dependsOn": [
+					{
+						"activity": "bronze_pipeline",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "JsonSource",
+						"storeSettings": {
+							"type": "AzureBlobStorageReadSettings",
+							"recursive": true,
+							"enablePartitionDiscovery": false
+						},
+						"formatSettings": {
+							"type": "JsonReadSettings"
+						}
+					},
+					"dataset": {
+						"referenceName": "dev_load_config",
+						"type": "DatasetReference",
+						"parameters": {
+							"p_layer": "silver"
+						}
+					}
+				}
+			},
+			{
+				"name": "silver_pipeline",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "load-silver-config",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "silver_pipeline",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true,
+					"parameters": {
+						"p_correlation_id": {
+							"value": "@variables('correlation_id')",
+							"type": "Expression"
+						},
+						"p_payload": {
+							"value": "@json(concat(\n    activity('bronze_pipeline').output,\n    ', \"silver_config\": ',\n    string(activity('load-silver-config').output.firstRow.config_json)\n))",
+							"type": "Expression"
+						}
+					}
 				}
 			}
 		],
