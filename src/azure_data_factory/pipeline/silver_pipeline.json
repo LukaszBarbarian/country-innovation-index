@@ -1,0 +1,32 @@
+{
+	"name": "silver_pipeline",
+	"properties": {
+		"activities": [
+			{
+				"name": "foreach-transformation",
+				"type": "ForEach",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@pipeline().parameters.p_payload",
+						"type": "Expression"
+					}
+				}
+			}
+		],
+		"parameters": {
+			"p_correlation_id": {
+				"type": "string"
+			},
+			"p_payload": {
+				"type": "array"
+			},
+			"p_env": {
+				"type": "string",
+				"defaultValue": "dev"
+			}
+		},
+		"annotations": []
+	}
+}
