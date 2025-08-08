@@ -24,5 +24,6 @@ class StaticFileIngestionStrategy(BaseIngestionStrategy):
         return self.create_result(
             status="COMPLETED",
             message="Static file path passed through to the next layer.",
+            source_response_status_code=200,
             output_paths=all_output_paths
         )

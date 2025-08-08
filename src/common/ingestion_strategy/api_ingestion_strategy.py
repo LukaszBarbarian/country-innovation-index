@@ -75,7 +75,7 @@ class ApiIngestionStrategy(BaseIngestionStrategy):
                 return self.create_result(
                     status="SKIPPED",
                     message="No new files uploaded.",
-                    source_response_status_code=source_response_status_code
+                    source_response_status_code=200
                 )
             else:
                 message = f"API data successfully processed and stored. Uploaded {len(all_output_paths)} files."
@@ -83,7 +83,7 @@ class ApiIngestionStrategy(BaseIngestionStrategy):
                     status="COMPLETED",
                     message=message,
                     output_paths=all_output_paths,
-                    source_response_status_code=source_response_status_code
+                    source_response_status_code=200
                 )
         
         except Exception as e:
