@@ -2,19 +2,25 @@
 from pyspark.sql import SparkSession
 from abc import ABC, abstractmethod
 from injector import inject, Injector
+from src.common.config.config_manager import ConfigManager
 from src.common.readers.base_data_reader import BaseDataReader
 from src.common.factories.data_reader_factory import DataReaderFactory
 from src.common.enums.domain_source import DomainSource
 from src.common.models.base_model import BaseModel
-from src.common.contexts.layer_context import LayerContext
+from src.common.contexts.base_layer_context import BaseLayerContext
 
 
 class BaseModelBuilder(ABC):
     @inject
-    def __init__(self, spark: SparkSession, injector: Injector, context: LayerContext):
+    def __init__(self, spark: SparkSession, 
+                 injector: Injector, 
+                 context: BaseLayerContext,
+                 config: ConfigManager):
+        
         self._spark = spark
         self._injector = injector
         self._context = context
+        self._config = config
 
     def get_reader(self, domain_source: DomainSource) -> BaseDataReader:
         reader_class = DataReaderFactory.get_class(domain_source)

@@ -5,7 +5,7 @@ import hashlib
 from typing import Dict, Any, List, cast
 from xml import dom
 
-from src.common.contexts.layer_context import LayerContext
+from src.common.contexts.base_layer_context import BaseLayerContext
 from src.common.storage_file_builder.base_storage_file_builder import BaseStorageFileBuilder
 from src.common.models.file_info import FileInfo
 from src.common.models.processed_result import ProcessedResult
@@ -15,7 +15,7 @@ class DefaultStorageFileBuilder(BaseStorageFileBuilder):
 
     def build_file_output(self, 
                           processed_records_results: ProcessedResult, 
-                          context: LayerContext, 
+                          context: BaseLayerContext, 
                           container_name: str) -> Dict[str, Any]:
 
         # 1. Dane do zapisania
@@ -25,7 +25,7 @@ class DefaultStorageFileBuilder(BaseStorageFileBuilder):
         file_size_bytes = len(file_content_bytes)
 
         # 2. Oblicz hash payloadu (jeśli obecny)
-        payload_hash = self._compute_payload_hash(context.source_config_payload)
+        payload_hash = self._compute_payload_hash(context.payload)
 
         # 3. Generuj ścieżkę i nazwę pliku z hashem
         full_path_in_container, file_name = self._generate_blob_path_and_name(dataset_name=context.dataset_name, 

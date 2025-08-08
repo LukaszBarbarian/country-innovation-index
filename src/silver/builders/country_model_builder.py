@@ -23,16 +23,18 @@ class CountryModelBuilder(BaseModelBuilder):
         5. Wykonuje unifikację i deduplikację, tworząc finalny model.
         """
 
-        country_reader = self.get_reader(DomainSource.NOBELPRIZE)
-        country_data = country_reader.load_data()
-        
-        return CountryModel(None)
+        if self._context.domain_source == DomainSource.NOBELPRIZE:
+            country_reader = self.get_reader(DomainSource.NOBELPRIZE)
+            country_data = country_reader.load_data()
+
+                    
+        return CountryModel(self._spark.createDataFrame([]))
     
     async def normalize(self, model):
-        return await super().normalize(model)
+        return model
     
     async def enrich(self, model):
-        return await super().enrich(model)
+        return model
     
     async def transform(self, model):
-        return await super().transform(model)
+        return model

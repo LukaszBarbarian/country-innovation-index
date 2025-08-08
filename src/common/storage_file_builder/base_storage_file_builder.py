@@ -5,7 +5,7 @@ import json
 from typing import Dict, Any, List
 import uuid
 
-from src.common.contexts.layer_context import LayerContext
+from src.common.contexts.base_layer_context import BaseLayerContext
 from src.common.models.processed_result import ProcessedResult
 
 
@@ -13,7 +13,7 @@ class BaseStorageFileBuilder(ABC):
     @abstractmethod
     def build_file_output(self, 
                           processed_records_results: ProcessedResult, 
-                          context: LayerContext, 
+                          context: BaseLayerContext, 
                           container_name: str) -> Dict[str, Any]:
         """
         Przyjmuje listę obiektów ProcessedResult i kontekst ingestii.

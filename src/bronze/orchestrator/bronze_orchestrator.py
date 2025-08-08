@@ -4,7 +4,7 @@ import logging
 
 from pyspark.sql import SparkSession
 from src.common.config.config_manager import ConfigManager
-from src.common.contexts.layer_context import LayerContext
+from src.common.contexts.base_layer_context import BaseLayerContext
 from src.common.enums.etl_layers import ETLLayer
 from src.common.factories.ingestion_strategy_factory import IngestionStrategyFactory
 from src.common.models.orchestrator_result import OrchestratorResult
@@ -23,7 +23,7 @@ class BronzeOrchestrator(BaseOrchestrator):
     Główny orkiestrator dla warstwy Bronze. Koordynuje proces pozyskiwania danych
     przy użyciu odpowiedniej strategii (API, plik statyczny itd.).
     """
-    async def run(self, context: LayerContext) -> OrchestratorResult:
+    async def run(self, context: BaseLayerContext) -> OrchestratorResult:
         try:
             # 1. Wybór odpowiedniej strategii na podstawie typu źródła danych z kontekstu.
             ingestion_strategy = IngestionStrategyFactory.get_instance(
@@ -51,7 +51,7 @@ class BronzeOrchestrator(BaseOrchestrator):
 
 
 
-    def _create_final_result(self, context: LayerContext, ingestion_result: IngestionResult) -> OrchestratorResult:
+    def _create_final_result(self, context: BaseLayerContext, ingestion_result: IngestionResult) -> OrchestratorResult:
         """
         Metoda pomocnicza do tworzenia ostatecznego obiektu OrchestratorResult.
         """

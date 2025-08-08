@@ -1,6 +1,7 @@
 
 import logging
-from src.common.contexts.layer_context import LayerContext
+from src.common.config.config_manager import ConfigManager
+from src.common.contexts.base_layer_context import BaseLayerContext
 from src.common.enums.etl_layers import ETLLayer
 from src.common.registers.orchestrator_registry import OrchestratorRegistry
 from src.common.storage_account.blob_storage_manager import BlobStorageManager
@@ -22,10 +23,8 @@ logger = logging.getLogger(__name__)
 
 @OrchestratorRegistry.register(ETLLayer.BRONZE)
 class SilverOrchestrator(BaseOrchestrator):
-    def __init__(self, config):
-        super().__init__(config)
          
-    async def run(self, context: LayerContext) -> OrchestratorResult:
+    async def run(self, context: BaseLayerContext) -> OrchestratorResult:
         logger.info(f"Starting transformation CorrelationId: {context.correlation_id}")
         storage_manager = BlobStorageManager(context.etl_layer.value)
 
@@ -35,7 +34,7 @@ class SilverOrchestrator(BaseOrchestrator):
             if not self.spark:
                 raise
 
-            di_injector = self.init_di(context, self.spark)
+            di_injector = self.init_di(context, self.spark, self.config)
 
             for model_type in ModelType:
                 builder_class = ModelBuilderFactory.get_class(model_type)
@@ -60,7 +59,7 @@ class SilverOrchestrator(BaseOrchestrator):
 
     
 
-    def init_di(self, context: LayerContext, spark: SparkSession) -> Injector:
-        return Injector(SilverModule(context, spark))
+    def init_di(self, context: BaseLayerContext, spark: SparkSession, config: ConfigManager) -> Injector:
+        return Injector(SilverModule(context, spark, config))
         
         

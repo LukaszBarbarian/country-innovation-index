@@ -1,5 +1,5 @@
 from typing import Any
-from src.common.contexts.layer_context import LayerContext
+from src.common.contexts.base_layer_context import BaseLayerContext
 from src.common.enums.domain_source import DomainSource
 from src.common.enums.file_format import FileFormat
 from src.common.models.processed_result import ProcessedResult
@@ -12,5 +12,5 @@ class PatentsProcessor(BaseDataProcessor):
     def __init__(self):
         super().__init__()
 
-    def process(self, raw_data: Any, context: LayerContext) -> ProcessedResult:
+    def process(self, raw_data: Any, context: BaseLayerContext) -> ProcessedResult:
         return ProcessedResult(data=raw_data, format=FileFormat.JSON, skip_upload=True)

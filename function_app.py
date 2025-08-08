@@ -6,7 +6,7 @@ import os
 import uuid
 import traceback
 from typing import Optional, Dict
-from src.common.contexts.payload_parser import PayloadParser
+from src.bronze.contexts.bronze_parser import BronzePayloadParser
 from src.common.enums.env import Env
 from src.common.factories.orchestrator_factory import OrchestratorFactory
 from src.common.models.orchestrator_result import OrchestratorResult
@@ -49,7 +49,7 @@ async def ingest_now(req: func.HttpRequest) -> func.HttpResponse:
 
     try:
         try:
-            context = PayloadParser().parse(payload)
+            context = BronzePayloadParser().parse(payload)
             
             correlation_id = context.correlation_id 
             queue_message_id = context.queue_message_id 

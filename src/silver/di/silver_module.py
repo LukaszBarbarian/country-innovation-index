@@ -2,24 +2,24 @@
 
 from injector import Module, Binder, singleton, provider
 from pyspark.sql import SparkSession
-from src.common.utils.cache import Cache
-from src.common.contexts.layer_context import LayerContext
+from src.common.config.config_manager import ConfigManager
+from src.common.contexts.base_layer_context import BaseLayerContext
 
 from src.common.di.di_module import DIModule
 from src.common.di.builders_module import BuildersModule
 from src.common.di.readers_module import ReadersModule
 
 class SilverModule(DIModule):
-    def __init__(self, context: LayerContext, spark_session: SparkSession):
-        super().__init__(context)
+    def __init__(self, context: BaseLayerContext, spark_session: SparkSession, config: ConfigManager):
+        super().__init__(context, config)
         self._spark_session = spark_session
 
 
     def configure(self, binder: Binder):
-        binder.install(BuildersModule(self._context))
-        binder.install(ReadersModule(self._context))
+        binder.install(BuildersModule(self._context, self._config))
+        binder.install(ReadersModule(self._context, self._config))
         
-        binder.bind(LayerContext, to=self.provide_context, scope=singleton)
+        binder.bind(BaseLayerContext, to=self.provide_context, scope=singleton)
 
 
     @singleton
@@ -29,5 +29,5 @@ class SilverModule(DIModule):
     
     @singleton
     @provider
-    def provide_context(self) -> LayerContext:
+    def provide_context(self) -> BaseLayerContext:
         return self._context

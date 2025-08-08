@@ -5,7 +5,7 @@ import traceback
 from typing import List, Optional
 
 from src.common.config.config_manager import ConfigManager
-from src.common.contexts.layer_context import LayerContext
+from src.common.contexts.base_layer_context import BaseLayerContext
 from src.common.enums.domain_source_type import DomainSourceType
 from src.common.factories.api_client_factory import ApiClientFactory
 from src.common.factories.data_processor_factory import DataProcessorFactory
@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 @IngestionStrategyRegistry.register(DomainSourceType.API)
 class ApiIngestionStrategy(BaseIngestionStrategy):
-    async def ingest(self, context: LayerContext) -> IngestionResult:
+    async def ingest(self, context: BaseLayerContext) -> IngestionResult:
         all_output_paths: List[str] = []
         source_response_status_code: Optional[int] = None
         

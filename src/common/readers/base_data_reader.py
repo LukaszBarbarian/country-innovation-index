@@ -2,8 +2,9 @@
 from abc import ABC, abstractmethod
 from pyspark.sql import DataFrame
 from pyspark.sql.session import SparkSession
+from src.common.config.config_manager import ConfigManager
 from src.common.enums.domain_source import DomainSource
-from src.common.contexts.layer_context import LayerContext
+from src.common.contexts.base_layer_context import BaseLayerContext
 from injector import inject
 
 class BaseDataReader(ABC):
@@ -12,9 +13,10 @@ class BaseDataReader(ABC):
     Zapewnia automatyczne zarządzanie cache'owaniem danych.
     """
     @inject
-    def __init__(self, spark: SparkSession, context: LayerContext):
+    def __init__(self, spark: SparkSession, context: BaseLayerContext, config: ConfigManager):
         self._spark = spark
         self._context = context
+        self._config = config
 
     def set_domain_source(self, domain_source: DomainSource):
         self._domain_source = domain_source
@@ -26,13 +28,13 @@ class BaseDataReader(ABC):
         """
         cache_key = self._domain_source.name
 
-        if self._context.cache.exists(cache_key):
+        if self._context._cache.exists(cache_key):
             print(f"[{self._domain_source.name}] Pobieram dane z cache'u.")
-            return self._context.cache.get(cache_key)
+            return self._context._cache.get(cache_key)
         
         print(f"[{self._domain_source.name}] Ładuję dane z pliku i zapisuję w cache'u.")
         df = self._load_from_source()
-        self._context.cache.set(cache_key, df)
+        self._context._cache.set(cache_key, df)
         return df
 
     @abstractmethod

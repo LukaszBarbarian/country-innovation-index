@@ -5,7 +5,7 @@ import logging
 from typing import Dict, Any, List, AsyncGenerator
 import httpx
 
-from src.common.contexts.layer_context import LayerContext
+from src.common.contexts.base_layer_context import BaseLayerContext
 from src.common.models.raw_data import RawData
 
 logger = logging.getLogger(__name__)
@@ -41,5 +41,5 @@ class ApiClient(ABC):
 
 
     @abstractmethod
-    async def fetch_all(self, context: LayerContext) -> List[RawData]:
+    async def fetch_all(self, context: BaseLayerContext) -> List[RawData]:
         raise NotImplementedError

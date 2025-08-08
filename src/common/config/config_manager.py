@@ -1,21 +1,29 @@
-# src/common/config_manager.py
 import os
 import json
 import logging
-from typing import Dict, Optional
+from typing import Any, Dict, Optional, List, cast
 from pathlib import Path
+from dataclasses import dataclass, field
+
+from src.common.config.references_config_parser import ReferenceConfig
 
 logger = logging.getLogger(__name__)
 
-class ConfigManager:
-    _instance = None
-    _config_cache: Dict[str, str] = {}
-    _local_settings_loaded = False
+# Data classes for reference configuration
 
-    def __new__(cls):
+
+# Main ConfigManager class, now with a constructor that takes the pre-parsed object
+class ConfigManager:
+    _instance: Optional['ConfigManager'] = None
+    _config_cache: Dict[str, str] = {}
+    _local_settings_loaded: bool = False
+    _reference_config: Optional['ReferenceConfig'] = None
+
+    def __new__(cls, reference_config: Optional['ReferenceConfig'] = None):
         if cls._instance is None:
             cls._instance = super(ConfigManager, cls).__new__(cls)
             cls._instance._load_config()
+            cls._instance._reference_config = reference_config
         return cls._instance
 
     def _load_config(self):
@@ -25,10 +33,9 @@ class ConfigManager:
 
     def _try_load_from_local_settings(self, key: str, settings_path: Optional[str] = None):
         if self._local_settings_loaded:
-            return  # nie próbuj ładować drugi raz
+            return
 
         if settings_path is None:
-            # domyślnie 3 poziomy wyżej niż aktualny katalog roboczy
             project_root = Path.cwd()
             for parent in [project_root] + list(project_root.parents):
                 potential = parent / "local.settings.json"
@@ -47,7 +54,7 @@ class ConfigManager:
                     if key_upper not in self._config_cache:
                         self._config_cache[key_upper] = v
                 self._local_settings_loaded = True
-                logger.info(f"Loaded settings from {settings_path}")
+            logger.info(f"Loaded settings from {settings_path}")
         except Exception as e:
             logger.warning(f"Failed to load local.settings.json: {e}")
 
@@ -65,3 +72,9 @@ class ConfigManager:
             raise ValueError(f"Configuration setting '{key}' not found.")
 
         return value
+
+    @property
+    def reference_config(self) -> 'ReferenceConfig':
+        if self._reference_config is None:
+            raise ValueError("Reference configuration has not been set.")
+        return self._reference_config

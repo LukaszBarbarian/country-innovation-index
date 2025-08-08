@@ -2,7 +2,7 @@
 from abc import ABC, abstractmethod
 from dataclasses import field
 from typing import Any, Dict, List, Optional, overload
-from src.common.contexts.layer_context import LayerContext
+from src.common.contexts.base_layer_context import BaseLayerContext
 from src.common.models.ingestion_result import IngestionResult
 from src.common.models.orchestrator_result import OrchestratorResult
 from src.common.config.config_manager import ConfigManager
@@ -17,7 +17,7 @@ class BaseOrchestrator(ABC):
         
 
     @abstractmethod
-    async def run(self, context: LayerContext) -> OrchestratorResult:
+    async def run(self, context: BaseLayerContext) -> OrchestratorResult:
         pass
     
 
@@ -29,7 +29,7 @@ class BaseOrchestrator(ABC):
 
     
 
-    def _create_final_result_for_error(self, context: LayerContext, error: Exception) -> OrchestratorResult:
+    def _create_final_result_for_error(self, context: BaseLayerContext, error: Exception) -> OrchestratorResult:
         """
         Metoda pomocnicza do tworzenia wyniku w przypadku nieoczekiwanego błędu.
         """

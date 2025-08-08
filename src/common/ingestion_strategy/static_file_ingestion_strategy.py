@@ -1,6 +1,6 @@
 import logging
 from typing import List
-from src.common.contexts.layer_context import LayerContext
+from src.common.contexts.base_layer_context import BaseLayerContext
 from src.common.enums.domain_source_type import DomainSourceType
 from src.common.ingestion_strategy.base_ingestion_strategy import BaseIngestionStrategy
 from src.common.models.ingestion_result import IngestionResult
@@ -10,8 +10,8 @@ logger = logging.getLogger(__name__)
 
 @IngestionStrategyRegistry.register(DomainSourceType.STATIC_FILE)
 class StaticFileIngestionStrategy(BaseIngestionStrategy):
-    async def ingest(self, context: LayerContext) -> IngestionResult:
-        if not context.file_path:
+    async def ingest(self, context: BaseLayerContext) -> IngestionResult:
+        if not context.file_paths:
             logger.error(f"Missing file_path in context for STATIC_FILE type. Correlation ID: {context.correlation_id}")
             return self.create_result(
                 status="FAILED",
@@ -19,11 +19,9 @@ class StaticFileIngestionStrategy(BaseIngestionStrategy):
                 error_details={"error": "file_path is required for STATIC_FILE type"}
             )
         
-        all_output_paths: List[str] = [context.file_path]
-        
         return self.create_result(
             status="COMPLETED",
             message="Static file path passed through to the next layer.",
             source_response_status_code=200,
-            output_paths=all_output_paths
+            output_paths=context.file_paths
         )

@@ -3,15 +3,16 @@ import sys
 import asyncio
 import findspark
 
+from src.common.config.references_config_parser import ReferenceConfigParser
 from src.common.enums.etl_layers import ETLLayer
 from src.common.factories.orchestrator_factory import OrchestratorFactory
+from src.silver.context.silver_parser import SilverPayloadParser
 
 
 
 sys.path.insert(0, "d:/projects/cv-demo1")
 print("sys.path:", sys.path)
 
-from src.common.contexts.payload_parser import PayloadParser
 import src.silver.init.silver_init 
 from src.common.config.config_manager import ConfigManager
 
@@ -71,14 +72,20 @@ json_string = """
         "env": "dev",
         "etl_layer": "bronze",
         "processing_config_payload": {
-            "status": "COMPLETED",
-            "api_name": "NOBELPRIZE",
-            "dataset_name": "nobelPrizes",
-            "layer_name": "bronze",
-            "message": "API data successfully processed and stored to Bronze.",
-            "api_response_status_code": null,
-            "output_path": "https://demosurdevdatalake4418sa.blob.core.windows.net/bronze/NOBELPRIZE/2025/08/03/nobelPrizes_736984ab-3b21-4c9f-b2dd-7863f1a74389_c237f2d9.json"
-        }
+                "status": "COMPLETED",
+                "correlation_id": "abc-123",
+                "queue_message_id": "xyz-789",
+                "domain_source": "PATENTS",
+                "domain_source_type": "static_file",
+                "dataset_name": "patents",
+                "layer_name": "bronze",
+                "env": "dev",
+                "message": "Static file path passed through to the next layer.",
+                "source_response_status_code": 200,
+                "output_paths": [
+                    "/manual/patents/patents.json"
+                ]
+            }
         }
 """
 
@@ -86,13 +93,28 @@ json_string = """
 payload = json.loads(json_string)
 
 
+json_string = """
+{
+  "manual_data_paths": [
+    {
+      "domain_source": "PATENTS",
+      "dataset_name": "patents",
+      "file_path": "/manual/patents/patents.json"
+    }
+  ],
+  "references": {
+    "country_codes": "/references/country_codes.csv"
+  }
+}
+"""
 
+config = json.loads(json_string)
 
+reference = ReferenceConfigParser().parse(config)
+context = SilverPayloadParser().parse(payload)
 
-payload_parser = PayloadParser()
-context = payload_parser.parse(payload)
-config = ConfigManager()
-orchestrator = OrchestratorFactory.get_instance(ETLLayer.SILVER, spark=spark)
+config = ConfigManager(reference)
+orchestrator = OrchestratorFactory.get_instance(ETLLayer.SILVER, spark=spark, config=config)
 result = asyncio.run(orchestrator.run(context))
 
 

@@ -3,7 +3,7 @@
 from abc import ABC, abstractmethod
 from typing import Optional, Any, Dict, List
 from src.common.config.config_manager import ConfigManager
-from src.common.contexts.layer_context import LayerContext
+from src.common.contexts.base_layer_context import BaseLayerContext
 from src.common.models.ingestion_result import IngestionResult
 
 class BaseIngestionStrategy(ABC):
@@ -15,7 +15,7 @@ class BaseIngestionStrategy(ABC):
         self.config = config
 
     @abstractmethod
-    async def ingest(self, context: LayerContext) -> IngestionResult:
+    async def ingest(self, context: BaseLayerContext) -> IngestionResult:
         """
         Abstrakcyjna metoda, która wykonuje operację pozyskiwania danych.
         
