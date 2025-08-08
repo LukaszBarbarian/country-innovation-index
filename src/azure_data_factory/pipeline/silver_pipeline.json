@@ -3,34 +3,20 @@
 	"properties": {
 		"activities": [
 			{
-				"name": "foreach-transformation",
-				"type": "ForEach",
+				"name": "Set variable1",
+				"type": "SetVariable",
 				"dependsOn": [],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
 				"userProperties": [],
 				"typeProperties": {
-					"items": {
-						"value": "@pipeline().parameters.p_payload",
+					"variableName": "test",
+					"value": {
+						"value": "@string(pipeline().parameters.p_config)",
 						"type": "Expression"
-					},
-					"activities": [
-						{
-							"name": "Set variable1",
-							"type": "SetVariable",
-							"dependsOn": [],
-							"policy": {
-								"secureOutput": false,
-								"secureInput": false
-							},
-							"userProperties": [],
-							"typeProperties": {
-								"variableName": "test",
-								"value": {
-									"value": "@item()",
-									"type": "Expression"
-								}
-							}
-						}
-					]
+					}
 				}
 			}
 		],
@@ -44,6 +30,9 @@
 			"p_env": {
 				"type": "string",
 				"defaultValue": "dev"
+			},
+			"p_config": {
+				"type": "string"
 			}
 		},
 		"variables": {
