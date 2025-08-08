@@ -1,6 +1,9 @@
 # src/bronze/orchestrators/bronze_orchestrator.py
 
 import logging
+
+from pyspark.sql import SparkSession
+from src.common.config.config_manager import ConfigManager
 from src.common.contexts.layer_context import LayerContext
 from src.common.enums.etl_layers import ETLLayer
 from src.common.factories.ingestion_strategy_factory import IngestionStrategyFactory
@@ -14,6 +17,8 @@ logger = logging.getLogger(__name__)
 
 @OrchestratorRegistry.register(ETLLayer.BRONZE)
 class BronzeOrchestrator(BaseOrchestrator):
+    def __init__(self, config: ConfigManager):
+        super().__init__(config)
     """
     Główny orkiestrator dla warstwy Bronze. Koordynuje proces pozyskiwania danych
     przy użyciu odpowiedniej strategii (API, plik statyczny itd.).
@@ -41,4 +46,26 @@ class BronzeOrchestrator(BaseOrchestrator):
             logger.error(f"Bronze orchestration failed with unhandled exception: {e}")
             return self._create_final_result_for_error(context, e)
 
-    
+
+
+
+
+
+    def _create_final_result(self, context: LayerContext, ingestion_result: IngestionResult) -> OrchestratorResult:
+        """
+        Metoda pomocnicza do tworzenia ostatecznego obiektu OrchestratorResult.
+        """
+        return OrchestratorResult(
+            status=ingestion_result.status,
+            correlation_id=context.correlation_id,
+            queue_message_id=context.queue_message_id,
+            layer_name=context.etl_layer,
+            env=context.env,
+            message=ingestion_result.message,
+            domain_source=context.domain_source,
+            domain_source_type=context.domain_source_type,
+            dataset_name=context.dataset_name,
+            output_paths=ingestion_result.output_paths,
+            source_response_status_code=ingestion_result.source_response_status_code,
+            error_details=ingestion_result.error_details
+        )

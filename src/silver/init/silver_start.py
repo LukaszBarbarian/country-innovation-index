@@ -3,10 +3,16 @@ import sys
 import asyncio
 import findspark
 
+from src.common.enums.etl_layers import ETLLayer
+from src.common.factories.orchestrator_factory import OrchestratorFactory
+
+
+
 sys.path.insert(0, "d:/projects/cv-demo1")
 print("sys.path:", sys.path)
 
-
+from src.common.contexts.payload_parser import PayloadParser
+import src.silver.init.silver_init 
 from src.common.config.config_manager import ConfigManager
 
 SPARK_INSTALL_PATH = "C:/spark/spark-3.5.6-bin-hadoop3"
@@ -52,9 +58,6 @@ print("✅ SparkSession gotowa!")
 
 
 
-from src.silver.orchestrators.silver_orchestrator import SilverOrchestrator
-from src.silver.contexts.layer_runtime_context import LayerRuntimeContext
-from src.silver.contexts.silver_payload_parser import SilverPayloadParser
 from src.common.config.config_manager import ConfigManager
 
 
@@ -86,15 +89,11 @@ payload = json.loads(json_string)
 
 
 
-payload_parser = SilverPayloadParser()
+payload_parser = PayloadParser()
 context = payload_parser.parse(payload)
-
-runtime_context = LayerRuntimeContext(spark=spark, layer_context=context)
 config = ConfigManager()
-
-orchestrator = SilverOrchestrator(config)
-
-result = asyncio.run(orchestrator.run(runtime_context))
+orchestrator = OrchestratorFactory.get_instance(ETLLayer.SILVER, spark=spark)
+result = asyncio.run(orchestrator.run(context))
 
 
 

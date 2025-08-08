@@ -18,11 +18,6 @@ class NobelPrizeApiClient(ApiClient):
     def __init__(self, config: ConfigManager):
         super().__init__(config=config, base_url_setting_name="NOBELPRIZE_API_BASE_URL")
 
-    async def __aenter__(self):
-        return self
-
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        await self.client.aclose()
 
     async def fetch_all(self, context: LayerContext) -> List[RawData]:
         dataset_name = context.dataset_name

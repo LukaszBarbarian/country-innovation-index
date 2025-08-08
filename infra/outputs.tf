@@ -64,3 +64,9 @@ output "manual_container_name" {
   description = "The name of the Manual layer container."
   value       = azurerm_storage_container.container_manual.name
 }
+
+
+output "references_container_name" {
+  description = "The name of the Reference layer container."
+  value       = azurerm_storage_container.container_references.name
+}

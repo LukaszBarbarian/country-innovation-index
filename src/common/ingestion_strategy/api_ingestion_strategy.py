@@ -67,7 +67,9 @@ class ApiIngestionStrategy(BaseIngestionStrategy):
                     file_content_bytes=file_content_bytes,
                     file_info=file_info
                 )
-                all_output_paths.append(file_info.full_path_in_container)
+
+                if file_info.file_size_bytes > 0:
+                    all_output_paths.append(file_info.full_path_in_container)
 
             if not all_output_paths:
                 return self.create_result(

@@ -23,7 +23,7 @@ class OrchestratorResult:
 
     @property
     def is_success(self) -> bool:
-        return self.status == "COMPLETED"
+        return self.status in ["COMPLETED", "SKIPPED"]
     
     @property
     def is_failed(self) -> bool:

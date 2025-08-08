@@ -95,7 +95,7 @@ async def ingest_now(req: func.HttpRequest) -> func.HttpResponse:
             "layer_name": result.layer_name.value, 
             "env" : result.env.value,
             "message": result.message,
-            "source_response_status_code": result.source_response_status_code,
+            "source_response_status_code": http_status_code,
             "output_paths": result.output_paths if result.output_paths is not None else []
         }
 
