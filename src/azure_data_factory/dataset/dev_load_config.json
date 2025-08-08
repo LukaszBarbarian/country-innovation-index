@@ -1,17 +1,26 @@
 {
-	"name": "dev_pipeline_payload",
+	"name": "dev_load_config",
 	"properties": {
 		"linkedServiceName": {
 			"referenceName": "azure_blob_storage_linked_service",
 			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"p_layer": {
+				"type": "string"
+			}
 		},
 		"annotations": [],
 		"type": "Json",
 		"typeProperties": {
 			"location": {
 				"type": "AzureBlobStorageLocation",
-				"fileName": "dev.json",
-				"container": "configs"
+				"fileName": "dev.config.json",
+				"folderPath": "config",
+				"container": {
+					"value": "@dataset().p_layer",
+					"type": "Expression"
+				}
 			}
 		},
 		"schema": {
