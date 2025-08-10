@@ -11,7 +11,8 @@
 		"typeProperties": {
 			"url": "@{concat('https://', linkedService().p_storage_queue_account_name, '.queue.core.windows.net/bronze-tasks/messages')}",
 			"enableServerCertificateValidation": true,
-			"authenticationType": "Anonymous"
+			"authenticationType": "ManagedServiceIdentity",
+			"aadResourceId": "https://storage.azure.com/"
 		}
 	}
 }
