@@ -23,6 +23,10 @@
 			"type": "string",
 			"defaultValue": "dev"
 		},
+		"silver-pipeline-trigger_properties_silver_pipeline_parameters_p_correlation_id": {
+			"type": "string",
+			"defaultValue": "@triggerBody().event.data.correlation_id"
+		},
 		"silver-pipeline-trigger_properties_typeProperties_scope": {
 			"type": "string",
 			"defaultValue": "/subscriptions/4f24dcd1-9601-4727-ab67-d97cebce64ca/resourceGroups/demosur-dev-rg/providers/Microsoft.EventGrid/topics/adf-silver-trigger-topic"
@@ -186,7 +190,7 @@
 						"typeProperties": {
 							"variableName": "correlation_id",
 							"value": {
-								"value": "@pipeline().parameters.p_payload.event.data.correlation_id\n",
+								"value": "@pipeline().parameters.p_correlation_id",
 								"type": "Expression"
 							}
 						}
@@ -200,8 +204,8 @@
 						"type": "string",
 						"defaultValue": "dev"
 					},
-					"p_payload": {
-						"type": "object"
+					"p_correlation_id": {
+						"type": "string"
 					}
 				},
 				"variables": {
@@ -313,7 +317,8 @@
 							"type": "PipelineReference"
 						},
 						"parameters": {
-							"p_env": "[parameters('silver-pipeline-trigger_properties_silver_pipeline_parameters_p_env')]"
+							"p_env": "[parameters('silver-pipeline-trigger_properties_silver_pipeline_parameters_p_env')]",
+							"p_correlation_id": "[parameters('silver-pipeline-trigger_properties_silver_pipeline_parameters_p_correlation_id')]"
 						}
 					}
 				],

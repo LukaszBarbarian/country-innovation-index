@@ -23,6 +23,10 @@
 			"type": "string",
 			"defaultValue": "dev"
 		},
+		"silver-pipeline-trigger_properties_silver_pipeline_parameters_p_correlation_id": {
+			"type": "string",
+			"defaultValue": "@triggerBody().event.data.correlation_id"
+		},
 		"silver-pipeline-trigger_properties_typeProperties_scope": {
 			"type": "string",
 			"defaultValue": "/subscriptions/4f24dcd1-9601-4727-ab67-d97cebce64ca/resourceGroups/demosur-dev-rg/providers/Microsoft.EventGrid/topics/adf-silver-trigger-topic"
@@ -65,6 +69,9 @@
 					},
 					"silver-pipeline-trigger_properties_silver_pipeline_parameters_p_env": {
 						"value": "[parameters('silver-pipeline-trigger_properties_silver_pipeline_parameters_p_env')]"
+					},
+					"silver-pipeline-trigger_properties_silver_pipeline_parameters_p_correlation_id": {
+						"value": "[parameters('silver-pipeline-trigger_properties_silver_pipeline_parameters_p_correlation_id')]"
 					},
 					"silver-pipeline-trigger_properties_typeProperties_scope": {
 						"value": "[parameters('silver-pipeline-trigger_properties_typeProperties_scope')]"
