@@ -3,91 +3,79 @@
 	"properties": {
 		"activities": [
 			{
-				"name": "foreach-ingestion",
-				"type": "ForEach",
+				"name": "load-bronze-payload",
+				"type": "Lookup",
 				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
 				"userProperties": [],
 				"typeProperties": {
-					"items": {
-						"value": "@pipeline().parameters.p_payload",
+					"source": {
+						"type": "JsonSource",
+						"storeSettings": {
+							"type": "AzureBlobStorageReadSettings",
+							"recursive": false,
+							"enablePartitionDiscovery": false
+						},
+						"formatSettings": {
+							"type": "JsonReadSettings"
+						}
+					},
+					"dataset": {
+						"referenceName": "dev_load_config",
+						"type": "DatasetReference",
+						"parameters": {
+							"p_layer": "bronze"
+						}
+					},
+					"firstRowOnly": false
+				}
+			},
+			{
+				"name": "send-payload",
+				"type": "AzureFunctionActivity",
+				"dependsOn": [
+					{
+						"activity": "load-bronze-payload",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"functionName": "start_ingestion_http",
+					"body": {
+						"value": "@activity('load-bronze-payload').output",
 						"type": "Expression"
 					},
-					"isSequential": false,
-					"activities": [
-						{
-							"name": "ingestion-now",
-							"type": "AzureFunctionActivity",
-							"dependsOn": [],
-							"policy": {
-								"timeout": "0.12:00:00",
-								"retry": 0,
-								"retryIntervalInSeconds": 30,
-								"secureOutput": false,
-								"secureInput": false
-							},
-							"userProperties": [],
-							"typeProperties": {
-								"functionName": "ingestNow",
-								"body": {
-									"value": "@json(\n    concat(\n        '{',\n            '\"etl_layer\":\"', item().etl_layer, '\",',\n            '\"env\":\"', item().env, '\",',\n            '\"correlation_id\":\"', pipeline().parameters.p_correlation_id, '\",',\n            '\"queue_message_id\":\"', guid(), '\",',\n            '\"source_config_payload\":', string(item().source_config_payload),\n        '}'\n    )\n)\n",
-									"type": "Expression"
-								},
-								"method": "POST"
-							},
-							"linkedServiceName": {
-								"referenceName": "azure_function_linked_service",
-								"type": "LinkedServiceReference"
-							}
-						},
-						{
-							"name": "append-ingestion-response",
-							"type": "AppendVariable",
-							"dependsOn": [
-								{
-									"activity": "ingestion-now",
-									"dependencyConditions": [
-										"Succeeded"
-									]
-								}
-							],
-							"userProperties": [],
-							"typeProperties": {
-								"variableName": "ingest-response-aggregated",
-								"value": {
-									"value": "@json(concat(\n  '{',\n    '\"correlation_id\":\"', activity('ingestion-now').output.correlation_id, '\",',\n    '\"queue_message_id\":\"', activity('ingestion-now').output.queue_message_id, '\",',\n    '\"env\":\"', activity('ingestion-now').output.env, '\",',\n    '\"etl_layer\":\"', variables('pipeline-layer'), '\",',\n    '\"processing_config_payload\":{',\n      '\"status\":\"', activity('ingestion-now').output.status, '\",',\n      '\"api_name\":\"', activity('ingestion-now').output.domain_source, '\",',\n      '\"dataset_name\":\"', activity('ingestion-now').output.dataset_name, '\",',\n      '\"layer_name\":\"', activity('ingestion-now').output.layer_name, '\",',\n      '\"message\":\"', activity('ingestion-now').output.message, '\",',\n      '\"source_response_status_code\":', string(activity('ingestion-now').output.source_response_status_code), ',',\n      '\"output_paths\":', json(string(activity('ingestion-now').output.output_paths)),\n      if(contains(activity('ingestion-now').output, 'error_details'),\n        concat(',\"error_details\":\"', activity('ingestion-now').output.error_details, '\"'),\n        ''\n      ),\n    '}',\n  '}'\n))\n",
-									"type": "Expression"
-								}
-							}
-						}
-					]
+					"method": "POST"
+				},
+				"linkedServiceName": {
+					"referenceName": "azure_function_linked_service",
+					"type": "LinkedServiceReference"
 				}
 			}
 		],
 		"parameters": {
-			"p_correlation_id": {
-				"type": "string"
-			},
 			"p_env": {
 				"type": "string",
 				"defaultValue": "dev"
 			},
-			"p_payload": {
-				"type": "array"
-			}
-		},
-		"variables": {
-			"ingest-response": {
-				"type": "String"
-			},
-			"ingest-response-aggregated": {
-				"type": "Array"
-			},
-			"pipeline-layer": {
-				"type": "String",
-				"defaultValue": "bronze"
-			},
-			"test": {
-				"type": "String"
+			"p_storage_queue_account_name": {
+				"type": "string"
 			}
 		},
 		"annotations": [],

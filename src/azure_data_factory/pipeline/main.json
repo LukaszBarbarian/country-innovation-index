@@ -3,16 +3,9 @@
 	"properties": {
 		"activities": [
 			{
-				"name": "bronze_pipeline",
+				"name": "send_messages",
 				"type": "ExecutePipeline",
-				"dependsOn": [
-					{
-						"activity": "load-bronze-config",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
+				"dependsOn": [],
 				"policy": {
 					"secureInput": false
 				},
@@ -22,153 +15,7 @@
 						"referenceName": "bronze_pipeline",
 						"type": "PipelineReference"
 					},
-					"waitOnCompletion": true,
-					"parameters": {
-						"p_correlation_id": {
-							"value": "@variables('correlation_id')",
-							"type": "Expression"
-						},
-						"p_payload": {
-							"value": "@activity('load-bronze-config').output.value",
-							"type": "Expression"
-						}
-					}
-				}
-			},
-			{
-				"name": "init-correlation-id",
-				"type": "SetVariable",
-				"dependsOn": [],
-				"policy": {
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"variableName": "correlation_id",
-					"value": {
-						"value": "@pipeline().RunId\n",
-						"type": "Expression"
-					}
-				}
-			},
-			{
-				"name": "load-bronze-config",
-				"type": "Lookup",
-				"dependsOn": [
-					{
-						"activity": "init-correlation-id",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"policy": {
-					"timeout": "0.12:00:00",
-					"retry": 0,
-					"retryIntervalInSeconds": 30,
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"source": {
-						"type": "JsonSource",
-						"storeSettings": {
-							"type": "AzureBlobStorageReadSettings",
-							"recursive": false,
-							"enablePartitionDiscovery": false
-						},
-						"formatSettings": {
-							"type": "JsonReadSettings"
-						}
-					},
-					"dataset": {
-						"referenceName": "dev_load_config",
-						"type": "DatasetReference",
-						"parameters": {
-							"p_layer": "bronze"
-						}
-					},
-					"firstRowOnly": false
-				}
-			},
-			{
-				"name": "load-silver-config",
-				"type": "Lookup",
-				"dependsOn": [
-					{
-						"activity": "bronze_pipeline",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"policy": {
-					"timeout": "0.12:00:00",
-					"retry": 0,
-					"retryIntervalInSeconds": 30,
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"source": {
-						"type": "JsonSource",
-						"storeSettings": {
-							"type": "AzureBlobStorageReadSettings",
-							"recursive": true,
-							"enablePartitionDiscovery": false
-						},
-						"formatSettings": {
-							"type": "JsonReadSettings"
-						}
-					},
-					"dataset": {
-						"referenceName": "dev_load_config",
-						"type": "DatasetReference",
-						"parameters": {
-							"p_layer": "silver"
-						}
-					},
-					"firstRowOnly": false
-				}
-			},
-			{
-				"name": "silver_pipeline",
-				"type": "ExecutePipeline",
-				"dependsOn": [
-					{
-						"activity": "load-silver-config",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"policy": {
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"pipeline": {
-						"referenceName": "silver_pipeline",
-						"type": "PipelineReference"
-					},
-					"waitOnCompletion": true,
-					"parameters": {
-						"p_correlation_id": {
-							"value": "@variables('correlation_id')",
-							"type": "Expression"
-						},
-						"p_payload": {
-							"value": "@activity('bronze_pipeline').output",
-							"type": "Expression"
-						},
-						"p_config": {
-							"value": "@activity('load-silver-config').output",
-							"type": "Expression"
-						}
-					}
+					"waitOnCompletion": true
 				}
 			}
 		],
