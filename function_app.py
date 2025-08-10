@@ -92,7 +92,7 @@ def ingest_orchestrator(context: df.DurableOrchestrationContext):
     }
 
     # wywołujemy aktywność, która zapisze summary na kolejce "silver-processing-queue"
-    queue_result = yield context.call_activity("write_to_silver_queue", summary_payload)
+    queue_result = yield context.call_activity("write_to_queue", { "payload": summary_payload, "queue_name": "silver-processing-queue"})
 
     return {
         "status": "COMPLETED",
@@ -108,20 +108,35 @@ def ingest_orchestrator(context: df.DurableOrchestrationContext):
 async def run_ingestion_activity(input: Dict[str, Any]) -> Dict[str, Any]:
     config = ConfigManager()
 
-    correlation_id = input.get("correlation_id", str(uuid.uuid4()))
+    correlation_id = input.get("correlation_id")
+
+    if not correlation_id:
+        error_message = "Brak wymaganej wartości 'correlation_id' w payloadzie."
+        logger.error(error_message)
+        
+        # Zwróć błąd w formacie, który jest łatwy do przetworzenia w orchestratorze
+        return {
+            "status": "FAILED",
+            "correlation_id": "NOT_PROVIDED",
+            "message": error_message,
+            "error_details": "Payload nie zawiera klucza 'correlation_id'.",
+        }
 
     try:
+        # Pamiętaj, że input może być modyfikowany, więc najlepiej usunąć correlation_id
+        # jeśli parser go nie potrzebuje, albo przekazać do parsera bezpośrednio
         parsed_context = BronzePayloadParser(correlation_id).parse(input)
-
+        
         result = await OrchestratorFactory.get_instance(
             ETLLayer.BRONZE, config=config
         ).run(parsed_context)
 
-        logger.info(f"Pomyślnie przetworzono pozycję: {getattr(result, 'correlation_id', 'UNKNOWN')}")
-        # jeśli result jest modelem, zwracamy jego dict
-
+        logger.info(f"Pomyślnie przetworzono pozycję: {correlation_id}")
+        
         if result:
-            return result.to_dict()
+            result_dict = result.to_dict()
+            result_dict["correlation_id"] = correlation_id
+            return result_dict
         
         return {"status": "OK", "correlation_id": correlation_id}
 
@@ -138,15 +153,23 @@ async def run_ingestion_activity(input: Dict[str, Any]) -> Dict[str, Any]:
 # 4) Activity: otrzymuje summary (payload) i wysyła je bezpośrednio na
 #    storage queue (używamy SDK, nie dekoratora queue_output).
 # ---------------------------------------------------------------------
-@app.activity_trigger(input_name="payload")
-async def write_to_silver_queue(payload: Dict[str, Any]):
+@app.activity_trigger(input_name="input")
+async def write_to_queue(input: Dict[str, Any]):
+    queue_name = ""
+
     try:
-        queue_manager = QueueStorageManager("silver-processing-queue")
+        payload = input.get("payload")
+        queue_name = input.get("queue_name")
+
+        if not payload or not queue_name:
+            return {"status": "FAILED", "message": "Brak payloadu lub nazwy kolejki."}
+
+        queue_manager = QueueStorageManager(queue_name)
         queue_manager.send_message(json.dumps(payload))
-        
-        logger.info("Summary for Silver pipeline placed on queue.")
-        return {"status": "ENQUEUED"}
+
+        logger.info(f"Summary for pipeline placed on queue '{queue_name}'.")
+        return {"status": "ENQUEUED", "queue": queue_name}
 
     except Exception as e:
-        logger.exception("Błąd podczas wysyłania summary na kolejkę.")
+        logger.exception(f"Błąd podczas wysyłania summary na kolejkę '{queue_name}'.")
         return {"status": "FAILED", "message": str(e), "error_details": traceback.format_exc()}
