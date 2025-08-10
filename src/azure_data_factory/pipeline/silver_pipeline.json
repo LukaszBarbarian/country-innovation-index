@@ -14,7 +14,7 @@
 				"typeProperties": {
 					"variableName": "correlation_id",
 					"value": {
-						"value": "@pipeline().parameters.p_payload.event.data.correlation_id\n",
+						"value": "@pipeline().parameters.p_correlation_id",
 						"type": "Expression"
 					}
 				}
