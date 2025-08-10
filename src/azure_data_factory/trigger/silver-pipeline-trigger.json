@@ -11,7 +11,7 @@
 				},
 				"parameters": {
 					"p_env": "dev",
-					"p_correlation_id": "@triggerBody().event.data.correlation_id"
+					"p_payload": "@triggerBody().event.data"
 				}
 			}
 		],
