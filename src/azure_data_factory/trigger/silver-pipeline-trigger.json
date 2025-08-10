@@ -10,7 +10,8 @@
 					"type": "PipelineReference"
 				},
 				"parameters": {
-					"p_env": "dev"
+					"p_env": "dev",
+					"p_correlation_id": "@triggerBody().event.data.correlation_id"
 				}
 			}
 		],
