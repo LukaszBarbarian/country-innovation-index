@@ -23,9 +23,9 @@
 			"type": "string",
 			"defaultValue": "dev"
 		},
-		"silver-pipeline-trigger_properties_silver_pipeline_parameters_p_correlation_id": {
+		"silver-pipeline-trigger_properties_silver_pipeline_parameters_p_payload": {
 			"type": "string",
-			"defaultValue": "@triggerBody().event.data.correlation_id"
+			"defaultValue": "@triggerBody().event.data"
 		},
 		"silver-pipeline-trigger_properties_typeProperties_scope": {
 			"type": "string",
@@ -70,8 +70,8 @@
 					"silver-pipeline-trigger_properties_silver_pipeline_parameters_p_env": {
 						"value": "[parameters('silver-pipeline-trigger_properties_silver_pipeline_parameters_p_env')]"
 					},
-					"silver-pipeline-trigger_properties_silver_pipeline_parameters_p_correlation_id": {
-						"value": "[parameters('silver-pipeline-trigger_properties_silver_pipeline_parameters_p_correlation_id')]"
+					"silver-pipeline-trigger_properties_silver_pipeline_parameters_p_payload": {
+						"value": "[parameters('silver-pipeline-trigger_properties_silver_pipeline_parameters_p_payload')]"
 					},
 					"silver-pipeline-trigger_properties_typeProperties_scope": {
 						"value": "[parameters('silver-pipeline-trigger_properties_typeProperties_scope')]"

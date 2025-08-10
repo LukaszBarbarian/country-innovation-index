@@ -23,9 +23,9 @@
 			"type": "string",
 			"defaultValue": "dev"
 		},
-		"silver-pipeline-trigger_properties_silver_pipeline_parameters_p_correlation_id": {
+		"silver-pipeline-trigger_properties_silver_pipeline_parameters_p_payload": {
 			"type": "string",
-			"defaultValue": "@triggerBody().event.data.correlation_id"
+			"defaultValue": "@triggerBody().event.data"
 		},
 		"silver-pipeline-trigger_properties_typeProperties_scope": {
 			"type": "string",
@@ -190,7 +190,7 @@
 						"typeProperties": {
 							"variableName": "correlation_id",
 							"value": {
-								"value": "@pipeline().parameters.p_correlation_id",
+								"value": "@pipeline().parameters.p_payload.value",
 								"type": "Expression"
 							}
 						}
@@ -204,8 +204,8 @@
 						"type": "string",
 						"defaultValue": "dev"
 					},
-					"p_correlation_id": {
-						"type": "string"
+					"p_payload": {
+						"type": "object"
 					}
 				},
 				"variables": {
@@ -318,7 +318,7 @@
 						},
 						"parameters": {
 							"p_env": "[parameters('silver-pipeline-trigger_properties_silver_pipeline_parameters_p_env')]",
-							"p_correlation_id": "[parameters('silver-pipeline-trigger_properties_silver_pipeline_parameters_p_correlation_id')]"
+							"p_payload": "[parameters('silver-pipeline-trigger_properties_silver_pipeline_parameters_p_payload')]"
 						}
 					}
 				],
