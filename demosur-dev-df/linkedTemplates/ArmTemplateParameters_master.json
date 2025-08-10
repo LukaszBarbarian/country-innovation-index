@@ -14,6 +14,12 @@
 		"azure_function_linked_service_properties_typeProperties_functionAppUrl": {
 			"value": "https://demosurdevfunc4418.azurewebsites.net"
 		},
+		"silver-pipeline-trigger_properties_silver_pipeline_parameters_p_env": {
+			"value": "dev"
+		},
+		"silver-pipeline-trigger_properties_typeProperties_scope": {
+			"value": "/subscriptions/4f24dcd1-9601-4727-ab67-d97cebce64ca/resourceGroups/demosur-dev-rg/providers/Microsoft.EventGrid/topics/adf-silver-trigger-topic"
+		},
 		"containerUri": {
 			"value": ""
 		},
