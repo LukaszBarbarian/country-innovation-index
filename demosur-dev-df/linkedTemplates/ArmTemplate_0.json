@@ -50,7 +50,7 @@
 						"typeProperties": {
 							"variableName": "correlation_id",
 							"value": {
-								"value": "@pipeline().parameters.p_payload.value",
+								"value": "@pipeline().parameters.p_payload.value.correlation_id",
 								"type": "Expression"
 							}
 						}
