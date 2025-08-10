@@ -1,22 +1,20 @@
-from html import parser
 import uuid
-import azure.functions as func
-import azure.durable_functions as df
-import logging
 import json
 import os
 import traceback
+import logging
 from typing import Dict, Any
 
+import azure.functions as func
+import azure.durable_functions as df
 
+# Importy z Twoich modułów
 from src.bronze.contexts.bronze_parser import BronzePayloadParser
 from src.common.factories.orchestrator_factory import OrchestratorFactory
 from src.common.config.config_manager import ConfigManager
 from src.common.enums.etl_layers import ETLLayer
-
 from src.bronze.init import bronze_init
 from src.common.storage_account.queue_storage_manager import QueueStorageManager
-
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -26,8 +24,9 @@ app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 # ---------------------------------------------------------------------
 # 1) Queue trigger: odbiera wiadomość (payload — lista obiektów),
 #    uruchamia Durable Orchestrator i przekazuje mu listę elementów.
+#    Ta funkcja pozostaje niezmieniona, służy do wyzwalania z kolejki.
 # ---------------------------------------------------------------------
-@app.function_name(name="IngestNowQueue")
+@app.function_name(name="ingest_now_queue")
 @app.queue_trigger(arg_name="msg", queue_name="bronze-tasks", connection="AzureWebJobsStorageQueue")
 @app.durable_client_input(client_name="starter")
 async def ingest_now_queue(msg: func.QueueMessage, starter: df.DurableOrchestrationClient):
@@ -38,13 +37,10 @@ async def ingest_now_queue(msg: func.QueueMessage, starter: df.DurableOrchestrat
 
         if not isinstance(items_to_process, list) or not items_to_process:
             logger.error("Oczekiwano listy pozycji do przetworzenia na kolejce.")
-            return  # nic nie robimy — można też wysłać DLQ itp.
+            return
 
-        # start orchestrator and pass the whole list as input
-        # start_new(orchestrator_function_name, instance_id=None, input=None)
         instance_id = await starter.start_new("ingest_orchestrator", None, items_to_process)
         logger.info(f"Rozpoczęto orkiestrację z ID = '{instance_id}' dla {len(items_to_process)} pozycji.")
-        # opcjonalnie można zapisać instance_id na innej kolejce/logu
         return
 
     except json.JSONDecodeError:
@@ -53,6 +49,51 @@ async def ingest_now_queue(msg: func.QueueMessage, starter: df.DurableOrchestrat
     except Exception:
         logger.exception("Błąd podczas obsługi wiadomości z kolejki.")
         return
+
+# ---------------------------------------------------------------------
+# NOWA FUNKCJA HTTP:
+# 1.a) HTTP trigger: odbiera payload (listę obiektów) jako ciało żądania HTTP.
+#      Ta funkcja jest punktem wejścia dla Azure Data Factory (ADF).
+# ---------------------------------------------------------------------
+@app.function_name(name="start_ingestion_http")
+@app.route(route="start_ingestion")
+@app.durable_client_input(client_name="starter")
+async def start_ingestion_http(req: func.HttpRequest, starter: df.DurableOrchestrationClient) -> func.HttpResponse:
+    logger.info('HTTP trigger function processed a request.')
+    
+    try:
+        req_body = req.get_json()
+    except ValueError:
+        return func.HttpResponse(
+             "Błąd: Wymagany jest poprawny format JSON w ciele żądania.",
+             status_code=400
+        )
+
+    items_to_process = req_body
+
+    if not isinstance(items_to_process, list) or not items_to_process:
+        logger.error("Oczekiwano listy pozycji do przetworzenia w ciele żądania.")
+        return func.HttpResponse(
+            "Błąd: Oczekiwano niepustej listy pozycji do przetworzenia.",
+            status_code=400
+        )
+
+    try:
+        # Uruchomienie Twojego istniejącego Durable Orchestratora
+        instance_id = await starter.start_new("ingest_orchestrator", None, items_to_process)
+        logger.info(f"Rozpoczęto orkiestrację z ID = '{instance_id}' dla {len(items_to_process)} pozycji.")
+
+        return func.HttpResponse(
+            f"Orkiestracja dla {len(items_to_process)} pozycji została rozpoczęta. ID: {instance_id}",
+            status_code=202  # 202 Accepted oznacza, że żądanie zostało przyjęte do przetworzenia
+        )
+    except Exception as e:
+        logger.exception(f"Błąd podczas uruchamiania orkiestracji: {e}")
+        return func.HttpResponse(
+            f"Błąd podczas uruchamiania orkiestracji: {e}",
+            status_code=500
+        )
+
 
 # ---------------------------------------------------------------------
 # 2) Orchestrator: wykonuje równolegle aktywności dla każdego elementu
@@ -68,8 +109,6 @@ def ingest_orchestrator(context: df.DurableOrchestrationContext):
             "status": "FAILED",
             "message": "Orchestrator received an empty or invalid list of items."
         }
-
-
 
     correlation_id = str(uuid.uuid4())
 
@@ -114,7 +153,6 @@ async def run_ingestion_activity(input: Dict[str, Any]) -> Dict[str, Any]:
         error_message = "Brak wymaganej wartości 'correlation_id' w payloadzie."
         logger.error(error_message)
         
-        # Zwróć błąd w formacie, który jest łatwy do przetworzenia w orchestratorze
         return {
             "status": "FAILED",
             "correlation_id": "NOT_PROVIDED",
@@ -123,8 +161,6 @@ async def run_ingestion_activity(input: Dict[str, Any]) -> Dict[str, Any]:
         }
 
     try:
-        # Pamiętaj, że input może być modyfikowany, więc najlepiej usunąć correlation_id
-        # jeśli parser go nie potrzebuje, albo przekazać do parsera bezpośrednio
         parsed_context = BronzePayloadParser(correlation_id).parse(input)
         
         result = await OrchestratorFactory.get_instance(
