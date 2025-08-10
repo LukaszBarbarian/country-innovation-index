@@ -188,9 +188,9 @@
 						},
 						"userProperties": [],
 						"typeProperties": {
-							"variableName": "correlation_id",
+							"variableName": "payload",
 							"value": {
-								"value": "@pipeline().parameters.p_payload.value",
+								"value": "@pipeline().parameters.p_payload.results\n\n",
 								"type": "Expression"
 							}
 						}
@@ -209,7 +209,7 @@
 					}
 				},
 				"variables": {
-					"correlation_id": {
+					"payload": {
 						"type": "String"
 					}
 				},
