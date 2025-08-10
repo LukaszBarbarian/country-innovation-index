@@ -4,10 +4,15 @@
 		"annotations": [],
 		"type": "RestService",
 		"typeProperties": {
-			"url": "@concat('https://', pipeline().parameters.storageAccountName, '.queue.core.windows.net/')",
+			"url": "@concat('https://', linkedService().storageAccountName, '.queue.core.windows.net/')",
 			"enableServerCertificateValidation": true,
 			"authenticationType": "ManagedServiceIdentity",
 			"aadResourceId": "https://storage.azure.com/"
+		},
+		"parameters": {
+			"storageAccountName": {
+				"type": "string"
+			}
 		}
 	}
 }
