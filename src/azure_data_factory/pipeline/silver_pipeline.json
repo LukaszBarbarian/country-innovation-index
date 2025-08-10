@@ -14,7 +14,7 @@
 				"typeProperties": {
 					"variableName": "payload",
 					"value": {
-						"value": "@pipeline().parameters.p_payload.results\n\n",
+						"value": "@string(pipeline().parameters.p_payload)",
 						"type": "Expression"
 					}
 				}
@@ -30,9 +30,6 @@
 			}
 		},
 		"variables": {
-			"correlation_id": {
-				"type": "String"
-			},
 			"payload": {
 				"type": "String"
 			}
