@@ -358,7 +358,8 @@
 				],
 				"type": "BlobEventsTrigger",
 				"typeProperties": {
-					"blobPathBeginsWith": "/bronze/blobs/dev.config.json",
+					"blobPathBeginsWith": "/bronze/blobs/",
+					"blobPathEndsWith": "dev.config.json",
 					"ignoreEmptyBlobs": true,
 					"scope": "[parameters('trigger1_properties_typeProperties_scope')]",
 					"events": [
