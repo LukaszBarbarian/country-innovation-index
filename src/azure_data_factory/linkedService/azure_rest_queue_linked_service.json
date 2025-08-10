@@ -1,18 +1,18 @@
 {
 	"name": "azure_rest_queue_linked_service",
 	"properties": {
+		"parameters": {
+			"p_storage_queue_account_name": {
+				"type": "string"
+			}
+		},
 		"annotations": [],
 		"type": "RestService",
 		"typeProperties": {
-			"url": "@concat('https://', linkedService().storageAccountName, '.queue.core.windows.net/')",
+			"url": "@{concat('https://', linkedService().p_storage_queue_account_name, '.queue.core.windows.net/')}",
 			"enableServerCertificateValidation": true,
 			"authenticationType": "ManagedServiceIdentity",
 			"aadResourceId": "https://storage.azure.com/"
-		},
-		"parameters": {
-			"storageAccountName": {
-				"type": "string"
-			}
 		}
 	}
 }
