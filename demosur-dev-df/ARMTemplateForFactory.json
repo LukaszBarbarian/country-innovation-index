@@ -30,6 +30,10 @@
 		"silver-pipeline-trigger_properties_typeProperties_scope": {
 			"type": "string",
 			"defaultValue": "/subscriptions/4f24dcd1-9601-4727-ab67-d97cebce64ca/resourceGroups/demosur-dev-rg/providers/Microsoft.EventGrid/topics/adf-silver-trigger-topic"
+		},
+		"trigger1_properties_typeProperties_scope": {
+			"type": "string",
+			"defaultValue": "/subscriptions/4f24dcd1-9601-4727-ab67-d97cebce64ca/resourceGroups/demosur-dev-rg/providers/Microsoft.Storage/storageAccounts/demosurdevdatalake4418sa"
 		}
 	},
 	"variables": {
@@ -334,6 +338,36 @@
 			},
 			"dependsOn": [
 				"[concat(variables('factoryId'), '/pipelines/silver_pipeline')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/trigger1')]",
+			"type": "Microsoft.DataFactory/factories/triggers",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"runtimeState": "Started",
+				"pipelines": [
+					{
+						"pipelineReference": {
+							"referenceName": "main",
+							"type": "PipelineReference"
+						},
+						"parameters": {}
+					}
+				],
+				"type": "BlobEventsTrigger",
+				"typeProperties": {
+					"blobPathBeginsWith": "/bronze/blobs/dev.config.json",
+					"ignoreEmptyBlobs": true,
+					"scope": "[parameters('trigger1_properties_typeProperties_scope')]",
+					"events": [
+						"Microsoft.Storage.BlobCreated"
+					]
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/pipelines/main')]"
 			]
 		}
 	]

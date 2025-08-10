@@ -31,6 +31,10 @@
 			"type": "string",
 			"defaultValue": "/subscriptions/4f24dcd1-9601-4727-ab67-d97cebce64ca/resourceGroups/demosur-dev-rg/providers/Microsoft.EventGrid/topics/adf-silver-trigger-topic"
 		},
+		"trigger1_properties_typeProperties_scope": {
+			"type": "string",
+			"defaultValue": "/subscriptions/4f24dcd1-9601-4727-ab67-d97cebce64ca/resourceGroups/demosur-dev-rg/providers/Microsoft.Storage/storageAccounts/demosurdevdatalake4418sa"
+		},
 		"containerUri": {
 			"type": "string",
 			"metadata": "URI to storage account containing linked ARM templates"
@@ -75,6 +79,9 @@
 					},
 					"silver-pipeline-trigger_properties_typeProperties_scope": {
 						"value": "[parameters('silver-pipeline-trigger_properties_typeProperties_scope')]"
+					},
+					"trigger1_properties_typeProperties_scope": {
+						"value": "[parameters('trigger1_properties_typeProperties_scope')]"
 					}
 				}
 			},
