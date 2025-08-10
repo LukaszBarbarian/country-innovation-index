@@ -20,7 +20,7 @@ class BlobStorageManager(AzureClientManagerBase[BlobServiceClient, ContainerClie
         super().__init__(
             resource_name=container_name,
             storage_account_name_setting_name=storage_account_name_setting_name,
-            base_url_suffix=".blob.core.windows.net" # Zmieniamy na .dfs.core.windows.net dla Data Lake (HNS)
+            base_url_suffix=".blob.core.windows.net"
         )
 
     def _create_service_client_from_identity(self, account_url: str, credential) -> BlobServiceClient:

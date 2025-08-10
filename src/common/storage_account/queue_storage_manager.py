@@ -3,7 +3,7 @@
 import logging
 from typing import Optional, Union, Dict, Any
 from azure.storage.queue import QueueServiceClient, QueueClient, QueueMessage
-from azure.core.exceptions import ResourceNotFoundError, ClientAuthenticationError
+from azure.core.exceptions import ResourceNotFoundError
 
 # WAŻNE: Upewnij się, że ta ścieżka importu jest poprawna.
 from src.common.storage_account.blob_storage_manager import AzureClientManagerBase
@@ -12,26 +12,22 @@ from src.common.storage_account.blob_storage_manager import AzureClientManagerBa
 logger = logging.getLogger(__name__)
 
 class QueueStorageManager(AzureClientManagerBase[QueueServiceClient, QueueClient]):
-    """
-    Menedżer do interakcji z Azure Queue Storage dla określonej kolejki.
-    Dziedziczy podstawową logikę połączenia i autoryzacji z AzureClientManagerBase.
-    """
-    def __init__(self, queue_name: str, connection_string_setting_name: str = "AzureWebJobsStorage"):
+    def __init__(self, 
+                 resource_name: str, 
+                 storage_account_name_setting_name: str = "QUEUE_STORAGE_ACCOUNT"):
+        
         super().__init__(
-            resource_name=queue_name,
-            connection_string_setting_name=connection_string_setting_name,
+            resource_name=resource_name,
+            storage_account_name_setting_name=storage_account_name_setting_name,
             base_url_suffix=".queue.core.windows.net"
         )
-        logger.info(f"QueueStorageManager initialized for queue: {self.resource_name}")
 
-    def _create_service_client_from_connection_string(self, connection_string: str) -> QueueServiceClient:
-        return QueueServiceClient.from_connection_string(connection_string)
-
+    
     def _create_service_client_from_identity(self, account_url: str, credential) -> QueueServiceClient:
         return QueueServiceClient(account_url=account_url, credential=credential)
 
-    def _get_resource_client(self, service_client: QueueServiceClient, queue_name: str) -> QueueClient:
-        return service_client.get_queue_client(queue_name)
+    def _get_resource_client(self, service_client: QueueServiceClient, resource_name: str) -> QueueClient:
+        return service_client.get_queue_client(resource_name)
 
 
     def send_message(self, message_content: Union[str, bytes], encode_base64: bool = True):
@@ -62,8 +58,9 @@ class QueueStorageManager(AzureClientManagerBase[QueueServiceClient, QueueClient
             raise RuntimeError("QueueClient nie został zainicjowany.")
         try:
             messages = self.client.receive_messages(max_messages=max_messages, visibility_timeout=visibility_timeout)
-            logger.info(f"Odebrano {len(messages)} wiadomości z kolejki '{self.resource_name}'.")
-            return list(messages)
+            messages_list = list(messages)
+            logger.info(f"Odebrano {len(messages_list)} wiadomości z kolejki '{self.resource_name}'.")
+            return messages_list
         except ResourceNotFoundError:
             logger.warning(f"Kolejka '{self.resource_name}' nie istnieje podczas próby odbioru wiadomości. Zwracam pustą listę.")
             return []
@@ -118,6 +115,10 @@ class QueueStorageManager(AzureClientManagerBase[QueueServiceClient, QueueClient
         try:
             properties = self.client.get_queue_properties()
             length = properties.approximate_message_count
+
+            if length is None:
+                length = 0
+                
             logger.info(f"Kolejka '{self.resource_name}' ma około {length} wiadomości.")
             return length
         except ResourceNotFoundError:

@@ -14,7 +14,6 @@ from src.common.utils.cache import Cache
 class BaseLayerContext:
     # Fields without default values (required)
     correlation_id: str
-    queue_message_id: str
     etl_layer: ETLLayer
     env: Env
     domain_source: DomainSource

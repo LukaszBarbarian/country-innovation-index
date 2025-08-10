@@ -25,7 +25,12 @@ class DefaultStorageFileBuilder(BaseStorageFileBuilder):
         file_size_bytes = len(file_content_bytes)
 
         # 2. Oblicz hash payloadu (jeśli obecny)
-        payload_hash = self._compute_payload_hash(context.payload)
+        request_config_payload = context.payload.get("source_config_payload", {})
+        
+        if not request_config_payload:
+            raise
+
+        payload_hash = self._compute_payload_hash(request_config_payload)
 
         # 3. Generuj ścieżkę i nazwę pliku z hashem
         full_path_in_container, file_name = self._generate_blob_path_and_name(dataset_name=context.dataset_name, 

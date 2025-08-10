@@ -8,7 +8,7 @@ locals {
   function_app_name_final           = var.function_app_name != "" ? var.function_app_name : "${var.project_prefix}${var.environment}func${local.unique_suffix}"
   function_storage_account_name_final = lower(replace("${var.project_prefix}${var.environment}func${local.unique_suffix}sa", "-", "")) # Nazwy kont storage muszą być małe litery i bez myślników
   queue_storage_account_name_final = lower(replace("${var.project_prefix}${var.environment}queue${local.unique_suffix}sa", "-", "")) # Nowe konto storage dla kolejki
-  queue_name_final                  = "${var.project_prefix}${var.environment}messages" # Nazwa kolejki
+  queue_name_final = "bronze-tasks"
 
   # Ścieżki do kodu funkcji i skryptu do pakowania
   # source_code_dir to katalog główny projektu 'CV-DEMO1'
@@ -50,11 +50,6 @@ resource "azurerm_storage_account" "sa_functions" {
   }
 }
 
-### 2a. Azure Storage Queue (używa tego samego SA co Function App)
-resource "azurerm_storage_queue" "message_queue" {
-  name                 = local.queue_name_final
-  storage_account_name = azurerm_storage_account.sa_functions.name
-}
 
 resource "azurerm_role_assignment" "function_app_blob_data_contributor" {
   scope                = azurerm_storage_account.sa_functions.id
@@ -119,9 +114,13 @@ resource "azurerm_function_app" "main_function_app" {
     AzureWebJobsStorage               = azurerm_storage_account.sa_functions.primary_connection_string
     FUNCTIONS_EXTENSION_VERSION       = "~4"                                              # Wersja rozszerzenia funkcji (dla blueprintów)
     "AzureWebJobsFeatureFlags"        = "EnableWorkerIndexing"                            # Włącz indexowanie workerów dla Python V2 (blueprinty)
-    QUEUE_NAME                        = azurerm_storage_queue.message_queue.name
     DATA_LAKE_STORAGE_ACCOUNT_NAME = azurerm_storage_account.sadatalake.name
+    QUEUE_NAME = azurerm_storage_queue.queue_bronze_tasks.name
+    QUEUE_STORAGE_ACCOUNT = azurerm_storage_account.sa_queue.name
+    QUEUE_CONNECTION_STRING = azurerm_storage_account.sa_queue.primary_connection_string
     NOBELPRIZE_API_BASE_URL = "https://api.nobelprize.org/2.1/"
+    AzureWebJobsStorageQueue = azurerm_storage_account.sa_queue.primary_connection_string
+
 
   }
 
@@ -146,13 +145,26 @@ resource "azurerm_role_assignment" "adf_datalake_contributor" {
   scope                = azurerm_storage_account.sadatalake.id
   role_definition_name = "Storage Blob Data Contributor"
   principal_id         = module.adf.adf_principal_id
-  
-  # Upewnij się, że przypisanie roli zależy od obu zasobów
+
   depends_on = [
     azurerm_storage_account.sadatalake,
     module.adf
   ]
+
+  lifecycle {
+    ignore_changes = [
+      # ignoruj zmiany, które mogą powodować konflikt
+      principal_id,
+      role_definition_name,
+      scope,
+    ]
+  }
 }
+
+
+
+
+
 
 # module "databricks" {
 #   source                  = "./databricks"

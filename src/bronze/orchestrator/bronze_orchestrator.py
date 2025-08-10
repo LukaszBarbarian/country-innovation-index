@@ -12,6 +12,7 @@ from src.common.models.ingestion_result import IngestionResult
 from src.common.orchestrators.base_orchestrator import BaseOrchestrator
 from src.common.registers.orchestrator_registry import OrchestratorRegistry
 
+
 logger = logging.getLogger(__name__)
 
 
@@ -58,7 +59,6 @@ class BronzeOrchestrator(BaseOrchestrator):
         return OrchestratorResult(
             status=ingestion_result.status,
             correlation_id=context.correlation_id,
-            queue_message_id=context.queue_message_id,
             layer_name=context.etl_layer,
             env=context.env,
             message=ingestion_result.message,

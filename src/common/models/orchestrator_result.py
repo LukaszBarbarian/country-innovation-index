@@ -5,21 +5,21 @@ from src.common.enums.domain_source import DomainSource
 from src.common.enums.domain_source_type import DomainSourceType
 from src.common.enums.etl_layers import ETLLayer
 from src.common.enums.env import Env
+from pydantic import BaseModel, Field
 
-@dataclass
-class OrchestratorResult:
+
+class OrchestratorResult(BaseModel):
     status: str
     correlation_id: str
-    queue_message_id: str    
     layer_name: ETLLayer
     env: Env
     message: str
     domain_source: DomainSource = DomainSource.UNKNOWN
     domain_source_type: DomainSourceType = DomainSourceType.UNKNOWN
     dataset_name: Optional[str] = None
-    output_paths: Optional[List[str]] = None    
+    output_paths: Optional[List[str]] = None
     source_response_status_code: Optional[int] = None
-    error_details: Optional[Dict[str, Any]] = field(default_factory=dict) 
+    error_details: Optional[Dict[str, Any]] = Field(default_factory=dict)
 
     @property
     def is_success(self) -> bool:
@@ -28,3 +28,10 @@ class OrchestratorResult:
     @property
     def is_failed(self) -> bool:
         return self.status == "FAILED"
+    
+
+    def to_dict(self) -> dict[str, Any]:
+        return self.model_dump(
+            mode='json',
+            exclude_none=True
+        )

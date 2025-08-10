@@ -7,6 +7,9 @@ from src.common.enums.etl_layers import ETLLayer
 
 
 class BaseParser(ABC):
+
+    def __init__(self, correlation_id: str) -> None:
+        self.correlation_id = correlation_id
     
     def _ensure_requires(self, requires: list[str], payload: Dict[str, Any]):
         if not all(field in payload for field in requires):
