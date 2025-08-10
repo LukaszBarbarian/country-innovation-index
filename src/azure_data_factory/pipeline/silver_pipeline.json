@@ -3,20 +3,12 @@
 	"properties": {
 		"activities": [
 			{
-				"name": "Set variable1",
-				"type": "SetVariable",
+				"name": "Wait1",
+				"type": "Wait",
 				"dependsOn": [],
-				"policy": {
-					"secureOutput": false,
-					"secureInput": false
-				},
 				"userProperties": [],
 				"typeProperties": {
-					"variableName": "test",
-					"value": {
-						"value": "@string(pipeline().parameters.p_config)",
-						"type": "Expression"
-					}
+					"waitTimeInSeconds": 1
 				}
 			}
 		],
