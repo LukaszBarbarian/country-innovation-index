@@ -12,31 +12,25 @@
 				},
 				"userProperties": [],
 				"typeProperties": {
-					"variableName": "test",
+					"variableName": "payload",
 					"value": {
-						"value": "@string(pipeline().parameters.p_config)",
+						"value": "@string(pipeline().parameters.p_payload)",
 						"type": "Expression"
 					}
 				}
 			}
 		],
 		"parameters": {
-			"p_correlation_id": {
-				"type": "string"
-			},
-			"p_payload": {
-				"type": "array"
-			},
 			"p_env": {
 				"type": "string",
 				"defaultValue": "dev"
 			},
-			"p_config": {
-				"type": "string"
+			"p_payload": {
+				"type": "object"
 			}
 		},
 		"variables": {
-			"test": {
+			"payload": {
 				"type": "String"
 			}
 		},

@@ -1,0 +1,28 @@
+{
+	"name": "silver-pipeline-trigger",
+	"properties": {
+		"annotations": [],
+		"runtimeState": "Started",
+		"pipelines": [
+			{
+				"pipelineReference": {
+					"referenceName": "silver_pipeline",
+					"type": "PipelineReference"
+				},
+				"parameters": {
+					"p_env": "dev",
+					"p_payload": "@triggerBody().event.data"
+				}
+			}
+		],
+		"type": "CustomEventsTrigger",
+		"typeProperties": {
+			"subjectEndsWith": "",
+			"subjectBeginsWith": "",
+			"scope": "/subscriptions/4f24dcd1-9601-4727-ab67-d97cebce64ca/resourceGroups/demosur-dev-rg/providers/Microsoft.EventGrid/topics/adf-silver-trigger-topic",
+			"events": [
+				"SilverProcessing.Started"
+			]
+		}
+	}
+}
