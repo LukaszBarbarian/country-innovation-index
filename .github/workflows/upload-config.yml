@@ -1,4 +1,4 @@
-name: Upload Config to Azure Blob and Publish Event
+name: upload-config-dev
 
 on:
   workflow_dispatch:
