@@ -6,7 +6,7 @@ on:
       keyvault_name:
         description: 'Nazwa Azure Key Vault, z którego pobrać sekrety.'
         required: true
-        default: 'TwojaNazwaKeyVault' # Zmień na nazwę Twojego Key Vault
+        default: 'demosur-dev-kv' # Zmień na nazwę Twojego Key Vault
 
 env:
   # Zmienne, które będą uzupełnione dynamicznie z Key Vault
