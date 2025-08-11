@@ -70,3 +70,10 @@ output "references_container_name" {
   description = "The name of the Reference layer container."
   value       = azurerm_storage_container.container_references.name
 }
+
+
+
+output "eventgrid_topic_name" {
+  value = azurerm_eventgrid_topic.example.name
+  description = "The name of the Event Grid topic"
+}

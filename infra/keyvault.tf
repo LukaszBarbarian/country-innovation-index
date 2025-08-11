@@ -1,5 +1,3 @@
-# --- Data Source do pobrania ID tenanta i Object ID bieżącego użytkownika/SP ---
-data "azurerm_client_config" "current" {}
 
 
 # --- Azure Key Vault ---

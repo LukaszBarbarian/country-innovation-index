@@ -1,4 +1,6 @@
-# --- Zmienne lokalne (locals) ---
+data "azurerm_client_config" "current" {}
+
+
 locals {
   # Unikalny sufiks dla nazw zasobów, bazujący na ID grupy zasobów
   # Użycie funkcji sha1() na ID resource group zapewni unikalność po pierwszym utworzeniu RG
@@ -9,6 +11,7 @@ locals {
   function_storage_account_name_final = lower(replace("${var.project_prefix}${var.environment}func${local.unique_suffix}sa", "-", "")) # Nazwy kont storage muszą być małe litery i bez myślników
   queue_storage_account_name_final = lower(replace("${var.project_prefix}${var.environment}queue${local.unique_suffix}sa", "-", "")) # Nowe konto storage dla kolejki
   queue_name_final = "bronze-tasks"
+
 
   # Ścieżki do kodu funkcji i skryptu do pakowania
   # source_code_dir to katalog główny projektu 'CV-DEMO1'
@@ -120,6 +123,8 @@ resource "azurerm_function_app" "main_function_app" {
     QUEUE_CONNECTION_STRING = azurerm_storage_account.sa_queue.primary_connection_string
     NOBELPRIZE_API_BASE_URL = "https://api.nobelprize.org/2.1/"
     AzureWebJobsStorageQueue = azurerm_storage_account.sa_queue.primary_connection_string
+    EVENT_GRID_ENDPOINT             = azurerm_eventgrid_topic.etl_events_topic.endpoint
+    EVENT_GRID_KEY                  = azurerm_eventgrid_topic.etl_events_topic.primary_access_key
 
 
   }
@@ -138,6 +143,8 @@ module "adf" {
   project_prefix            = var.project_prefix
   environment               = var.environment
   function_app_url          = azurerm_function_app.main_function_app.default_hostname
+  eventgrid_topic_id  = azurerm_eventgrid_topic.etl_events_topic.id 
+
 }
 
 

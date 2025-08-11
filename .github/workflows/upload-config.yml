@@ -1,4 +1,4 @@
-name: Upload Config to Azure Blob Storage
+name: upload-config
 
 on:
   workflow_dispatch:

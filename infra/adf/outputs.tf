@@ -10,3 +10,4 @@ output "adf_principal_id" {
   description = "The Principal ID of the Azure Data Factory's Managed Service Identity."
   value       = azurerm_data_factory.adf_instance.identity[0].principal_id
 }
+

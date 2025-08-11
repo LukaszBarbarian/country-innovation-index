@@ -32,3 +32,9 @@ variable "environment" {
   type        = string
   default     = "dev"
 }
+
+
+variable "eventgrid_topic_id" {
+  description = "The ID of the Event Grid Topic to which the triggers will subscribe."
+  type        = string
+}
