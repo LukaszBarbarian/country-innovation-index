@@ -6,14 +6,7 @@ on:
       keyvault_name:
         description: 'Nazwa Azure Key Vault, z którego pobrać sekrety.'
         required: true
-        default: 'demosur-dev-kv' # Zmień na nazwę Twojego Key Vault
-
-env:
-  # Zmienne, które będą uzupełnione dynamicznie z Key Vault
-  STORAGE_ACCOUNT_NAME: 'storage-account-name'
-  STORAGE_CONTAINER_NAME: 'storage-container-configs-name'
-  EVENTGRID_TOPIC_NAME: 'eventgrid-topic-name'
-  RESOURCE_GROUP_NAME: 'resource-group-name'
+        default: 'demosur-dev-kv'
 
 jobs:
   upload-config:
