@@ -74,6 +74,6 @@ output "references_container_name" {
 
 
 output "eventgrid_topic_name" {
-  value = azurerm_eventgrid_topic.example.name
+  value = azurerm_eventgrid_topic.etl_events_topic.name
   description = "The name of the Event Grid topic"
 }
