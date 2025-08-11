@@ -24,10 +24,10 @@ jobs:
       - name: Fetch secrets from Key Vault
         id: fetch-secrets
         run: |
-          STORAGE_ACCOUNT_NAME=$(az keyvault secret show --vault-name "$KEYVAULT_NAME" --name "STORAGE-ACCOUNT-NAME" --query "value" -o tsv)
-          STORAGE_CONTAINER_NAME=$(az keyvault secret show --vault-name "$KEYVAULT_NAME" --name "STORAGE-CONTAINER-NAME" --query "value" -o tsv)
-          EVENTGRID_TOPIC_NAME=$(az keyvault secret show --vault-name "$KEYVAULT_NAME" --name "EVENTGRID-TOPIC-NAME" --query "value" -o tsv)
-          RESOURCE_GROUP_NAME=$(az keyvault secret show --vault-name "$KEYVAULT_NAME" --name "RESOURCE-GROUP-NAME" --query "value" -o tsv)
+          STORAGE_ACCOUNT_NAME=$(az keyvault secret show --vault-name "$KEYVAULT_NAME" --name "storage-account-name" --query "value" -o tsv)
+          STORAGE_CONTAINER_NAME=$(az keyvault secret show --vault-name "$KEYVAULT_NAME" --name "storage-container-configs-name" --query "value" -o tsv)
+          EVENTGRID_TOPIC_NAME=$(az keyvault secret show --vault-name "$KEYVAULT_NAME" --name "eventgrid-topic-name" --query "value" -o tsv)
+          RESOURCE_GROUP_NAME=$(az keyvault secret show --vault-name "$KEYVAULT_NAME" --name "resource-group-name" --query "value" -o tsv)
 
           echo "STORAGE_ACCOUNT_NAME=$STORAGE_ACCOUNT_NAME" >> $GITHUB_ENV
           echo "STORAGE_CONTAINER_NAME=$STORAGE_CONTAINER_NAME" >> $GITHUB_ENV

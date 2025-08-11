@@ -26,7 +26,7 @@ resource "azurerm_data_factory_trigger_custom_event" "bronze_trigger" {
   pipeline {
     name = "bronze_pipeline"
     parameters = {
-      p_payload = "@triggerBody()"
+      p_payload = "@triggerBody().event"
     }
   }
 }
@@ -41,7 +41,7 @@ resource "azurerm_data_factory_trigger_custom_event" "silver_trigger" {
   pipeline {
     name = "silver_pipeline"
     parameters = {
-      p_payload = "@triggerBody()"
+      p_payload = "@triggerBody().event"
     }
   }
 }
