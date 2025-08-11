@@ -58,13 +58,14 @@ async def ingest_now_queue(msg: func.QueueMessage, starter: df.DurableOrchestrat
 #      Ta funkcja jest punktem wejścia dla Azure Data Factory (ADF).
 # ---------------------------------------------------------------------
 @app.function_name(name="start_ingestion_http")
-@app.route(route="start_ingestion", methods=["POST"])
+@app.route(route="start_ingestion")
 @app.durable_client_input(client_name="starter")
 async def start_ingestion_http(req: func.HttpRequest, starter: df.DurableOrchestrationClient) -> func.HttpResponse:
     logger.info('HTTP trigger function processed a request.')
     
     try:
         req_body = req.get_json()
+
     except ValueError:
         return func.HttpResponse(
              "Błąd: Wymagany jest poprawny format JSON w ciele żądania.",
