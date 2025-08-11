@@ -34,29 +34,39 @@ jobs:
           echo "EVENTGRID_TOPIC_NAME=$EVENTGRID_TOPIC_NAME" >> $GITHUB_ENV
           echo "RESOURCE_GROUP_NAME=$RESOURCE_GROUP_NAME" >> $GITHUB_ENV
 
-      - name: Upload config.json to Blob Storage
+      - name: Get Event Grid credentials
         run: |
-          az storage blob upload \
-            --account-name "$STORAGE_ACCOUNT_NAME" \
-            --container-name "$STORAGE_CONTAINER_NAME" \
-            --file src/common/config/dev.config.json \
-            --name dev.config.json \
-            --overwrite \
-            --auth-mode login
-
+            EVENTGRID_KEY=$(az eventgrid topic key list \
+              --name "$EVENTGRID_TOPIC_NAME" \
+              --resource-group "$RESOURCE_GROUP_NAME" \
+              --query "key1" -o tsv)
+            EVENTGRID_ENDPOINT=$(az eventgrid topic show \
+              --name "$EVENTGRID_TOPIC_NAME" \
+              --resource-group "$RESOURCE_GROUP_NAME" \
+              --query "endpoint" -o tsv)
+        
+            echo "EVENTGRID_KEY=$EVENTGRID_KEY" >> $GITHUB_ENV
+            echo "EVENTGRID_ENDPOINT=$EVENTGRID_ENDPOINT" >> $GITHUB_ENV
+        
       - name: Publish Event to Event Grid
         run: |
-              az eventgrid event publish \
-                --topic-name "$EVENTGRID_TOPIC_NAME" \
-                --resource-group "$RESOURCE_GROUP_NAME" \
-                --events '[{
-                  "id": "'$(uuidgen)'",
-                  "eventType": "ConfigFileUploaded",
-                  "subject": "/dev.config.json",
-                  "eventTime": "'$(date -u +"%Y-%m-%dT%H:%M:%SZ")'",
-                  "data": { "filename": "dev.config.json" },
-                  "dataVersion": "1.0"
-                }]'
+            cat > event.json <<EOF
+            [{
+              "id": "$(uuidgen)",
+              "eventType": "ConfigFileUploaded",
+              "subject": "/dev.config.json",
+              "eventTime": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
+              "data": { "filename": "dev.config.json" },
+              "dataVersion": "1.0"
+            }]
+            EOF
+        
+            curl -X POST -H "aeg-sas-key: $EVENTGRID_KEY" \
+                 -H "Content-Type: application/json" \
+                 --data-binary @event.json \
+                 "$EVENTGRID_ENDPOINT"
+        
+          
 
       - name: Logout from Azure
         if: always()
