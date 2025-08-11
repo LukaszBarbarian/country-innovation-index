@@ -15,6 +15,8 @@ from src.common.config.config_manager import ConfigManager
 from src.common.enums.etl_layers import ETLLayer
 from src.bronze.init import bronze_init
 from src.common.storage_account.queue_storage_manager import QueueStorageManager
+from azure.core.credentials import AzureKeyCredential
+from azure.eventgrid import EventGridPublisherClient, EventGridEvent
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -56,7 +58,7 @@ async def ingest_now_queue(msg: func.QueueMessage, starter: df.DurableOrchestrat
 #      Ta funkcja jest punktem wejścia dla Azure Data Factory (ADF).
 # ---------------------------------------------------------------------
 @app.function_name(name="start_ingestion_http")
-@app.route(route="start_ingestion")
+@app.route(route="start_ingestion", methods=["POST"])
 @app.durable_client_input(client_name="starter")
 async def start_ingestion_http(req: func.HttpRequest, starter: df.DurableOrchestrationClient) -> func.HttpResponse:
     logger.info('HTTP trigger function processed a request.')
@@ -189,23 +191,61 @@ async def run_ingestion_activity(input: Dict[str, Any]) -> Dict[str, Any]:
 # 4) Activity: otrzymuje summary (payload) i wysyła je bezpośrednio na
 #    storage queue (używamy SDK, nie dekoratora queue_output).
 # ---------------------------------------------------------------------
+# @app.activity_trigger(input_name="input")
+# async def write_to_queue(input: Dict[str, Any]):
+#     queue_name = ""
+
+#     try:
+#         payload = input.get("payload")
+#         queue_name = input.get("queue_name")
+
+#         if not payload or not queue_name:
+#             return {"status": "FAILED", "message": "Brak payloadu lub nazwy kolejki."}
+
+#         queue_manager = QueueStorageManager(queue_name)
+#         queue_manager.send_message(json.dumps(payload))
+
+#         logger.info(f"Summary for pipeline placed on queue '{queue_name}'.")
+#         return {"status": "ENQUEUED", "queue": queue_name}
+
+#     except Exception as e:
+#         logger.exception(f"Błąd podczas wysyłania summary na kolejkę '{queue_name}'.")
+#         return {"status": "FAILED", "message": str(e), "error_details": traceback.format_exc()}
+
+
 @app.activity_trigger(input_name="input")
 async def write_to_queue(input: Dict[str, Any]):
-    queue_name = ""
-
     try:
         payload = input.get("payload")
-        queue_name = input.get("queue_name")
 
-        if not payload or not queue_name:
-            return {"status": "FAILED", "message": "Brak payloadu lub nazwy kolejki."}
+        if not payload:
+            return {"status": "FAILED", "message": "Brak payloadu."}
 
-        queue_manager = QueueStorageManager(queue_name)
-        queue_manager.send_message(json.dumps(payload))
+        # --- ZMIANA: ZAMIENIAMY WYSYŁANIE NA KOLEJKĘ NA EVENT GRID ---
+        #
+        # Wczytaj endpoint i klucz z ustawień aplikacji
+        endpoint = os.environ["EVENT_GRID_ENDPOINT"]
+        key = os.environ["EVENT_GRID_KEY"]
 
-        logger.info(f"Summary for pipeline placed on queue '{queue_name}'.")
-        return {"status": "ENQUEUED", "queue": queue_name}
+        credential = AzureKeyCredential(key)
+        client = EventGridPublisherClient(endpoint, credential)
+
+        # Tworzymy zdarzenie
+        event = EventGridEvent(
+            subject=f"/silver/processing/{payload.get('correlation_id')}",
+            event_type="SilverProcessing.Started",
+            data=payload,
+            data_version="1.0"
+        )
+
+        # Wysyłamy zdarzenie do Event Grid
+        client.send([event])
+
+        logger.info(f"Zdarzenie do Event Grid wysłane dla correlation_id: {payload.get('correlation_id')}.")
+        return {"status": "EVENT_SENT", "event_grid_topic": endpoint}
+        #
+        # -----------------------------------------------------------
 
     except Exception as e:
-        logger.exception(f"Błąd podczas wysyłania summary na kolejkę '{queue_name}'.")
+        logger.exception(f"Błąd podczas wysyłania zdarzenia do Event Grid.")
         return {"status": "FAILED", "message": str(e), "error_details": traceback.format_exc()}
