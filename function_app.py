@@ -221,7 +221,7 @@ async def write_to_queue(input: Dict[str, Any]):
 
         event = EventGridEvent(
             subject=f"/silver/processing/{payload.get('correlation_id')}",
-            event_type="SilverProcessing.Started",
+            event_type="BronzeIngestionCompleted",
             data=payload,
             data_version="1.0"
         )
