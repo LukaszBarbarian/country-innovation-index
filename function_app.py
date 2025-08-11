@@ -73,17 +73,11 @@ async def start_ingestion_http(req: func.HttpRequest, starter: df.DurableOrchest
 
         # PONIŻEJ PRÓBUJEMY PARSOWAĆ JSON
         req_body = req.get_json()
-
-    except ValueError:
-        logger.exception("Błąd: Wymagany jest poprawny format JSON w ciele żądania.")
-        return func.HttpResponse(
-            "Błąd: Wymagany jest poprawny format JSON w ciele żądania.",
-            status_code=400
-        )
+   
     except Exception as e:
         logger.exception(f"Inny błąd podczas przetwarzania żądania: {e}")
         return func.HttpResponse(
-            f"Błąd: {str(e)}",
+            f"Błąd: {str(e)}. Req: {str(req)}",
             status_code=500
         )
 
