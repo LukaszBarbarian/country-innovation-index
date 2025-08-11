@@ -62,14 +62,29 @@ async def ingest_now_queue(msg: func.QueueMessage, starter: df.DurableOrchestrat
 @app.durable_client_input(client_name="starter")
 async def start_ingestion_http(req: func.HttpRequest, starter: df.DurableOrchestrationClient) -> func.HttpResponse:
     logger.info('HTTP trigger function processed a request.')
-    
+
     try:
+        # POBIERAMY SUROWĄ ZAWARTOŚĆ CIAŁA ŻĄDANIA
+        req_body_bytes = req.get_body()
+        req_body_text = req_body_bytes.decode("utf-8")
+        
+        # LOGUJEMY SUROWĄ ZAWARTOŚĆ ŻĄDANIA, ABY ZOBACZYĆ, CO DOKŁADNIE PRZYSŁAŁ ADF
+        logger.info(f"Surowa zawartość żądania: {req_body_text}")
+
+        # PONIŻEJ PRÓBUJEMY PARSOWAĆ JSON
         req_body = req.get_json()
 
     except ValueError:
+        logger.exception("Błąd: Wymagany jest poprawny format JSON w ciele żądania.")
         return func.HttpResponse(
-             "Błąd: Wymagany jest poprawny format JSON w ciele żądania.",
-             status_code=400
+            "Błąd: Wymagany jest poprawny format JSON w ciele żądania.",
+            status_code=400
+        )
+    except Exception as e:
+        logger.exception(f"Inny błąd podczas przetwarzania żądania: {e}")
+        return func.HttpResponse(
+            f"Błąd: {str(e)}",
+            status_code=500
         )
 
     items_to_process = req_body
@@ -80,6 +95,7 @@ async def start_ingestion_http(req: func.HttpRequest, starter: df.DurableOrchest
             "Błąd: Oczekiwano niepustej listy pozycji do przetworzenia.",
             status_code=400
         )
+
 
     try:
         # Uruchomienie Twojego istniejącego Durable Orchestratora

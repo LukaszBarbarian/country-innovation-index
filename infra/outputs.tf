@@ -77,3 +77,8 @@ output "eventgrid_topic_name" {
   value = azurerm_eventgrid_topic.etl_events_topic.name
   description = "The name of the Event Grid topic"
 }
+
+
+output "current_object_id" {
+  value = data.azurerm_client_config.current.object_id
+}
