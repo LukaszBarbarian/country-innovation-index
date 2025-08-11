@@ -1,50 +1,45 @@
-name: upload-config
+name: Upload Config to Azure Blob and Publish Event
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
-    paths:
-      - 'src/common/config/dev.config.json'
+    inputs:
+      keyvault_name:
+        description: 'Nazwa Azure Key Vault, z którego pobrać sekrety.'
+        required: true
+        default: 'TwojaNazwaKeyVault' # Zmień na nazwę Twojego Key Vault
 
 env:
-  TERRAFORM_DIR: ./infra
+  # Zmienne, które będą uzupełnione dynamicznie z Key Vault
+  STORAGE_ACCOUNT_NAME: 'storage-account-name'
+  STORAGE_CONTAINER_NAME: 'storage-container-configs-name'
+  EVENTGRID_TOPIC_NAME: 'eventgrid-topic-name'
+  RESOURCE_GROUP_NAME: 'resource-group-name'
 
 jobs:
   upload-config:
     runs-on: ubuntu-latest
-
+    env:
+      KEYVAULT_NAME: ${{ github.event.inputs.keyvault_name }}
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Login to Azure
         uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: 1.5.0
-
-      - name: Terraform Init
-        run: terraform init
-        working-directory: ${{ env.TERRAFORM_DIR }}
-
-      - name: Terraform Refresh
-        run: terraform refresh
-        working-directory: ${{ env.TERRAFORM_DIR }}
-
-      - name: Get Terraform Outputs
-        id: tf_outputs
+      - name: Fetch secrets from Key Vault
+        id: fetch-secrets
         run: |
-          echo "STORAGE_ACCOUNT_NAME=$(terraform output -raw storage_account_name)" >> $GITHUB_ENV
-          echo "STORAGE_CONTAINER_NAME=$(terraform output -raw configs_container_name)" >> $GITHUB_ENV
-          echo "RESOURCE_GROUP_NAME=$(terraform output -raw resource_group_name)" >> $GITHUB_ENV
-          echo "EVENTGRID_TOPIC_NAME=$(terraform output -raw eventgrid_topic_name || echo '')" >> $GITHUB_ENV
-        working-directory: ${{ env.TERRAFORM_DIR }}
+          STORAGE_ACCOUNT_NAME=$(az keyvault secret show --vault-name "$KEYVAULT_NAME" --name "STORAGE-ACCOUNT-NAME" --query "value" -o tsv)
+          STORAGE_CONTAINER_NAME=$(az keyvault secret show --vault-name "$KEYVAULT_NAME" --name "STORAGE-CONTAINER-NAME" --query "value" -o tsv)
+          EVENTGRID_TOPIC_NAME=$(az keyvault secret show --vault-name "$KEYVAULT_NAME" --name "EVENTGRID-TOPIC-NAME" --query "value" -o tsv)
+          RESOURCE_GROUP_NAME=$(az keyvault secret show --vault-name "$KEYVAULT_NAME" --name "RESOURCE-GROUP-NAME" --query "value" -o tsv)
+
+          echo "STORAGE_ACCOUNT_NAME=$STORAGE_ACCOUNT_NAME" >> $GITHUB_ENV
+          echo "STORAGE_CONTAINER_NAME=$STORAGE_CONTAINER_NAME" >> $GITHUB_ENV
+          echo "EVENTGRID_TOPIC_NAME=$EVENTGRID_TOPIC_NAME" >> $GITHUB_ENV
+          echo "RESOURCE_GROUP_NAME=$RESOURCE_GROUP_NAME" >> $GITHUB_ENV
 
       - name: Upload config.json to Blob Storage
         run: |
@@ -57,7 +52,6 @@ jobs:
             --auth-mode login
 
       - name: Publish Event to Event Grid
-        if: env.EVENTGRID_TOPIC_NAME != ''
         run: |
           az eventgrid event publish \
             --topic-name "$EVENTGRID_TOPIC_NAME" \
@@ -72,5 +66,5 @@ jobs:
             }]'
 
       - name: Logout from Azure
-        run: az logout
         if: always()
+        run: az logout
