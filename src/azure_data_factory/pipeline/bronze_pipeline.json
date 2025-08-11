@@ -73,9 +73,6 @@
 			"p_env": {
 				"type": "string",
 				"defaultValue": "dev"
-			},
-			"p_storage_queue_account_name": {
-				"type": "string"
 			}
 		},
 		"annotations": [],
