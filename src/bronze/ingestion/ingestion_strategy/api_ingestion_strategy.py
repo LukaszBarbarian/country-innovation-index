@@ -9,6 +9,7 @@ from src.common.config.config_manager import ConfigManager
 from src.common.contexts.base_layer_context import BaseLayerContext
 from src.common.enums.domain_source import DomainSource
 from src.common.enums.domain_source_type import DomainSourceType
+from src.common.enums.etl_layers import ETLLayer
 from src.common.factories.api_client_factory import ApiClientFactory
 from src.common.factories.data_processor_factory import DataProcessorFactory
 from src.common.factories.storage_file_builder_factory import StorageFileBuilderFactory
@@ -33,7 +34,7 @@ class ApiIngestionStrategy(BaseIngestionStrategy):
         try:
             api_client = ApiClientFactory.get_instance(context.domain_source, config=self.config)
             data_processor = DataProcessorFactory.get_instance(context.domain_source)
-            file_metadata_builder = StorageFileBuilderFactory.get_instance(context.domain_source, config=self.config)
+            file_metadata_builder = StorageFileBuilderFactory.get_instance(ETLLayer.BRONZE, config=self.config)
             storage_manager = BlobClientManager(context.etl_layer.value)
             
             all_processed_records_results: List[ProcessedResult] = []

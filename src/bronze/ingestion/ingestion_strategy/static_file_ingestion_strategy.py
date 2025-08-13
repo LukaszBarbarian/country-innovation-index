@@ -17,7 +17,7 @@ class StaticFileIngestionStrategy(BaseIngestionStrategy):
         super().__init__(config)
 
     async def ingest(self, context: BronzeLayerContext) -> IngestionResult:
-        self.file_builder = StorageFileBuilderFactory.get_instance(context.domain_source, config=self.config)
+        self.file_builder = StorageFileBuilderFactory.get_instance(ETLLayer.BRONZE, config=self.config)
 
         if not context.file_paths:
             logger.error(
