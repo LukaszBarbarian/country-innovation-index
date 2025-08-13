@@ -39,9 +39,8 @@ jobs:
         run: |
           az storage container create \
             --name "$STORAGE_CONTAINER_NAME" \
-            --account-name "$STORAGE_ACCOUNT_NAME" \
-            --fail-on-exist false
-      
+            --account-name "$STORAGE_ACCOUNT_NAME" 
+                  
       - name: Upload config file to Blob Storage
         run: |
           az storage blob upload \
