@@ -43,23 +43,23 @@ jobs:
 
       - name: Get Event Grid credentials
         run: |
-            EVENTGRID_KEY=$(az eventgrid topic key list \
-              --name "$EVENTGRID_TOPIC_NAME" \
-              --resource-group "$RESOURCE_GROUP_NAME" \
-              --query "key1" -o tsv)
-            EVENTGRID_ENDPOINT=$(az eventgrid topic show \
-              --name "$EVENTGRID_TOPIC_NAME" \
-              --resource-group "$RESOURCE_GROUP_NAME" \
-              --query "endpoint" -o tsv)
-        
-            echo "EVENTGRID_KEY=$EVENTGRID_KEY" >> $GITHUB_ENV
-            echo "EVENTGRID_ENDPOINT=$EVENTGRID_ENDPOINT" >> $GITHUB_ENV
-        
+          # Pobieranie klucza i endpointu z Azure CLI
+          EVENTGRID_KEY=$(az eventgrid topic key list \
+            --name "$EVENTGRID_TOPIC_NAME" \
+            --resource-group "$RESOURCE_GROUP_NAME" \
+            --query "key1" -o tsv)
+          EVENTGRID_ENDPOINT=$(az eventgrid topic show \
+            --name "$EVENTGRID_TOPIC_NAME" \
+            --resource-group "$RESOURCE_GROUP_NAME" \
+            --query "endpoint" -o tsv)
+          
+          # Ustawianie zmiennych środowiskowych dla kolejnych kroków
+          echo "EVENTGRID_KEY=$EVENTGRID_KEY" >> $GITHUB_ENV
+          echo "EVENTGRID_ENDPOINT=$EVENTGRID_ENDPOINT" >> $GITHUB_ENV
+    
       - name: Publish Event to Event Grid
-        env:
-          EVENTGRID_KEY: ${{ secrets.EVENTGRID_KEY }}
-          EVENTGRID_ENDPOINT: ${{ secrets.EVENTGRID_ENDPOINT }}
         run: |
+          # Skrypt używa zmiennych zdefiniowanych w poprzednim kroku
           cat > event.json <<EOF
           [{
             "id": "$(uuidgen)",
@@ -74,8 +74,7 @@ jobs:
           curl -X POST -H "aeg-sas-key: $EVENTGRID_KEY" \
                 -H "Content-Type: application/json" \
                 --data-binary @event.json \
-                "$EVENTGRID_ENDPOINT"
-        
+              "$EVENTGRID_ENDPOINT"
           
 
       - name: Logout from Azure
