@@ -58,7 +58,7 @@ class BronzeStorageFileBuilder(BaseStorageFileBuilder):
         # 5. FileInfo
         file_info = FileInfo(
             container_name=container_name,
-            full_path_in_container=full_path_url,
+            full_path_in_container=full_path_in_container,
             file_name=file_name,
             file_size_bytes=file_size_bytes,
             domain_source=context.domain_source.value,
@@ -66,7 +66,8 @@ class BronzeStorageFileBuilder(BaseStorageFileBuilder):
             ingestion_date=context.ingestion_time_utc.strftime("%Y-%m-%d"),
             correlation_id=context.correlation_id,
             blob_tags=blob_tags,
-            payload_hash=payload_hash
+            payload_hash=payload_hash,
+            full_blob_url=full_path_url
         )
 
         return {

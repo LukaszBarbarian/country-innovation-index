@@ -15,4 +15,6 @@ class FileInfo:
     ingestion_date: str = ""
     correlation_id: Optional[str] = None 
     
+    full_blob_url: Optional[str] = None 
+    
     blob_tags: Optional[Dict[str, str]] = None
