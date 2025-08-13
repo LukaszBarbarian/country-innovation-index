@@ -37,7 +37,7 @@ class BronzeStorageFileBuilder(BaseStorageFileBuilder):
         full_path_in_container, file_name = self._generate_blob_path_and_name(
                                           context.dataset_name,
                                           context.correlation_id,
-                                          context.domain_source,
+                                          context.domain_source.value,
                                           ingestion_time_utc=context.ingestion_time_utc,
                                           file_extension="json",
                                           payload_hash=payload_hash)

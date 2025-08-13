@@ -204,15 +204,22 @@ async def write_to_queue(input: Dict[str, Any]):
     if not payload:
         return {"status": "FAILED", "message": "Brak payloadu."}
 
+    # Pobieranie zmiennych środowiskowych na początku
     endpoint = os.environ.get("EVENT_GRID_ENDPOINT")
     key = os.environ.get("EVENT_GRID_KEY")
-
-    manager = EventGridClientManager()
-    if endpoint and key:
-        manager.initialize_from_key(endpoint, key)
-    else:
-        logger.info("Brak klucza — próba połączenia przez Managed Identity")
-        manager._initialize_clients()  # używa DefaultAzureCredential
+    
+    # Obsłuż przypadek, gdy endpoint jest pusty
+    if not endpoint:
+        error_message = "Zmienna środowiskowa 'EVENT_GRID_ENDPOINT' nie jest ustawiona."
+        logger.error(error_message)
+        return {"status": "FAILED", "message": error_message}
+    
+    # Tworzenie klienta Event Grid, przekazując mu wymagane dane
+    try:
+        manager = EventGridClientManager(endpoint=endpoint, key=key)
+    except ValueError as e:
+        logger.exception(f"Błąd inicjalizacji klienta Event Grid: {e}")
+        return {"status": "FAILED", "message": f"Błąd inicjalizacji: {e}"}
 
     return manager.send_event(
         event_type="BronzeIngestionCompleted",

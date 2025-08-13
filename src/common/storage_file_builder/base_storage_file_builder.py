@@ -1,5 +1,6 @@
 # src/common/storage_metadata_file_builder/base_storage_metadata_file_builder.py
 from abc import ABC, abstractmethod
+import datetime
 import hashlib
 import json
 from typing import Dict, Any, List
@@ -44,7 +45,10 @@ class BaseStorageFileBuilder(ABC):
                                      payload_hash: str, 
                                      ingestion_time_utc: str):
         file_name = f"{dataset_name}_{correlation_id}_{payload_hash}.{file_extension}"
-        blob_path = f"{domain_source}/{ingestion_time_utc}/{file_name}"
+
+        ingestion_date_path = datetime.datetime.now(datetime.timezone.utc).strftime("%Y/%m/%d")
+
+        blob_path = f"{domain_source}/{ingestion_date_path}/{file_name}"
         return blob_path, file_name
 
     def _compute_payload_hash(self, api_request_payload: Dict[str, Any]) -> str:
