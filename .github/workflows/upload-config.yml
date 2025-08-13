@@ -37,7 +37,7 @@ jobs:
 
       - name: Upload config file to Blob Storage
         run: |
-            az storage blob upload --account-name "$STORAGE_ACCOUNT_NAME" --container-name "$STORAGE_CONTAINER_NAME" --name "bronze/config/dev.config.json" --file "src/common/config/dev.config.json" --overwrite
+            az storage blob upload --account-name "$STORAGE_ACCOUNT_NAME" --container-name "$STORAGE_CONTAINER_NAME" --name "bronze/configs/dev.config.json" --file "src/common/config/dev.config.json" --overwrite
 
               
 
