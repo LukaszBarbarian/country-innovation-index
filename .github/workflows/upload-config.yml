@@ -60,7 +60,7 @@ jobs:
             cat > event.json <<EOF
             [{
               "id": "$(uuidgen)",
-              "eventType": "ConfigFileUploaded",
+              "eventType": "StartBronzeIngestion",
               "subject": "/dev.config.json",
               "eventTime": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
               "data": { "filename": "dev.config.json" },
