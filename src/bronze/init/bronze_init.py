@@ -13,3 +13,7 @@ from src.bronze.ingestion.api_clients.nobelprize_api_client import NobelPrizeApi
 
 #processor
 from src.bronze.ingestion.processors.nobelprize_processor import NobelPrizeProcessor
+
+
+from src.bronze.ingestion.ingestion_strategy.api_ingestion_strategy import ApiIngestionStrategy
+from src.bronze.ingestion.ingestion_strategy.static_file_ingestion_strategy import StaticFileIngestionStrategy

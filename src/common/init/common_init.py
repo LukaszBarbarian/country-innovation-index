@@ -1,3 +1,2 @@
-from src.common.ingestion_strategy.api_ingestion_strategy import ApiIngestionStrategy
-from src.common.ingestion_strategy.static_file_ingestion_strategy import StaticFileIngestionStrategy
+
 
