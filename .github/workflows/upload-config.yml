@@ -37,7 +37,7 @@ jobs:
 
       - name: Upload config file to Blob Storage
         run: |
-            az storage blob upload --account-name "$STORAGE_ACCOUNT_NAME" --container-name "$STORAGE_CONTAINER_NAME" --name "dev.config.json" --file "src/common/config/dev.config.json" --overwrite
+            az storage blob upload --account-name "$STORAGE_ACCOUNT_NAME" --container-name "$STORAGE_CONTAINER_NAME" --name "bronze/config/dev.config.json" --file "src/common/config/dev.config.json" --overwrite
 
               
 
@@ -66,7 +66,7 @@ jobs:
             "eventType": "StartBronzeIngestion",
             "subject": "/dev.config.json",
             "eventTime": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
-            "data": { "config_file_path": "dev.config.json" },
+            "data": { "config_file_path": "bronze/dev.config.json" },
             "dataVersion": "1.0"
           }]
           EOF
