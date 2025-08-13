@@ -21,7 +21,7 @@ class NobelPrizeApiClient(ApiClient):
         super().__init__(config=config, base_url_setting_name="NOBELPRIZE_API_BASE_URL")
 
 
-    async def fetch_all(self, context: BaseLayerContext) -> List[RawData]:
+    async def fetch_all(self, context: BronzeLayerContext) -> List[RawData]:
         dataset_name = context.dataset_name
         request_payload = context.payload.get("source_config_payload", {}).get("request_payload")       
 

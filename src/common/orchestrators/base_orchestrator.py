@@ -6,11 +6,11 @@ from src.common.contexts.base_layer_context import BaseLayerContext
 from src.common.models.ingestion_result import IngestionResult
 from src.common.models.orchestrator_result import OrchestratorResult
 from src.common.config.config_manager import ConfigManager
-from pyspark.sql import SparkSession
+from src.common.spark.spark_service import SparkService
 
 
 class BaseOrchestrator(ABC):
-    def __init__(self, config: ConfigManager, spark: Optional[SparkSession] = None):
+    def __init__(self, config: ConfigManager, spark: Optional[SparkService] = None):
         self.config = config
         self.storage_account_name = self.config.get_setting("DATA_LAKE_STORAGE_ACCOUNT_NAME")
         self.spark = spark
@@ -39,9 +39,6 @@ class BaseOrchestrator(ABC):
             layer_name=context.etl_layer,
             env=context.env,
             message=f"Orchestrator failed due to an internal error: {str(error)}",
-            domain_source=context.domain_source,
-            domain_source_type=context.domain_source_type,
-            dataset_name=context.dataset_name,
             error_details={
                 "errorType": type(error).__name__,
                 "errorMessage": str(error)

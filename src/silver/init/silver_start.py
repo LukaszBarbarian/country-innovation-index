@@ -1,50 +1,23 @@
 import os, sys
 import sys
 import asyncio
-import findspark
-
-from src.common.config.references_config_parser import ReferenceConfigParser
-from src.common.enums.etl_layers import ETLLayer
-from src.common.factories.orchestrator_factory import OrchestratorFactory
-from src.silver.context.silver_parser import SilverPayloadParser
-
-
+from injector import V
 
 sys.path.insert(0, "d:/projects/cv-demo1")
 print("sys.path:", sys.path)
 
-import src.silver.init.silver_init 
+
+
+from src.common.spark.spark_service import SparkService
 from src.common.config.config_manager import ConfigManager
-
-SPARK_INSTALL_PATH = "C:/spark/spark-3.5.6-bin-hadoop3"
-findspark.init(SPARK_INSTALL_PATH)
-
-
-config = ConfigManager()
-AZURE_STORAGE_ACCOUNT_NAME = "demosurdevdatalake4418sa"
-AZURE_STORAGE_ACCOUNT_KEY = config.get_setting("AZURE_STORAGE_ACCOUNT_KEY")#os.getenv("AZURE_STORAGE_ACCOUNT_KEY")
-AZURE_CONTAINER_NAME = "bronze"
+from src.common.config.references_config_parser import ReferenceConfigParser
+from src.common.enums.etl_layers import ETLLayer
+from src.common.factories.orchestrator_factory import OrchestratorFactory
+from src.silver.context.silver_parser import SilverPayloadParser
+import src.silver.init.silver_init 
 
 
-parquet_path = f"abfss://{AZURE_CONTAINER_NAME}@{AZURE_STORAGE_ACCOUNT_NAME}.dfs.core.windows.net"
-JAR_PATH = "C:/spark/jars"
-all_jars = ",".join([
-    os.path.join(JAR_PATH, jar)
-    for jar in os.listdir(JAR_PATH) if jar.endswith(".jar")
-])
 
-from pyspark.sql import SparkSession
-
-spark = SparkSession.builder \
-    .appName("SparkAzureABFSS") \
-    .master("local[*]") \
-    .config("spark.jars", all_jars) \
-    .config(f"fs.azure.account.key.{AZURE_STORAGE_ACCOUNT_NAME}.dfs.core.windows.net", AZURE_STORAGE_ACCOUNT_KEY) \
-    .config("spark.hadoop.fs.azure.account.auth.type." + AZURE_STORAGE_ACCOUNT_NAME + ".dfs.core.windows.net", "SharedKey") \
-    .config("spark.hadoop.fs.azure.createRemoteFileSystemDuringInitialization", "true") \
-    .getOrCreate()
-
-print("✅ SparkSession gotowa!")
 
 # df = spark.createDataFrame([
 #     (1, "Łukasz"),
@@ -56,52 +29,24 @@ print("✅ SparkSession gotowa!")
 # df.write.mode("overwrite").parquet(parquet_path)
 
 
-
-
-
 from src.common.config.config_manager import ConfigManager
 
 
 import json
 
 # Ciąg znaków zawierający dane JSON
-json_string = """
-{
-        "correlation_id": "736984ab-3b21-4c9f-b2dd-7863f1a74389",
-        "queue_message_id": "209a080e-c116-49c8-9fe8-393555906fb1",
-        "env": "dev",
-        "etl_layer": "bronze",
-        "processing_config_payload": {
-                "status": "COMPLETED",
-                "correlation_id": "abc-123",
-                "queue_message_id": "xyz-789",
-                "domain_source": "PATENTS",
-                "domain_source_type": "static_file",
-                "dataset_name": "patents",
-                "layer_name": "bronze",
-                "env": "dev",
-                "message": "Static file path passed through to the next layer.",
-                "source_response_status_code": 200,
-                "output_paths": [
-                    "/manual/patents/patents.json"
-                ]
-            }
-        }
-"""
+payload = {"status": "BRONZE_COMPLETED", "env" : "dev", "correlation_id": "a104eb07-180d-4f0b-8e52-2007edc73ffc", "timestamp": "2025-08-10T14:42:54.996192+00:00", "processed_items": 2, 
+           "results":
+                    [
+                        {"status": "COMPLETED", "correlation_id": "63f5fa96-e202-4446-84cc-a43dbe337160", "layer_name": "bronze", "env": "dev", "message": "API data successfully processed and stored. Uploaded 1 files.", "domain_source": "NOBELPRIZE", "domain_source_type": "api", "dataset_name": "nobelPrizes", "output_paths": ["https://demosurdevdatalake4418sa.blob.core.windows.net/bronze/NOBELPRIZE/2025/08/12/nobelPrizes_127e1b2c-6460-4c59-9d3f-7aaec0e9640b_2e201fc5.json"], "source_response_status_code": 200, "error_details": {}}, 
+                        {"status": "COMPLETED", "correlation_id": "63f5fa96-e202-4446-84cc-a43dbe337160", "layer_name": "bronze", "env": "dev", "message": "Static file path passed through to the next layer.", "domain_source": "PATENTS", "domain_source_type": "static_file", "dataset_name": "patents", "output_paths": ["https://demosurdevdatalake4418sa.blob.core.windows.net/manual/patents/patents.json"], "source_response_status_code": 200, "error_details": {}}
+                    ]
+          }
 
-
-payload = json.loads(json_string)
 
 
 json_string = """
 {
-  "manual_data_paths": [
-    {
-      "domain_source": "PATENTS",
-      "dataset_name": "patents",
-      "file_path": "/manual/patents/patents.json"
-    }
-  ],
   "references": {
     "country_codes": "/references/country_codes.csv"
   }
@@ -114,6 +59,9 @@ reference = ReferenceConfigParser().parse(config)
 context = SilverPayloadParser().parse(payload)
 
 config = ConfigManager(reference)
+spark = SparkService(config)
+spark.start_local()
+
 orchestrator = OrchestratorFactory.get_instance(ETLLayer.SILVER, spark=spark, config=config)
 result = asyncio.run(orchestrator.run(context))
 

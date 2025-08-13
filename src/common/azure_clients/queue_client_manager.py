@@ -6,7 +6,7 @@ from azure.storage.queue import QueueServiceClient, QueueClient, QueueMessage
 from azure.core.exceptions import ResourceNotFoundError
 
 # WAŻNE: Upewnij się, że ta ścieżka importu jest poprawna.
-from src.common.storage_account.blob_storage_manager import AzureClientManagerBase
+from src.common.azure_clients.blob_client_manager import AzureClientManagerBase
 
 
 logger = logging.getLogger(__name__)

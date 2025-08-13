@@ -34,6 +34,16 @@ jobs:
           echo "EVENTGRID_TOPIC_NAME=$EVENTGRID_TOPIC_NAME" >> $GITHUB_ENV
           echo "RESOURCE_GROUP_NAME=$RESOURCE_GROUP_NAME" >> $GITHUB_ENV
 
+
+      - name: Upload config file to Blob Storage
+        run: |
+            az storage blob upload \
+              --account-name "$STORAGE_ACCOUNT_NAME" \
+              --container-name "$STORAGE_CONTAINER_NAME" \
+              --name "dev.config.json" \
+              --file "src/common/config/dev.config.json"          
+              
+
       - name: Get Event Grid credentials
         run: |
             EVENTGRID_KEY=$(az eventgrid topic key list \

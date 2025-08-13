@@ -10,11 +10,12 @@ import azure.durable_functions as df
 
 # Importy z Twoich modułów
 from src.bronze.contexts.bronze_parser import BronzePayloadParser
+from src.common.azure_clients.event_grid_client_manager import EventGridClientManager
 from src.common.factories.orchestrator_factory import OrchestratorFactory
 from src.common.config.config_manager import ConfigManager
 from src.common.enums.etl_layers import ETLLayer
 from src.bronze.init import bronze_init
-from src.common.storage_account.queue_storage_manager import QueueStorageManager
+from src.common.azure_clients.queue_client_manager import QueueStorageManager
 from azure.core.credentials import AzureKeyCredential
 from azure.eventgrid import EventGridPublisherClient, EventGridEvent
 
@@ -130,6 +131,7 @@ def ingest_orchestrator(context: df.DurableOrchestrationContext):
     summary_payload = {
         "status": "BRONZE_COMPLETED",
         "correlation_id": correlation_id,
+        "env" : "dev",
         "timestamp": context.current_utc_datetime.isoformat(),
         "processed_items": len(items),
         "results": results
@@ -167,7 +169,7 @@ async def run_ingestion_activity(input: Dict[str, Any]) -> Dict[str, Any]:
         }
 
     try:
-        parsed_context = BronzePayloadParser(correlation_id).parse(input)
+        parsed_context = BronzePayloadParser().parse(input)
         logger.info(f"Parsed context for correlation_id {correlation_id}")
 
         result = await OrchestratorFactory.get_instance(
@@ -198,40 +200,22 @@ async def run_ingestion_activity(input: Dict[str, Any]) -> Dict[str, Any]:
 @app.activity_trigger(input_name="input")
 async def write_to_queue(input: Dict[str, Any]):
     logger.info("write_to_queue activity started.")
-    try:
-        payload = input.get("payload")
-        logger.info(f"Payload received for write_to_queue: {payload}")
+    payload = input.get("payload")
+    if not payload:
+        return {"status": "FAILED", "message": "Brak payloadu."}
 
-        if not payload:
-            logger.error("Brak payloadu w write_to_queue.")
-            return {"status": "FAILED", "message": "Brak payloadu."}
+    endpoint = os.environ.get("EVENT_GRID_ENDPOINT")
+    key = os.environ.get("EVENT_GRID_KEY")
 
-        endpoint = os.environ.get("EVENT_GRID_ENDPOINT")
-        key = os.environ.get("EVENT_GRID_KEY")
+    manager = EventGridClientManager()
+    if endpoint and key:
+        manager.initialize_from_key(endpoint, key)
+    else:
+        logger.info("Brak klucza — próba połączenia przez Managed Identity")
+        manager._initialize_clients()  # używa DefaultAzureCredential
 
-        if not endpoint or not key:
-            error_msg = "Brak ustawionych zmiennych środowiskowych EVENT_GRID_ENDPOINT lub EVENT_GRID_KEY."
-            logger.error(error_msg)
-            return {"status": "FAILED", "message": error_msg}
-
-        logger.info(f"EVENT_GRID_ENDPOINT: {endpoint}")
-
-        credential = AzureKeyCredential(key)
-        client = EventGridPublisherClient(endpoint, credential)
-
-        event = EventGridEvent(
-            subject=f"/silver/processing/{payload.get('correlation_id')}",
-            event_type="BronzeIngestionCompleted",
-            data=payload,
-            data_version="1.0"
-        )
-
-        logger.info(f"Sending event to Event Grid for correlation_id: {payload.get('correlation_id')}")
-        client.send([event])
-        logger.info("Event Grid send succeeded.")
-
-        return {"status": "EVENT_SENT", "event_grid_topic": endpoint}
-
-    except Exception as e:
-        logger.exception(f"Błąd podczas wysyłania zdarzenia do Event Grid: {e}")
-        return {"status": "FAILED", "message": str(e), "error_details": traceback.format_exc()}
+    return manager.send_event(
+        event_type="BronzeIngestionCompleted",
+        subject=f"/silver/processing/{payload.get('correlation_id')}",
+        data=payload
+    )

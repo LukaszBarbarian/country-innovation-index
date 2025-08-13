@@ -1,21 +1,22 @@
 # src/common/storage_metadata_file_builder/default_storage_file_builder.py
 
 import json
-import hashlib
 from typing import Dict, Any, List, cast
-from xml import dom
 
-from src.common.contexts.base_layer_context import BaseLayerContext
+from src.bronze.contexts.bronze_layer_context import BronzeLayerContext
+from src.common.enums.domain_source_type import DomainSourceType
+from src.common.enums.etl_layers import ETLLayer
+from src.common.registers.storage_file_builder_registry import StorageFileBuilderRegistry
 from src.common.storage_file_builder.base_storage_file_builder import BaseStorageFileBuilder
 from src.common.models.file_info import FileInfo
 from src.common.models.processed_result import ProcessedResult
 
-
-class DefaultStorageFileBuilder(BaseStorageFileBuilder):
+@StorageFileBuilderRegistry.register(ETLLayer.BRONZE)
+class BronzeStorageFileBuilder(BaseStorageFileBuilder):
 
     def build_file_output(self, 
                           processed_records_results: ProcessedResult, 
-                          context: BaseLayerContext, 
+                          context: BronzeLayerContext, 
                           container_name: str) -> Dict[str, Any]:
 
         # 1. Dane do zapisania
@@ -33,12 +34,16 @@ class DefaultStorageFileBuilder(BaseStorageFileBuilder):
         payload_hash = self._compute_payload_hash(request_config_payload)
 
         # 3. Generuj ścieżkę i nazwę pliku z hashem
-        full_path_in_container, file_name = self._generate_blob_path_and_name(dataset_name=context.dataset_name, 
-                                          correlation_id=context.correlation_id, 
-                                          domain_source=context.domain_source.value,
+        full_path_in_container, file_name = self._generate_blob_path_and_name(
+                                          context.dataset_name,
+                                          context.correlation_id,
+                                          context.domain_source,
+                                          ingestion_time_utc=context.ingestion_time_utc,
                                           file_extension="json",
-                                          ingestion_time_utc=context.ingestion_time_utc.strftime('%Y/%m/%d'),
                                           payload_hash=payload_hash)
+        
+        full_path_url = self.build_blob_url(container_name, full_path_in_container, self.config.get_setting("DATA_LAKE_STORAGE_ACCOUNT_NAME"))
+
 
         # 4. Tagi do bloba
         blob_tags = {
@@ -53,7 +58,7 @@ class DefaultStorageFileBuilder(BaseStorageFileBuilder):
         # 5. FileInfo
         file_info = FileInfo(
             container_name=container_name,
-            full_path_in_container=full_path_in_container,
+            full_path_in_container=full_path_url,
             file_name=file_name,
             file_size_bytes=file_size_bytes,
             domain_source=context.domain_source.value,

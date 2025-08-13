@@ -3,7 +3,7 @@
     "configurations": [
         // Twoja istniejąca konfiguracja Azure Functions
         {
-            "name": "Attach to Python Functions",
+            "name": "Debug Azure Functions",
             "type": "debugpy",
             "request": "attach",
             "connect": {
@@ -14,7 +14,7 @@
         },
         // ----------- NOWA KONFIGURACJA DLA DATABRICKS CONNECT -----------
         {
-            "name": "Python: Debug Databricks",
+            "name": "Debug Databricks",
             "type": "python",
             "request": "launch",
             "program": "${file}", // Uruchamia aktualnie otwarty plik
@@ -23,6 +23,13 @@
             "env": {
                 "PYTHONPATH": "${workspaceFolder}" // Dostosuj tę ścieżkę do Twojej struktury
             }
+        },
+        {
+            "name": "Debug Silver.start",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/silver/init/silver_start.py",
+            "console": "integratedTerminal"
         }
     ]
 }

@@ -8,9 +8,11 @@ from src.common.contexts.base_layer_context import BaseLayerContext
 from src.common.di.di_module import DIModule
 from src.common.di.builders_module import BuildersModule
 from src.common.di.readers_module import ReadersModule
+from src.common.spark.spark_service import SparkService
+from src.silver.context.silver_context import SilverLayerContext
 
 class SilverModule(DIModule):
-    def __init__(self, context: BaseLayerContext, spark_session: SparkSession, config: ConfigManager):
+    def __init__(self, context: SilverLayerContext, spark_session: SparkService, config: ConfigManager):
         super().__init__(context, config)
         self._spark_session = spark_session
 
@@ -19,15 +21,17 @@ class SilverModule(DIModule):
         binder.install(BuildersModule(self._context, self._config))
         binder.install(ReadersModule(self._context, self._config))
         
+        binder.bind(SilverLayerContext, to=self.provide_context, scope=singleton)
         binder.bind(BaseLayerContext, to=self.provide_context, scope=singleton)
+
 
 
     @singleton
     @provider
-    def provide_spark_session(self) -> SparkSession:
+    def provide_spark_session(self) -> SparkService:
         return self._spark_session
     
     @singleton
     @provider
-    def provide_context(self) -> BaseLayerContext:
+    def provide_context(self) -> SilverLayerContext:
         return self._context

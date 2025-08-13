@@ -1,6 +1,7 @@
-from abc import ABC
-from typing import Any, Dict
+from abc import ABC, abstractmethod
+from typing import Any, Dict, List
 
+from src.common.contexts.base_layer_context import BaseLayerContext
 from src.common.enums.domain_source import DomainSource
 from src.common.enums.env import Env
 from src.common.enums.etl_layers import ETLLayer
@@ -8,8 +9,12 @@ from src.common.enums.etl_layers import ETLLayer
 
 class BaseParser(ABC):
 
-    def __init__(self, correlation_id: str) -> None:
-        self.correlation_id = correlation_id
+    def __init__(self) -> None:
+        pass
+
+    @abstractmethod
+    def parse(self, payload: Dict[str, Any]) -> BaseLayerContext:
+        raise NotImplementedError()
     
     def _ensure_requires(self, requires: list[str], payload: Dict[str, Any]):
         if not all(field in payload for field in requires):
@@ -33,3 +38,18 @@ class BaseParser(ABC):
             return DomainSource(domain_source_str)
         except ValueError:
             raise ValueError(f"Invalid domain_source: '{domain_source_str}'")
+        
+
+    def _is_status_valid(self, status: str, results: List[Dict[str, Any]]) -> bool:
+        """
+        Sprawdza, czy główny status kończy się na '_COMPLETED'
+        i czy status każdego elementu w 'results' to 'COMPLETED'.
+        """
+        if not status.endswith("_COMPLETED"):
+            return False
+        
+        for item in results:
+            if item.get("status") != "COMPLETED":
+                return False
+        
+        return True        

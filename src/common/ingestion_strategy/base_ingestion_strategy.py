@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from typing import Optional, Any, Dict, List
 from src.common.config.config_manager import ConfigManager
 from src.common.contexts.base_layer_context import BaseLayerContext
+from src.common.enums.domain_source import DomainSource
 from src.common.models.ingestion_result import IngestionResult
 
 class BaseIngestionStrategy(ABC):
@@ -13,6 +14,7 @@ class BaseIngestionStrategy(ABC):
     """
     def __init__(self, config: ConfigManager):
         self.config = config
+
 
     @abstractmethod
     async def ingest(self, context: BaseLayerContext) -> IngestionResult:

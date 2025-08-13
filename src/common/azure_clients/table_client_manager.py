@@ -7,7 +7,7 @@ from azure.core.exceptions import ResourceNotFoundError, ResourceExistsError
 # Pamiętaj, że musisz mieć zainstalowane azure-data-tables: pip install azure-data-tables
 
 # Importuj swoją klasę bazową
-from src.common.storage_account.manager_base import AzureClientManagerBase
+from src.common.azure_clients.base_azure_client_manager import AzureClientManagerBase
 
 logger = logging.getLogger(__name__)
 

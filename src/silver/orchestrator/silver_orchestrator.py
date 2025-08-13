@@ -1,16 +1,20 @@
 
 import logging
+from logging import config
+
+import injector
 from src.common.config.config_manager import ConfigManager
 from src.common.contexts.base_layer_context import BaseLayerContext
 from src.common.enums.etl_layers import ETLLayer
 from src.common.registers.orchestrator_registry import OrchestratorRegistry
-from src.common.storage_account.blob_storage_manager import BlobStorageManager
+from src.common.azure_clients.blob_client_manager import BlobClientManager
 from src.common.models.orchestrator_result import OrchestratorResult
 from src.common.orchestrators.base_orchestrator import BaseOrchestrator
 from src.common.enums.model_type import ModelType
 from typing import List, Optional
 import traceback 
 from injector import Injector
+from src.common.spark.spark_service import SparkService
 from src.silver.di.silver_module import SilverModule
 from src.common.factories.model_builder_factory import ModelBuilderFactory
 from src.common.models.base_model import BaseModel
@@ -21,12 +25,12 @@ from pyspark.sql import SparkSession
 logger = logging.getLogger(__name__)
 
 
-@OrchestratorRegistry.register(ETLLayer.BRONZE)
+@OrchestratorRegistry.register(ETLLayer.SILVER)
 class SilverOrchestrator(BaseOrchestrator):
          
     async def run(self, context: BaseLayerContext) -> OrchestratorResult:
         logger.info(f"Starting transformation CorrelationId: {context.correlation_id}")
-        storage_manager = BlobStorageManager(context.etl_layer.value)
+        storage_manager = BlobClientManager(context.etl_layer.value)
 
         final_output_path: Optional[str] = None 
 
@@ -45,7 +49,6 @@ class SilverOrchestrator(BaseOrchestrator):
             return OrchestratorResult(
                 status="COMPLETED",
                 correlation_id=context.correlation_id,
-                queue_message_id=context.queue_message_id,
                 layer_name=context.etl_layer,
                 env=context.env,
                 message="No records fetched, skipping file save.",
@@ -59,7 +62,7 @@ class SilverOrchestrator(BaseOrchestrator):
 
     
 
-    def init_di(self, context: BaseLayerContext, spark: SparkSession, config: ConfigManager) -> Injector:
+    def init_di(self, context: BaseLayerContext, spark: SparkService, config: ConfigManager) -> Injector:
         return Injector(SilverModule(context, spark, config))
         
         

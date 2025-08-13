@@ -8,11 +8,12 @@ from src.common.factories.data_reader_factory import DataReaderFactory
 from src.common.enums.domain_source import DomainSource
 from src.common.models.base_model import BaseModel
 from src.common.contexts.base_layer_context import BaseLayerContext
+from src.common.spark.spark_service import SparkService
 
 
 class BaseModelBuilder(ABC):
     @inject
-    def __init__(self, spark: SparkSession, 
+    def __init__(self, spark: SparkService, 
                  injector: Injector, 
                  context: BaseLayerContext,
                  config: ConfigManager):
@@ -21,6 +22,8 @@ class BaseModelBuilder(ABC):
         self._injector = injector
         self._context = context
         self._config = config
+
+        
 
     def get_reader(self, domain_source: DomainSource) -> BaseDataReader:
         reader_class = DataReaderFactory.get_class(domain_source)

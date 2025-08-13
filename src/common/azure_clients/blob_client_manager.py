@@ -3,15 +3,15 @@
 import logging
 from typing import Any, Union, Dict, Literal, Optional
 # Zmieniamy na asynchroniczne klienty
-from azure.storage.blob.aio import BlobServiceClient, ContainerClient, BlobClient 
+from azure.storage.blob.aio import BlobServiceClient, ContainerClient 
 from azure.core.exceptions import ResourceNotFoundError, ResourceExistsError 
 import json
 from src.common.models.file_info import FileInfo
-from src.common.storage_account.manager_base import AzureClientManagerBase
+from src.common.azure_clients.base_azure_client_manager import AzureClientManagerBase
 
 logger = logging.getLogger(__name__)
 
-class BlobStorageManager(AzureClientManagerBase[BlobServiceClient, ContainerClient]):
+class BlobClientManager(AzureClientManagerBase[BlobServiceClient, ContainerClient]):
     
     def __init__(self, 
                  container_name: str, 

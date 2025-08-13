@@ -1,4 +1,5 @@
 # src/parsers/bronze_payload_parser.py
+
 from typing import Dict, Any, List, Optional, cast
 from src.bronze.contexts.bronze_layer_context import BronzeLayerContext
 from src.common.contexts.base_parser import BaseParser
@@ -10,9 +11,7 @@ from src.common.enums.env import Env
 
 class BronzePayloadParser(BaseParser):
     def parse(self, payload: Dict[str, Any]) -> BronzeLayerContext:
-        # Jeśli nie ma correlation_id, generuj nowe UUID
-
-        self._ensure_requires(requires=["etl_layer", "env"], payload=payload)
+        self._ensure_requires(requires=["correlation_id", "etl_layer", "env"], payload=payload)
 
         source_config_payload = payload.get("source_config_payload")
         if not source_config_payload:
@@ -31,22 +30,27 @@ class BronzePayloadParser(BaseParser):
         domain_source = self._map_domain_source(source_config_payload["domain_source"])
         dataset_name = source_config_payload["dataset_name"]
 
-        request_payload = source_config_payload.get("request_payload", {})
+        request_payload = cast(Dict[str, Any], source_config_payload.get("request_payload", {}))
 
-        file_path: Optional[List[str]] = None
+        # Zmieniamy nazwę zmiennej, aby była spójna z nazwą pola w dataclass
+        file_paths: List[str] = []
 
         if domain_source_type == DomainSourceType.STATIC_FILE:
-            file_path = cast(List[str], request_payload.get("file_path", []))
+            # Używamy .get() aby uniknąć błędów, jeśli klucz nie istnieje
+            file_paths = cast(List[str], request_payload.get("file_path", []))
 
         return BronzeLayerContext(
             correlation_id=correlation_id,
             etl_layer=etl_layer,
             env=env,
+            # Przekazujemy pola specyficzne dla warstwy Bronze
             domain_source=domain_source,
             domain_source_type=domain_source_type,
             dataset_name=dataset_name,
+            file_paths=file_paths,
+            
+            # Przekazujemy pozostałe pola
             payload=payload,
             source_config_payload=source_config_payload,
-            request_payload=request_payload,
-            file_paths=file_path or []
+            request_payload=request_payload
         )

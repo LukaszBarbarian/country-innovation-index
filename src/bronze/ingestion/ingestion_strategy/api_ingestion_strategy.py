@@ -4,8 +4,10 @@ import logging
 import traceback
 from typing import List, Optional
 
+from src.bronze.contexts.bronze_layer_context import BronzeLayerContext
 from src.common.config.config_manager import ConfigManager
 from src.common.contexts.base_layer_context import BaseLayerContext
+from src.common.enums.domain_source import DomainSource
 from src.common.enums.domain_source_type import DomainSourceType
 from src.common.factories.api_client_factory import ApiClientFactory
 from src.common.factories.data_processor_factory import DataProcessorFactory
@@ -15,21 +17,24 @@ from src.common.models.file_info import FileInfo
 from src.common.models.ingestion_result import IngestionResult
 from src.common.models.processed_result import ProcessedResult
 from src.common.registers.ingestion_strategy_registry import IngestionStrategyRegistry
-from src.common.storage_account.blob_storage_manager import BlobStorageManager
+from src.common.azure_clients.blob_client_manager import BlobClientManager
 
 logger = logging.getLogger(__name__)
 
 @IngestionStrategyRegistry.register(DomainSourceType.API)
 class ApiIngestionStrategy(BaseIngestionStrategy):
-    async def ingest(self, context: BaseLayerContext) -> IngestionResult:
+    def __init__(self, config: ConfigManager):
+        super().__init__(config)
+        
+    async def ingest(self, context: BronzeLayerContext) -> IngestionResult:
         all_output_paths: List[str] = []
         source_response_status_code: Optional[int] = None
         
         try:
             api_client = ApiClientFactory.get_instance(context.domain_source, config=self.config)
             data_processor = DataProcessorFactory.get_instance(context.domain_source)
-            file_metadata_builder = StorageFileBuilderFactory.get_instance(context.domain_source)
-            storage_manager = BlobStorageManager(context.etl_layer.value)
+            file_metadata_builder = StorageFileBuilderFactory.get_instance(context.domain_source, config=self.config)
+            storage_manager = BlobClientManager(context.etl_layer.value)
             
             all_processed_records_results: List[ProcessedResult] = []
 

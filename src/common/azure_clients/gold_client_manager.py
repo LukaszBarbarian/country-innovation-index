@@ -3,14 +3,14 @@
 import logging
 from typing import Dict, Any, Union, Literal
 from datetime import datetime
-from src.common.storage_account.blob_storage_manager import BlobStorageManager
+from src.common.azure_clients.blob_client_manager import BlobClientManager
 
 logger = logging.getLogger(__name__)
 
-class GoldStorageManager(BlobStorageManager):
+class GoldStorageManager(BlobClientManager):
     """
     Menedżer do interakcji z kontenerem 'gold' w Azure Blob Storage.
-    Dziedziczy generyczne operacje na blob-ach z BlobStorageManager
+    Dziedziczy generyczne operacje na blob-ach z BlobClientManager
     i może dodawać specyficzne metody dla warstwy Gold (danych analitycznych/raportowych).
     """
     DEFAULT_CONTAINER_NAME = "gold" # Ustaw domyślną nazwę kontenera
