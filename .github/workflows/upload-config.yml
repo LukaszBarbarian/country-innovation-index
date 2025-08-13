@@ -56,22 +56,25 @@ jobs:
             echo "EVENTGRID_ENDPOINT=$EVENTGRID_ENDPOINT" >> $GITHUB_ENV
         
       - name: Publish Event to Event Grid
+        env:
+          EVENTGRID_KEY: ${{ secrets.EVENTGRID_KEY }}
+          EVENTGRID_ENDPOINT: ${{ secrets.EVENTGRID_ENDPOINT }}
         run: |
-            cat > event.json <<EOF
-            [{
-              "id": "$(uuidgen)",
-              "eventType": "StartBronzeIngestion",
-              "subject": "/dev.config.json",
-              "eventTime": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
-              "data": { "filename": "dev.config.json" },
-              "dataVersion": "1.0"
-            }]
-            EOF
-        
-            curl -X POST -H "aeg-sas-key: $EVENTGRID_KEY" \
-                 -H "Content-Type: application/json" \
-                 --data-binary @event.json \
-                 "$EVENTGRID_ENDPOINT"
+          cat > event.json <<EOF
+          [{
+            "id": "$(uuidgen)",
+            "eventType": "StartBronzeIngestion",
+            "subject": "/dev.config.json",
+            "eventTime": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
+            "data": { "filename": "dev.config.json" },
+            "dataVersion": "1.0"
+          }]
+          EOF
+          
+          curl -X POST -H "aeg-sas-key: $EVENTGRID_KEY" \
+                -H "Content-Type: application/json" \
+                --data-binary @event.json \
+                "$EVENTGRID_ENDPOINT"
         
           
 
