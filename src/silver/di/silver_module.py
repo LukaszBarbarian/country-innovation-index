@@ -3,7 +3,7 @@
 from injector import Module, Binder, singleton, provider
 from pyspark.sql import SparkSession
 from src.common.config.config_manager import ConfigManager
-from src.common.contexts.base_layer_context import BaseLayerContext
+from src.common.models.base_context import BaseContext
 
 from src.common.di.di_module import DIModule
 from src.common.di.builders_module import BuildersModule
@@ -22,7 +22,7 @@ class SilverModule(DIModule):
         binder.install(ReadersModule(self._context, self._config))
         
         binder.bind(SilverLayerContext, to=self.provide_context, scope=singleton)
-        binder.bind(BaseLayerContext, to=self.provide_context, scope=singleton)
+        binder.bind(BaseContext, to=self.provide_context, scope=singleton)
 
 
 

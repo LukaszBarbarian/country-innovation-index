@@ -49,13 +49,11 @@ class NobelPrizeDataReader(BaseDataReader):
                 # 4. Iterujemy po ścieżkach z danego wyniku i ładujemy pliki
                 for path in result.output_paths:
                     try:
-                        if dataset_name == "nobelprizes":
+                        if dataset_name == "laureates":
                             schema = self._get_schema_nobelprizes()
-                        elif dataset_name == "kandydaci":
-                            schema = None
-
 
                         df = self._spark.read_json(path, schema)
+
                         
                         dataframes_dict[dataset_name] = df
                         print(f"Załadowano dane dla datasetu '{dataset_name}' z pliku: {path}")
@@ -67,8 +65,37 @@ class NobelPrizeDataReader(BaseDataReader):
     
 
     def _get_schema_nobelprizes(self) -> Structure:
+        countryNow_schema = StructType([
+            StructField("en", StringType(), True),
+            StructField("no", StringType(), True),
+            StructField("se", StringType(), True),
+            StructField("sameAs", ArrayType(StringType()), True),
+            StructField("latitude", StringType(), True),
+            StructField("longitude", StringType(), True)
+        ])
+
+        place_schema = StructType([
+            StructField("countryNow", countryNow_schema, True),
+            # Dodaj inne pola, jeśli potrzebujesz (np. city, cityNow)
+        ])
+        
+        birth_schema = StructType([
+            StructField("date", StringType(), True),
+            StructField("place", place_schema, True)
+        ])
+
+        knownName_schema = StructType([
+            StructField("en", StringType(), True),
+            StructField("se", StringType(), True)
+        ])
+
+        laureate_schema = StructType([
+            StructField("id", StringType(), True),
+            StructField("knownName", knownName_schema, True),
+            StructField("birth", birth_schema, True),
+            StructField("gender", StringType(), True)
+        ])
+
         return StructType([
-                            StructField("id", IntegerType(), True),
-                            StructField("name", StringType(), True),
-                            StructField("prizes", ArrayType(StringType()), True)
-])
+            StructField("laureates", ArrayType(laureate_schema), True)
+        ])

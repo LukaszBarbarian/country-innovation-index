@@ -59,8 +59,8 @@ class BlobClientManager(AzureClientManagerBase[BlobServiceClient, ContainerClien
 
         try:
             folder_path = "/".join(file_info.full_path_in_container.split("/")[:-1]) + "/"
-            if await self.blob_with_same_payload_hash_exists(folder_path, file_info.payload_hash):
-                logger.info(f"File with payload_hash {file_info.payload_hash} already exists in {folder_path}. Skipping upload.")
+            if await self.blob_with_same_hash_name_exists(folder_path, file_info.hash_name):
+                logger.info(f"File with hash_name {file_info.hash_name} already exists in {folder_path}. Skipping upload.")
                 return 0
 
             blob_name = file_info.full_path_in_container
@@ -149,13 +149,13 @@ class BlobClientManager(AzureClientManagerBase[BlobServiceClient, ContainerClien
 
 
 
-    async def blob_with_same_payload_hash_exists(self, folder_path: str, payload_hash: str) -> bool:
+    async def blob_with_same_hash_name_exists(self, folder_path: str, hash_name: str) -> bool:
         """
-        Sprawdza, czy w folderze (prefix) jest blob z ciągiem 'payload_hash' w nazwie.
+        Sprawdza, czy w folderze (prefix) jest blob z ciągiem 'hash_name' w nazwie.
         
         Args:
             folder_path: Ścieżka do folderu, np. "folder1/folder2/".
-            payload_hash: Hash, który ma być wyszukany w nazwie bloba.
+            hash_name: Hash, który ma być wyszukany w nazwie bloba.
             
         Returns:
             True, jeśli blob o pasującej nazwie istnieje, False w przeciwnym wypadku.
@@ -169,13 +169,29 @@ class BlobClientManager(AzureClientManagerBase[BlobServiceClient, ContainerClien
             
             async for blob in blobs:
                 # Warunek sprawdzający, czy podany hash znajduje się w nazwie bloba
-                if payload_hash in blob.name:
-                    logger.info(f"Znaleziono istniejący blob '{blob.name}' zawierający hash: {payload_hash}")
+                if hash_name in blob.name:
+                    logger.info(f"Znaleziono istniejący blob '{blob.name}' zawierający hash: {hash_name}")
                     return True
             
             # Jeśli pętla się zakończyła i nic nie znaleziono
             return False
             
         except Exception as e:
-            logger.error(f"Wystąpił błąd podczas sprawdzania blobów pod kątem hasha '{payload_hash}': {e}", exc_info=True)
+            logger.error(f"Wystąpił błąd podczas sprawdzania blobów pod kątem hasha '{hash_name}': {e}", exc_info=True)
             raise
+
+
+
+
+    async def get_blob_properties(self, blob_path: str) -> Optional[dict]:
+        """Pobiera tylko właściwości (w tym ETag) bloba bez pobierania zawartości."""
+        blob_client = self.client.get_blob_client(blob_path)
+        try:
+            properties = await blob_client.get_blob_properties()
+            return properties
+        except ResourceNotFoundError:
+            logger.info(f"Blob '{blob_path}' not found.")
+            return None
+        except Exception as e:
+            logger.error(f"Error getting properties for blob '{blob_path}': {e}", exc_info=True)
+            raise        

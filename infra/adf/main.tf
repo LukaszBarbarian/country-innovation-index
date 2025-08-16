@@ -45,3 +45,20 @@ resource "azurerm_data_factory_trigger_custom_event" "silver_trigger" {
     }
   }
 }
+
+resource "azurerm_data_factory_trigger_schedule" "bronze_daily_trigger" {
+  name            = "bronze-daily-trigger"
+  data_factory_id = azurerm_data_factory.adf_instance.id
+
+  pipeline {
+    name = "bronze_pipeline"
+  }
+
+  frequency = "Day"
+  interval  = 1
+
+  schedule {
+    minutes = [0]
+    hours   = [0]
+  }
+}

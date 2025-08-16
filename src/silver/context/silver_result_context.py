@@ -18,7 +18,6 @@ class SilverResultContext:
     env: Env
     
     message: Optional[str] = None
-    source_response_status_code: Optional[int] = None
     error_details: Optional[Dict[str, Any]] = None
     output_paths: List[str] = field(default_factory=list)
     is_valid: bool = False

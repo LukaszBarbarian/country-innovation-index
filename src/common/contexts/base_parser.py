@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List
 
-from src.common.contexts.base_layer_context import BaseLayerContext
+from src.common.models.base_context import BaseContext
 from src.common.enums.domain_source import DomainSource
 from src.common.enums.env import Env
 from src.common.enums.etl_layers import ETLLayer
@@ -13,7 +13,7 @@ class BaseParser(ABC):
         pass
 
     @abstractmethod
-    def parse(self, payload: Dict[str, Any]) -> BaseLayerContext:
+    def parse(self, payload: Dict[str, Any], correlation_id: str) -> BaseContext:
         raise NotImplementedError()
     
     def _ensure_requires(self, requires: list[str], payload: Dict[str, Any]):

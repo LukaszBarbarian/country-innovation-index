@@ -38,3 +38,10 @@ variable "eventgrid_topic_id" {
   description = "The ID of the Event Grid Topic to which the triggers will subscribe."
   type        = string
 }
+
+
+variable "storage_account_primary_connection_string" {
+  type        = string
+  description = "Primary connection string do Storage Account (Bronze/Silver/Gold)"
+}
+

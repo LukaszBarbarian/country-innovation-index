@@ -8,7 +8,7 @@ class FileInfo:
     full_path_in_container: str = ""
     file_name: str = ""
     file_size_bytes: Optional[int] = None
-    payload_hash: str = ""
+    hash_name: str = ""
     
     domain_source: str = ""
     dataset_name: str = ""

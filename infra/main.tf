@@ -127,6 +127,7 @@ resource "azurerm_function_app" "main_function_app" {
     EVENT_GRID_KEY                  = azurerm_eventgrid_topic.etl_events_topic.primary_access_key
 
 
+
   }
 
   tags = {
@@ -144,6 +145,8 @@ module "adf" {
   environment               = var.environment
   function_app_url          = azurerm_function_app.main_function_app.default_hostname
   eventgrid_topic_id  = azurerm_eventgrid_topic.etl_events_topic.id 
+  storage_account_primary_connection_string = azurerm_storage_account.sadatalake.primary_connection_string
+
 
 }
 
@@ -167,9 +170,6 @@ resource "azurerm_role_assignment" "adf_datalake_contributor" {
     ]
   }
 }
-
-
-
 
 
 

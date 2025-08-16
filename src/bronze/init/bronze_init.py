@@ -15,5 +15,10 @@ from src.bronze.ingestion.api_clients.nobelprize_api_client import NobelPrizeApi
 from src.bronze.ingestion.processors.nobelprize_processor import NobelPrizeProcessor
 
 
+#strategy ingestion
 from src.bronze.ingestion.ingestion_strategy.api_ingestion_strategy import ApiIngestionStrategy
 from src.bronze.ingestion.ingestion_strategy.static_file_ingestion_strategy import StaticFileIngestionStrategy
+
+
+#parser manifest
+from src.bronze.manifest.bronze_manifest_parser import BronzeManifestParser

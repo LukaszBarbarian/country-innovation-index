@@ -4,22 +4,19 @@ from logging import config
 
 import injector
 from src.common.config.config_manager import ConfigManager
-from src.common.contexts.base_layer_context import BaseLayerContext
+from src.common.models.base_context import BaseContext
 from src.common.enums.etl_layers import ETLLayer
+from src.common.models.etl_model import EtlModel
 from src.common.registers.orchestrator_registry import OrchestratorRegistry
-from src.common.azure_clients.blob_client_manager import BlobClientManager
 from src.common.models.orchestrator_result import OrchestratorResult
 from src.common.orchestrators.base_orchestrator import BaseOrchestrator
 from src.common.enums.model_type import ModelType
 from typing import List, Optional
-import traceback 
 from injector import Injector
 from src.common.spark.spark_service import SparkService
 from src.silver.di.silver_module import SilverModule
 from src.common.factories.model_builder_factory import ModelBuilderFactory
-from src.common.models.base_model import BaseModel
-from pyspark.sql import SparkSession
-
+from src.silver.model_persister.model_persister import ModelPersister
 
 
 logger = logging.getLogger(__name__)
@@ -28,11 +25,10 @@ logger = logging.getLogger(__name__)
 @OrchestratorRegistry.register(ETLLayer.SILVER)
 class SilverOrchestrator(BaseOrchestrator):
          
-    async def run(self, context: BaseLayerContext) -> OrchestratorResult:
+    async def run(self, context: BaseContext) -> OrchestratorResult:
         logger.info(f"Starting transformation CorrelationId: {context.correlation_id}")
-        storage_manager = BlobClientManager(context.etl_layer.value)
 
-        final_output_path: Optional[str] = None 
+        final_output_path: List[str] = None 
 
         try:
             if not self.spark:
@@ -43,7 +39,12 @@ class SilverOrchestrator(BaseOrchestrator):
             for model_type in ModelType:
                 builder_class = ModelBuilderFactory.get_class(model_type)
                 model_builder = di_injector.get(builder_class)
-                model = await model_builder.run()
+                model_builder.set_identity(model_type)
+                etl_model: EtlModel = await model_builder.run()
+
+                persister = ModelPersister(config=self.config, context=context, spark=self.spark)
+                path = persister.persist_model(etl_model)
+                final_output_path.append(path)
                 
                 
             return OrchestratorResult(
@@ -51,8 +52,8 @@ class SilverOrchestrator(BaseOrchestrator):
                 correlation_id=context.correlation_id,
                 layer_name=context.etl_layer,
                 env=context.env,
-                message="No records fetched, skipping file save.",
-                output_paths=None,
+                message="Silver process completed.",
+                output_paths=final_output_path,
             )
 
 
@@ -62,7 +63,7 @@ class SilverOrchestrator(BaseOrchestrator):
 
     
 
-    def init_di(self, context: BaseLayerContext, spark: SparkService, config: ConfigManager) -> Injector:
+    def init_di(self, context: BaseContext, spark: SparkService, config: ConfigManager) -> Injector:
         return Injector(SilverModule(context, spark, config))
         
         
