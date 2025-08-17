@@ -1,20 +1,11 @@
 name: deploy-function
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'function_app.py'
-      - 'requirements.txt'
-      - 'src/**'
-      - 'host.json'
   workflow_dispatch:
 
 env:
   PYTHON_VERSION: '3.12'
-  FUNCTION_APP_OS: linux
-  FUNCTION_CODE_DIR: ./ 
+  FUNCTION_CODE_DIR: ./
   AZURE_FUNCTION_APP_PACKAGE_NAME: 'function_app_package.zip'
   AZURE_FUNCTION_APP_PACKAGE_FULL_PATH: '${{ github.workspace }}/function_app_package.zip'
 
@@ -38,18 +29,13 @@ jobs:
     - name: Zip function app content
       run: |
         sudo apt-get update && sudo apt-get install -y zip
-        zip -r ${{ env.AZURE_FUNCTION_APP_PACKAGE_NAME }} \
-          function_app.py host.json requirements.txt \
-          src/common/ src/silver/ src/bronze/
+        zip -r ${{ env.AZURE_FUNCTION_APP_PACKAGE_NAME }} function_app.py host.json requirements.txt src/common/ src/silver/ src/bronze/
       working-directory: ${{ env.FUNCTION_CODE_DIR }}
 
-    - name: List files in workspace root
-      run: ls -la ${{ github.workspace }}
-
-    - name: Deploy Function App using Azure WebApps Deploy Action
+    - name: Deploy Function App
       uses: azure/webapps-deploy@v2
       with:
-        app-name: ${{ secrets.AZURE_FUNCTION_APP_NAME }}
+        app-name: ${{ secrets.AZURE_FUNCTION_APP_NAME }} 
         slot-name: 'production'
         package: ${{ env.AZURE_FUNCTION_APP_PACKAGE_FULL_PATH }}
 
