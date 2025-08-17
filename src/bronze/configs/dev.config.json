@@ -1,0 +1,18 @@
+{
+	"env": "dev",
+    "etl_layer": "bronze",
+	"sources" :
+				[
+					{      
+						"source_config_payload": {
+							"domain_source_type": "api",
+							"domain_source": "NOBELPRIZE",
+							"dataset_name": "laureates",
+							"request_payload": {
+								"offset": 0,
+								"limit": 100
+							}
+						}
+					}
+			]	
+}

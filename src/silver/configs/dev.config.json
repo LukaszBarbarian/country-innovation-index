@@ -1,0 +1,27 @@
+{
+    "env": "dev",
+    "etl_layer": "silver",
+    "references_tables": {
+      "boolean_mappings": "/references/boolean_mappings/boolean_mapping.csv",
+      "country_codes": "/references/country_codes/country-codes.csv",
+      "date_formats": "/references/date_formats/date_formats.csv"
+    },
+    "manual_data_paths": [
+      {
+        "domain_source": "PATENTS",
+        "dataset_name": "patents",
+        "file_path": "/manual/patents/patents.json"
+      }
+    ],
+    "models": [
+      {
+        "model_name": "country",
+        "source_datasets": [
+          "laureates",
+          "patents"
+        ],
+        "status": "pending",
+        "errors": []
+      }
+    ]
+  }
