@@ -22,6 +22,7 @@ env:
 jobs:
   terraform:
     runs-on: ubuntu-latest
+    if: false
     outputs:
       function_app_name: ${{ steps.tf_outputs.outputs.function_app_name }}
       resource_group_name: ${{ steps.tf_outputs.outputs.resource_group_name }}
