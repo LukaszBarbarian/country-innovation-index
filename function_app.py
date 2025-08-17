@@ -59,7 +59,7 @@ def ingest_orchestrator(context: df.DurableOrchestrationContext):
         return {"status": "FAILED", "message": "Orchestrator received an empty or invalid payload."}
     
     orchestrator_result_dict = yield context.call_activity(
-        "run_bronze_orchestrator_activity", 
+        "run_ingestion_activity", 
         {"input_payload": input_payload}
     )
 
@@ -83,8 +83,8 @@ def ingest_orchestrator(context: df.DurableOrchestrationContext):
 
 
 @app.activity_trigger(input_name="input")
-async def run_bronze_orchestrator_activity(input: Dict[str, Any]) -> Dict[str, Any]:
-    logger.info("run_bronze_orchestrator_activity started.")
+async def run_ingestion_activity(input: Dict[str, Any]) -> Dict[str, Any]:
+    logger.info("run_ingestion_activity started.")
     
     input_payload = input["input_payload"]
     
