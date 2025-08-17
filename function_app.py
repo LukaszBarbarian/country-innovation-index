@@ -1,21 +1,8 @@
-import uuid
-import json
-import os
-import traceback
 import logging
-from typing import Dict, Any
-
 import azure.functions as func
 import azure.durable_functions as df
 
-# Importy z Twoich modułów
-from src.bronze.contexts.bronze_parser import BronzePayloadParser
-from src.common.azure_clients.event_grid_client_manager import EventGridClientManager
-from src.common.factories.orchestrator_factory import OrchestratorFactory
-from src.common.config.config_manager import ConfigManager
-from src.common.enums.etl_layers import ETLLayer
 
-from src.bronze.init import bronze_init
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
