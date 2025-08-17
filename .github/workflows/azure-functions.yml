@@ -35,7 +35,7 @@ jobs:
     - name: Deploy Function App
       uses: azure/webapps-deploy@v2
       with:
-        app-name: 'demosurdevfunc4418'
+        app-name: demosurdevfunc4418
         slot-name: 'production'
         package: ${{ env.AZURE_FUNCTION_APP_PACKAGE_FULL_PATH }}
 
