@@ -132,9 +132,7 @@ jobs:
       working-directory: ${{ env.FUNCTION_CODE_DIR }}
 
 
-    - name: List contents of function package
-      run: unzip -l ${{ env.AZURE_FUNCTION_APP_PACKAGE_NAME }}
-
+    
 
     - name: Deploy Function App using Azure WebApps Deploy Action
       uses: azure/webapps-deploy@v2
