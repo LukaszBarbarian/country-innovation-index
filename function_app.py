@@ -1,6 +1,4 @@
 import logging
-from typing import Dict, Any
-
 import azure.functions as func
 import azure.durable_functions as df
 
@@ -20,26 +18,25 @@ app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 
 
 
-@app.route(route="HttpTrigger1")
-def HttpTrigger1(req: func.HttpRequest) -> func.HttpResponse:
-    logging.info('Python HTTP trigger function processed a request.')
+@app.function_name(name="start_ingestion_http")
+@app.route(route="start_ingestion")
+@app.durable_client_input(client_name="starter")
+async def start_ingestion_http(req: func.HttpRequest, starter: df.DurableOrchestrationClient) -> func.HttpResponse:
+    logging.info('start_ingestion_http function triggered.')
 
-    name = req.params.get('name')
-    if not name:
-        try:
-            req_body = req.get_json()
-        except ValueError:
-            pass
-        else:
-            name = req_body.get('name')
-
-    if name:
-        return func.HttpResponse(
-            f"Hello, {name}. This HTTP triggered function executed successfully.",
-            mimetype="text/plain"
-        )
-    else:
-        return func.HttpResponse(
-            "This HTTP triggered function executed successfully. Pass a name in the query string or in the request body for a personalized response.",
-            mimetype="text/plain"
-        )
+    try:
+        manifest_payload = req.get_json()
+    except ValueError:
+        logging.error("Żądanie nie zawiera prawidłowego JSON.")
+        return func.HttpResponse("Błąd: Oczekiwano prawidłowego formatu JSON.", status_code=400)
+    except Exception as e:
+        logging.exception(f"Inny błąd podczas przetwarzania żądania: {e}")
+        return func.HttpResponse(f"Błąd: {str(e)}", status_code=500)
+    
+    try:
+        instance_id = await starter.start_new("ingest_orchestrator", None, manifest_payload)
+        logging.info(f"Rozpoczęto orkiestrację z ID = '{instance_id}'.")
+        return starter.create_check_status_response(req, instance_id)
+    except Exception as e:
+        logging.exception(f"Błąd podczas uruchamiania orkiestracji: {e}")
+        return func.HttpResponse(f"Błąd podczas uruchamiania orkiestracji: {e}", status_code=500)
