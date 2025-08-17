@@ -125,12 +125,11 @@ jobs:
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-    - name: Zip function app content # <-- Zmieniamy sposób pakowania
+    - name: Zip function app content
       run: |
-        sudo apt-get update && sudo apt-get install -y zip
-        # Pakujemy zawartość katalogu z kodem do pliku ZIP w głównym katalogu repozytorium
-        zip -r ${{ env.AZURE_FUNCTION_APP_PACKAGE_FULL_PATH }} .
-      working-directory: ${{ env.FUNCTION_CODE_DIR }} # Upewnij się, że pakujesz z ./ (katalogu z kodem)
+          sudo apt-get update && sudo apt-get install -y zip
+          zip -r ${{ env.AZURE_FUNCTION_APP_PACKAGE_FULL_PATH }} src *.py requirements.txt -x "*/__pycache__/*" "*/.git/*"
+      working-directory: ${{ env.FUNCTION_CODE_DIR }}
 
     - name: List files in current directory # <-- KROK DIAGNOSTYCZNY
       run: ls -la . 
