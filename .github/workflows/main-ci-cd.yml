@@ -128,7 +128,7 @@ jobs:
     - name: Zip function app content
       run: |
           sudo apt-get update && sudo apt-get install -y zip
-          zip -r ${{ env.AZURE_FUNCTION_APP_PACKAGE_FULL_PATH }} . -x "*/__pycache__/*" "*/.git/*"
+          zip -r ../deploy.zip function_app.py host.json requirements.txt src/
       working-directory: ${{ env.FUNCTION_CODE_DIR }}
 
 
