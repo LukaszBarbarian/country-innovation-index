@@ -22,6 +22,35 @@ logger.setLevel(logging.INFO)
 
 app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 
+@app.function_name(name="ingest_now_queue")
+@app.queue_trigger(arg_name="msg", queue_name="bronze-tasks", connection="AzureWebJobsStorageQueue")
+@app.durable_client_input(client_name="starter")
+async def ingest_now_queue(msg: func.QueueMessage, starter: df.DurableOrchestrationClient):
+    try:
+        logger.info("ingest_now_queue triggered.")
+        body_bytes = msg.get_body()
+        body_text = body_bytes.decode("utf-8")
+        logger.info(f"Message body text: {body_text}")
+
+        items_to_process = json.loads(body_text)
+
+        if not isinstance(items_to_process, list) or not items_to_process:
+            logger.error("Oczekiwano listy pozycji do przetworzenia na kolejce.")
+            return
+
+        instance_id = await starter.start_new("ingest_orchestrator", None, items_to_process)
+        logger.info(f"Rozpoczęto orkiestrację z ID = '{instance_id}' dla {len(items_to_process)} pozycji.")
+        return
+
+    except json.JSONDecodeError:
+        logger.exception("Nieprawidłowy JSON w wiadomości z kolejki.")
+        return
+    except Exception:
+        logger.exception("Błąd podczas obsługi wiadomości z kolejki.")
+        return
+
+
+
 
 @app.function_name(name="start_ingestion_http")
 @app.route(route="start_ingestion")

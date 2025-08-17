@@ -131,11 +131,9 @@ jobs:
           zip -r ${{ env.AZURE_FUNCTION_APP_PACKAGE_FULL_PATH }} . -x "*/__pycache__/*" "*/.git/*"
       working-directory: ${{ env.FUNCTION_CODE_DIR }}
 
-    - name: List files in current directory # <-- KROK DIAGNOSTYCZNY
-      run: ls -la . 
 
-    - name: List files in workspace root # <-- KROK DIAGNOSTYCZNY
-      run: ls -la ${{ github.workspace }}
+    - name: List contents of function package
+      run: unzip -l function_app_package.zip
 
     - name: Deploy Function App using Azure WebApps Deploy Action
       uses: azure/webapps-deploy@v2
