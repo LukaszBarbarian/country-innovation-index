@@ -129,7 +129,7 @@ jobs:
       run: |
         sudo apt-get update && sudo apt-get install -y zip
         # Pakujemy zawartość katalogu z kodem do pliku ZIP w głównym katalogu repozytorium
-          zip -r ${{ env.AZURE_FUNCTION_APP_PACKAGE_NAME }} function_app.py host.json requirements.txt src/
+          zip -r ${{ env.AZURE_FUNCTION_APP_PACKAGE_NAME }} . -x ".git*" -x ".vscode*"
       working-directory: ${{ env.FUNCTION_CODE_DIR }} # Upewnij się, że pakujesz z ./ (katalogu z kodem)
 
     - name: List files in current directory # <-- KROK DIAGNOSTYCZNY
