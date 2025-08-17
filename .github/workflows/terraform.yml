@@ -1,0 +1,95 @@
+name: Terraform CI/CD
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'infra/**'
+  workflow_dispatch:
+
+env:
+  TERRAFORM_DIR: ./infra
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+    outputs:
+      function_app_name: ${{ steps.tf_outputs.outputs.function_app_name }}
+      resource_group_name: ${{ steps.tf_outputs.outputs.resource_group_name }}
+      storage_account_name: ${{ steps.tf_outputs.outputs.storage_account_name }}
+      storage_container_name: ${{ steps.tf_outputs.outputs.configs_container_name }}
+      eventgrid_topic_name: ${{ steps.tf_outputs.outputs.eventgrid_topic_name }}
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: 'Login to Azure for Terraform'
+      uses: azure/login@v2
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Export Azure credentials for Terraform
+      run: |
+        echo "ARM_CLIENT_ID=${{ fromJson(secrets.AZURE_CREDENTIALS).clientId }}" >> $GITHUB_ENV
+        echo "ARM_CLIENT_SECRET=${{ fromJson(secrets.AZURE_CREDENTIALS).clientSecret }}" >> $GITHUB_ENV
+        echo "ARM_SUBSCRIPTION_ID=${{ fromJson(secrets.AZURE_CREDENTIALS).subscriptionId }}" >> $GITHUB_ENV
+        echo "ARM_TENANT_ID=${{ fromJson(secrets.AZURE_CREDENTIALS).tenantId }}" >> $GITHUB_ENV
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: 1.5.0
+
+    - name: Terraform Init
+      run: terraform init
+      working-directory: ${{ env.TERRAFORM_DIR }}
+
+    - name: Terraform Validate
+      run: terraform validate
+      working-directory: ${{ env.TERRAFORM_DIR }}
+
+    - name: Terraform Plan
+      id: plan
+      run: |
+        terraform plan -no-color -input=false -out=tfplan > plan_output.txt
+        PLAN_OUTPUT=$(cat plan_output.txt)
+        echo "$PLAN_OUTPUT"
+
+        if grep -q "No changes. Your infrastructure matches the configuration." plan_output.txt; then
+          echo "::set-output name=has_changes::false"
+        else
+          echo "::set-output name=has_changes::true"
+        fi
+      working-directory: ${{ env.TERRAFORM_DIR }}
+
+    - name: Terraform Apply
+      id: apply
+      if: ${{ steps.plan.outputs.has_changes == 'true' }}
+      run: terraform apply -input=false -auto-approve tfplan
+      working-directory: ${{ env.TERRAFORM_DIR }}
+
+    - name: Get Terraform Outputs
+      id: tf_outputs
+      run: |
+        FUNCTION_APP_NAME=$(terraform output -raw function_app_name)
+        RESOURCE_GROUP_NAME=$(terraform output -raw resource_group_name)
+        STORAGE_ACCOUNT_NAME=$(terraform output -raw storage_account_name)
+        STORAGE_CONTAINER_NAME=$(terraform output -raw configs_container_name )
+        EVENTGRID_TOPIC_NAME=$(terraform output -raw eventgrid_topic_name)
+
+        echo "FUNCTION_APP_NAME=$FUNCTION_APP_NAME" >> $GITHUB_ENV
+        echo "RESOURCE_GROUP_NAME=$RESOURCE_GROUP_NAME" >> $GITHUB_ENV
+        echo "STORAGE_ACCOUNT_NAME=$STORAGE_ACCOUNT_NAME" >> $GITHUB_ENV
+        echo "STORAGE_CONTAINER_NAME=$STORAGE_CONTAINER_NAME" >> $GITHUB_ENV
+        echo "EVENTGRID_TOPIC_NAME=$EVENTGRID_TOPIC_NAME" >> $GITHUB_ENV
+
+        echo "function_app_name=$FUNCTION_APP_NAME" >> $GITHUB_OUTPUT
+        echo "resource_group_name=$RESOURCE_GROUP_NAME" >> $GITHUB_OUTPUT
+        echo "storage_account_name=$STORAGE_ACCOUNT_NAME" >> $GITHUB_OUTPUT
+        echo "storage_container_name=$STORAGE_CONTAINER_NAME" >> $GITHUB_OUTPUT
+        echo "eventgrid_topic_name=$EVENTGRID_TOPIC_NAME" >> $GITHUB_OUTPUT
+      working-directory: ${{ env.TERRAFORM_DIR }}
+
+    - name: Logout from Azure (Terraform)
+      run: az logout
+      if: always()
