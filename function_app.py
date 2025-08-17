@@ -12,41 +12,120 @@ from src.bronze.init import bronze_init
 
 app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 
+logger = logging.getLogger(__name__)
 
 
 
-
-
-# 1. Funkcja HTTP Trigger
-# Rozpoczyna orkiestrację po wywołaniu HTTP POST
-@app.route(route="start_simple_orchestration")
+@app.route(route="start_ingestion")
 @app.durable_client_input(client_name="starter")
-async def start_simple_orchestration_http(req: func.HttpRequest, starter: df.DurableOrchestrationClient) -> func.HttpResponse:
-    logging.info('HTTP trigger function processed a request to start orchestration.')
-    
-    # Rozpoczynamy orkiestrację o nazwie 'simple_orchestrator'
-    instance_id = await starter.start_new("simple_orchestrator", None, {"name": "World"})
-    
-    logging.info(f"Started orchestration with ID = '{instance_id}'.")
-    return starter.create_check_status_response(req, instance_id)
+async def start_ingestion_http(req: func.HttpRequest, starter: df.DurableOrchestrationClient) -> func.HttpResponse:
+    logging.info('start_ingestion_http function triggered.')
 
-# 2. Funkcja Orchestrator
-# Koordynuje wykonanie funkcji 'activity'
+    try:
+        manifest_payload = req.get_json()
+    except ValueError:
+        logging.error("Żądanie nie zawiera prawidłowego JSON.")
+        return func.HttpResponse("Błąd: Oczekiwano prawidłowego formatu JSON.", status_code=400)
+    except Exception as e:
+        logging.exception(f"Inny błąd podczas przetwarzania żądania: {e}")
+        return func.HttpResponse(f"Błąd: {str(e)}", status_code=500)
+    
+    try:
+        instance_id = await starter.start_new("ingest_orchestrator", None, manifest_payload)
+        logging.info(f"Rozpoczęto orkiestrację z ID = '{instance_id}'.")
+        return starter.create_check_status_response(req, instance_id)
+    except Exception as e:
+        logging.exception(f"Błąd podczas uruchamiania orkiestracji: {e}")
+        return func.HttpResponse(f"Błąd podczas uruchamiania orkiestracji: {e}", status_code=500)
+
+# ---------------------------------------------------------------------
+# 2) Orchestrator
+# ---------------------------------------------------------------------
 @app.orchestration_trigger(context_name="context")
-def simple_orchestrator(context: df.DurableOrchestrationContext):
-    logging.info("Starting simple orchestrator.")
-    
-    # Wywołujemy funkcję 'activity' o nazwie 'simple_activity' i czekamy na jej wynik
-    result = yield context.call_activity("simple_activity", "World")
-    
-    logging.info(f"Orchestrator finished. Result: {result}")
-    
-    # Orkiestrator musi zwrócić wynik
-    return result
+def ingest_orchestrator(context: df.DurableOrchestrationContext):
+    logger.info("ingest_orchestrator started.")
+    input_payload = context.get_input()
 
-# 3. Funkcja Activity
-# Wykonuje faktyczną pracę
-@app.activity_trigger(input_name="name")
-def simple_activity(name: str):
-    logging.info(f"Running simple activity with input: {name}")
-    return f"Hello, {name} from the activity function!"
+    if not isinstance(input_payload, dict) or not input_payload:
+        logger.error("Orchestrator received an empty or invalid payload.")
+        return {"status": "FAILED", "message": "Orchestrator received an empty or invalid payload."}
+    
+    orchestrator_result_dict = yield context.call_activity(
+        "run_ingestion_activity", 
+        {"input_payload": input_payload}
+    )
+
+    logger.info(f"Completed Bronze orchestration. Result: {orchestrator_result_dict}")
+
+    silver_manifest_path = "/silver/configs/dev.config.json"
+    
+    event_grid_payload = {
+        "layer": "bronze",
+        "env": input_payload.get("env"),
+        "status": orchestrator_result_dict.get("status"),
+        "message_date": context.current_utc_datetime.isoformat(),
+        "correlation_id": orchestrator_result_dict.get("correlation_id"), # 🚨 Pobieramy z oryginalnego payloadu
+        "manifest": silver_manifest_path,
+        "summary_ingestion_uri": orchestrator_result_dict.get("summary_url")
+    }
+
+    yield context.call_activity("write_to_queue", {"payload": event_grid_payload})
+    
+    return orchestrator_result_dict
+
+
+@app.activity_trigger(input_name="input")
+async def run_ingestion_activity(input: Dict[str, Any]) -> Dict[str, Any]:
+    logger.info("run_ingestion_activity started.")
+    
+    input_payload = input["input_payload"]
+    
+    try:
+        config = ConfigManager()
+        orchestrator = OrchestratorFactory.get_instance(ETLLayer.BRONZE, config=config)
+        
+        parser = BronzePayloadParser()
+        bronze_context = parser.parse(input_payload)
+        
+        result = await orchestrator.run(bronze_context)
+
+        return result.to_dict()
+
+    except Exception as e:
+        logger.exception(f"Błąd podczas uruchamiania BronzeOrchestrator: {e}")
+        # Próba odtworzenia correlation_id w przypadku błędu
+        correlation_id = input_payload.get("correlation_id", "NOT_PROVIDED")
+        return {
+            "status": "FAILED",
+            "correlation_id": correlation_id,
+            "message": str(e),
+            "error_details": traceback.format_exc(),
+        }
+
+
+@app.activity_trigger(input_name="input")
+async def write_to_queue(input: Dict[str, Any]):
+    logger.info("write_to_queue activity started.")
+    payload = input.get("payload")
+    if not payload:
+        return {"status": "FAILED", "message": "Brak payloadu."}
+
+    endpoint = os.environ.get("EVENT_GRID_ENDPOINT")
+    key = os.environ.get("EVENT_GRID_KEY")
+    
+    if not endpoint:
+        error_message = "Zmienna środowiskowa 'EVENT_GRID_ENDPOINT' nie jest ustawiona."
+        logger.error(error_message)
+        return {"status": "FAILED", "message": error_message}
+    
+    try:
+        manager = EventGridClientManager(endpoint=endpoint, key=key)
+    except ValueError as e:
+        logger.exception(f"Błąd inicjalizacji klienta Event Grid: {e}")
+        return {"status": "FAILED", "message": f"Błąd inicjalizacji: {e}"}
+
+    return manager.send_event(
+        event_type="BronzeIngestionCompleted",
+        subject=f"/silver/processing/{payload.get('correlation_id')}",
+        data=payload
+    )
