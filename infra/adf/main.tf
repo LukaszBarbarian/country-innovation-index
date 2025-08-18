@@ -14,6 +14,32 @@ resource "azurerm_data_factory" "adf_instance" {
   identity {
     type = "SystemAssigned"
   }
+
+
+  # Dodaj poniższy blok, aby zdefiniować globalne zmienne
+  global_parameter {
+    name  = "bronze_manifest_url"
+    type  = "String" # Typ danych
+    value = format("https://%s.dfs.core.windows.net/%s/manifest", var.storage_account_name, var.bronze_container_name)
+  }
+
+  global_parameter {
+    name  = "silver_manifest_url"
+    type  = "String"
+    value = format("https://%s.dfs.core.windows.net/%s/manifest", var.storage_account_name, var.silver_container_name)
+  }
+
+  global_parameter {
+    name  = "gold_manifest_url"
+    type  = "String"
+    value = format("https://%s.dfs.core.windows.net/%s/manifest", var.storage_account_name, var.gold_container_name)
+  }
+
+  global_parameter {
+    name  = "bronze_ingestion_summary_url"
+    type  = "String"
+    value = format("https://%s.dfs.core.windows.net/%s/outputs/ingestion_summaries", var.storage_account_name, var.bronze_container_name)
+  }
 }
 
 resource "azurerm_data_factory_trigger_custom_event" "bronze_trigger" {

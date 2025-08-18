@@ -13,7 +13,7 @@ class BaseParser(ABC):
         pass
 
     @abstractmethod
-    def parse(self, payload: Dict[str, Any], correlation_id: str) -> BaseContext:
+    def parse(self, manifest_payload: Dict[str, Any], payload: Dict[str, Any] = None) -> BaseContext:
         raise NotImplementedError()
     
     def _ensure_requires(self, requires: list[str], payload: Dict[str, Any]):

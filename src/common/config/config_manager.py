@@ -5,8 +5,6 @@ from typing import Any, Dict, Optional, List, cast
 from pathlib import Path
 from dataclasses import dataclass, field
 
-from src.common.config.references_config_parser import ReferenceConfig
-
 logger = logging.getLogger(__name__)
 
 # Data classes for reference configuration
@@ -17,14 +15,7 @@ class ConfigManager:
     _instance: Optional['ConfigManager'] = None
     _config_cache: Dict[str, str] = {}
     _local_settings_loaded: bool = False
-    _reference_config: Optional['ReferenceConfig'] = None
 
-    def __new__(cls, reference_config: Optional['ReferenceConfig'] = None):
-        if cls._instance is None:
-            cls._instance = super(ConfigManager, cls).__new__(cls)
-            cls._instance._load_config()
-            cls._instance._reference_config = reference_config
-        return cls._instance
 
     def _load_config(self):
         for key, value in os.environ.items():
@@ -72,9 +63,3 @@ class ConfigManager:
             raise ValueError(f"Configuration setting '{key}' not found.")
 
         return value
-
-    @property
-    def reference_config(self) -> 'ReferenceConfig':
-        if self._reference_config is None:
-            raise ValueError("Reference configuration has not been set.")
-        return self._reference_config

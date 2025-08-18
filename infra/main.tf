@@ -146,8 +146,10 @@ module "adf" {
   function_app_url          = azurerm_function_app.main_function_app.default_hostname
   eventgrid_topic_id  = azurerm_eventgrid_topic.etl_events_topic.id 
   storage_account_primary_connection_string = azurerm_storage_account.sadatalake.primary_connection_string
-
-
+  bronze_container_name              = azurerm_storage_container.container_bronze.name
+  silver_container_name              = azurerm_storage_container.container_silver.name
+  gold_container_name                = azurerm_storage_container.container_gold.name
+  storage_account_name = azurerm_storage_account.sadatalake.name
 }
 
 

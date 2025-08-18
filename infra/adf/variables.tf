@@ -45,3 +45,20 @@ variable "storage_account_primary_connection_string" {
   description = "Primary connection string do Storage Account (Bronze/Silver/Gold)"
 }
 
+
+
+variable "bronze_container_name" {
+  type = string
+}
+
+variable "silver_container_name" {
+  type = string
+}
+
+variable "gold_container_name" {
+  type = string
+}
+
+variable "storage_account_name" {
+  type = string
+}

@@ -60,7 +60,7 @@ def ingest_orchestrator(context: df.DurableOrchestrationContext):
 
     logger.info(f"Completed Bronze orchestration. Result: {orchestrator_result_dict}")
 
-    silver_manifest_path = "/silver/configs/dev.config.json"
+    silver_manifest_path = "/silver/manifest/dev.manifest.json"
     
     event_grid_payload = {
         "layer": "bronze",

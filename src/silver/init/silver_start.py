@@ -3,6 +3,9 @@ import sys
 import asyncio
 from injector import V
 
+from src.silver.context.silver_parser import SilverPayloadParser
+
+
 sys.path.insert(0, "d:/projects/cv-demo1")
 print("sys.path:", sys.path)
 
@@ -10,10 +13,8 @@ print("sys.path:", sys.path)
 
 from src.common.spark.spark_service import SparkService
 from src.common.config.config_manager import ConfigManager
-from src.common.config.references_config_parser import ReferenceConfigParser
 from src.common.enums.etl_layers import ETLLayer
 from src.common.factories.orchestrator_factory import OrchestratorFactory
-from src.silver.context.silver_parser import SilverPayloadParser
 import src.silver.init.silver_init 
 
 
@@ -35,30 +36,65 @@ from src.common.config.config_manager import ConfigManager
 import json
 
 # Ciąg znaków zawierający dane JSON
-payload = {"status": "BRONZE_COMPLETED", "env" : "dev", "correlation_id": "a104eb07-180d-4f0b-8e52-2007edc73ffc", "timestamp": "2025-08-10T14:42:54.996192+00:00", "processed_items": 2, 
-           "results":
-                    [
-                        {"status": "COMPLETED", "correlation_id": "63f5fa96-e202-4446-84cc-a43dbe337160", "layer_name": "bronze", "env": "dev", "message": "API data successfully processed and stored. Uploaded 1 files.", "domain_source": "NOBELPRIZE", "domain_source_type": "api", "dataset_name": "laureates", "output_paths": ["https://demosurdevdatalake4418sa.blob.core.windows.net/bronze/NOBELPRIZE/2025/08/13/laureates_d9cc180b-14a5-4c39-94b2-ce8ff0783c4a_7122d7e2.json"], "error_details": {}}, 
-                        {"status": "COMPLETED", "correlation_id": "63f5fa96-e202-4446-84cc-a43dbe337160", "layer_name": "bronze", "env": "dev", "message": "Static file path passed through to the next layer.", "domain_source": "PATENTS", "domain_source_type": "static_file", "dataset_name": "patents", "output_paths": ["https://demosurdevdatalake4418sa.blob.core.windows.net/manual/patents/patents.json"], "error_details": {}}
-                    ]
-          }
+summary_json = """{
+		"status": "BRONZE_COMPLETED",
+		"env": "dev",
+		"layer_name": "bronze",
+		"correlation_id": "011d2629-dae2-42ac-92b3-861d94c98462",
+		"timestamp": "2025-08-18T07:50:19.256179Z",
+		"processed_items": 1,
+		"results": [
+			{
+				"correlation_id": "011d2629-dae2-42ac-92b3-861d94c98462",
+				"env": "dev",
+				"etl_layer": "bronze",
+				"domain_source": "NOBELPRIZE",
+				"domain_source_type": "api",
+				"dataset_name": "laureates",
+				"status": "SKIPPED",
+				"message": "No new files uploaded.",
+				"output_paths": [],
+				"error_details": {},
+				"duration_in_ms": 0
+			}
+		]
+	}"""
 
 
 
-json_string = """
+manifest_json = """
 {
-  "references": {
-    "country_codes": "/references/country_codes.csv"
-  }
-}
+		"env": "dev",
+		"etl_layer": "silver",
+		"references_tables": {
+			"boolean_mappings": "/references/boolean_mappings/boolean_mapping.csv",
+			"country_codes": "/references/country_codes/country-codes.csv",
+			"date_formats": "/references/date_formats/date_formats.csv"
+		},
+		"manual_data_paths": [
+			{
+				"domain_source": "PATENTS",
+				"dataset_name": "patents",
+				"file_path": "/manual/patents/patents.json"
+			}
+		],
+		"models": [
+			{
+				"model_name": "country",
+				"source_datasets": [
+					"laureates",
+					"patents"
+				],
+				"status": "pending",
+				"errors": []
+			}
+		]
+	}
 """
 
-config = json.loads(json_string)
+context = SilverPayloadParser().parse(manifest_payload=json.loads(manifest_json), payload=json.loads(summary_json))
 
-reference = ReferenceConfigParser().parse(config)
-context = SilverPayloadParser().parse(payload)
-
-config = ConfigManager(reference)
+config = ConfigManager()
 spark = SparkService(config)
 spark.start_local()
 

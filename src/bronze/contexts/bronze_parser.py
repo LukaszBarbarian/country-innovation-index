@@ -3,7 +3,6 @@ import uuid
 from typing import Dict, Any, List
 from dataclasses import asdict
 
-from src.bronze.manifest.bronze_manifest import BronzeManifest
 from src.bronze.contexts.bronze_layer_context import BronzeLayerContext
 from src.common.contexts.base_parser import BaseParser
 from src.common.enums.env import Env
