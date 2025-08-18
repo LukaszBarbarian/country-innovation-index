@@ -35,7 +35,7 @@ class BaseOrchestrator(ABC):
         return OrchestratorResult(
             status="FAILED",
             correlation_id=context.correlation_id,
-            layer_name=context.etl_layer,
+            etl_layer=context.etl_layer,
             env=context.env,
             message=f"Orchestrator failed due to an internal error: {str(error)}",
             error_details={

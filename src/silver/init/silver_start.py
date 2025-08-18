@@ -3,14 +3,11 @@ import sys
 import asyncio
 from injector import V
 
-from src.silver.context.silver_parser import SilverPayloadParser
-
-
 sys.path.insert(0, "d:/projects/cv-demo1")
 print("sys.path:", sys.path)
 
 
-
+from src.silver.context.silver_parser import SilverPayloadParser
 from src.common.spark.spark_service import SparkService
 from src.common.config.config_manager import ConfigManager
 from src.common.enums.etl_layers import ETLLayer
@@ -37,9 +34,9 @@ import json
 
 # Ciąg znaków zawierający dane JSON
 summary_json = """{
-		"status": "BRONZE_COMPLETED",
+		"status": "COMPLETED",
 		"env": "dev",
-		"layer_name": "bronze",
+		"etl_layer": "bronze",
 		"correlation_id": "011d2629-dae2-42ac-92b3-861d94c98462",
 		"timestamp": "2025-08-18T07:50:19.256179Z",
 		"processed_items": 1,
@@ -51,9 +48,9 @@ summary_json = """{
 				"domain_source": "NOBELPRIZE",
 				"domain_source_type": "api",
 				"dataset_name": "laureates",
-				"status": "SKIPPED",
+				"status": "COMPLETED",
 				"message": "No new files uploaded.",
-				"output_paths": [],
+				"output_paths": ["https://demosurdevdatalake4418sa.blob.core.windows.net/bronze/NOBELPRIZE/2025/08/18/laureates_f051c5bc-c9f9-4808-af96-f61b99b42b3a_aba47c75.json"],
 				"error_details": {},
 				"duration_in_ms": 0
 			}

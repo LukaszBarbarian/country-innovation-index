@@ -5,4 +5,5 @@ class DomainSource(Enum):
     UNKNOWN = ""
     NOBELPRIZE = "NOBELPRIZE"
     PATENTS = "PATENTS"
+    WORLDBANK = "WORLDBANK"
     

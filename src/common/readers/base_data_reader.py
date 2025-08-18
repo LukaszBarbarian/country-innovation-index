@@ -5,8 +5,9 @@ from src.common.config.config_manager import ConfigManager
 from src.common.enums.domain_source import DomainSource
 from src.common.models.base_context import BaseContext
 from injector import inject
-from typing import Dict, List
+from typing import Dict, List, Optional
 
+from src.common.models.ingestions import IngestionResult, IngestionSummary
 from src.common.spark.spark_service import SparkService
 
 class BaseDataReader(ABC):
@@ -38,7 +39,10 @@ class BaseDataReader(ABC):
         print(f"[{self._domain_source.name}] Ładuję dane z pliku i zapisuję w cache'u.")
 
         dataframes = self._load_from_source()
-        self._context._cache.set(cache_key, dataframes)
+
+        if dataframes:
+            self._context._cache.set(cache_key, dataframes)
+            
         return dataframes
 
     @abstractmethod
@@ -48,3 +52,4 @@ class BaseDataReader(ABC):
         ładowania danych z pliku i zwracać słownik DataFrame'ów.
         """
         pass
+

@@ -43,6 +43,13 @@ class IngestionResult:
                 return obj
 
             return convert_value(asdict(self))
+    
+    @property
+    def is_valid(self) -> bool:
+        """
+        Zwraca True, jeśli status jest pomyślny, w przeciwnym razie False.
+        """
+        return self.status in ["COMPLETED", "SUCCESS"]
 
 
 @dataclass(frozen=True)
@@ -55,6 +62,19 @@ class IngestionSummary:
     timestamp: str
     processed_items: int
     results: List[IngestionResult]
+
+    @property
+    def overall_status(self) -> str:
+        """Oblicza ogólny status na podstawie wszystkich wyników."""
+        if not self.results:
+            return "NO_RESULTS"
+
+        if all(result.is_valid for result in self.results):
+            return "COMPLETED"
+        elif any(not result.is_valid for result in self.results):
+            return "PARTIAL_SUCCESS"
+        else:
+            return "FAILED"    
 
 
 

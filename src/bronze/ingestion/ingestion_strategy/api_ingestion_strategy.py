@@ -18,6 +18,7 @@ from src.common.models.ingestions import IngestionContext, IngestionResult
 from src.common.models.processed_result import ProcessedResult
 from src.common.registers.ingestion_strategy_registry import IngestionStrategyRegistry
 from src.common.azure_clients.blob_client_manager import BlobClientManager
+from src.common.utils.decorator_duration import track_duration
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +27,8 @@ class ApiIngestionStrategy(BaseIngestionStrategy):
     def __init__(self, config: ConfigManager):
         super().__init__(config)
         
+
+    @track_duration        
     async def ingest(self, context: IngestionContext) -> IngestionResult:
         all_output_paths: List[str] = []
 
@@ -41,52 +44,41 @@ class ApiIngestionStrategy(BaseIngestionStrategy):
 
             async with api_client as client:
                 fetch_results = await client.fetch_all(context)
-            
-            for result in fetch_results:
-                for raw_record in result.data:
-                    processed_record_result = data_processor.process(raw_record, context)
-                    all_processed_records_results.append(processed_record_result)
 
-            logger.info(f"Finished fetching all records for {source_config.dataset_name}. Total records: {len(all_processed_records_results)}")
+            for result in fetch_results:
+                processed_record_result = data_processor.process(result.data, context)
+                all_processed_records_results.append(processed_record_result)
 
             if not all_processed_records_results:
-                logger.info(f"No records fetched for {source_config.dataset_name}. Skipping file save.")
                 return self._create_result(
                     context=context,
                     status="COMPLETED",
-                    message="No records fetched, skipping file save.")
-            
-            for processed_result in all_processed_records_results:
-                file_output = file_metadata_builder.build_file_output(
-                    processed_records_results=processed_result,
-                    context=context,
-                    container_name=ETLLayer.BRONZE.value
-                )
-                file_content_bytes = file_output["file_content_bytes"]
-                file_info: FileInfo = file_output["file_info"]
-
-                file_info.file_size_bytes = await storage_manager.upload_blob(
-                    file_content_bytes=file_content_bytes,
-                    file_info=file_info
+                    message="No records fetched, skipping file save."
                 )
 
-                if file_info.file_size_bytes > 0:
-                    all_output_paths.append(file_info.full_path_in_container)
+            # Tworzymy jeden plik ze wszystkimi ProcessedResult
+            file_output = file_metadata_builder.build_file_output(
+                processed_records_results=all_processed_records_results,
+                context=context,
+                container_name=ETLLayer.BRONZE.value
+            )
+            file_content_bytes = file_output["file_content_bytes"]
+            file_info: FileInfo = file_output["file_info"]
 
-            if not all_output_paths:
-                return self._create_result(
-                    context=context,
-                    status="SKIPPED",
-                    message="No new files uploaded."
-                )
-            else:
-                message = f"API data successfully processed and stored. Uploaded {len(all_output_paths)} files."
-                return self._create_result(
-                    context=context,
-                    status="COMPLETED",
-                    message=message,
-                    output_paths=all_output_paths
-                )
+            file_info.file_size_bytes = await storage_manager.upload_blob(
+                file_content_bytes=file_content_bytes,
+                file_info=file_info
+            )
+
+            all_output_paths = [file_info.full_path_in_container]
+
+            message = f"API data successfully processed and stored. Uploaded 1 file with {len(all_processed_records_results)} processed results."
+            return self._create_result(
+                context=context,
+                status="COMPLETED",
+                message=message,
+                output_paths=all_output_paths
+            )
         
         except Exception as e:
             logger.error(f"Error in ApiIngestionStrategy for {source_config.domain_source}: {e}")

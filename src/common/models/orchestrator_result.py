@@ -10,7 +10,7 @@ from src.common.enums.env import Env
 class OrchestratorResult(BaseModel):
     status: str
     correlation_id: str
-    layer_name: ETLLayer
+    etl_layer: ETLLayer
     env: Env
     timestamp: datetime.datetime = Field(default_factory=datetime.datetime.utcnow)
     processed_items: int

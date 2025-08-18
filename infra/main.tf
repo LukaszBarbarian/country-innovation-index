@@ -125,6 +125,7 @@ resource "azurerm_function_app" "main_function_app" {
     AzureWebJobsStorageQueue = azurerm_storage_account.sa_queue.primary_connection_string
     EVENT_GRID_ENDPOINT             = azurerm_eventgrid_topic.etl_events_topic.endpoint
     EVENT_GRID_KEY                  = azurerm_eventgrid_topic.etl_events_topic.primary_access_key
+    WORLDBANK_API_BASE_URL = "https://api.worldbank.org/v2/"
 
 
 

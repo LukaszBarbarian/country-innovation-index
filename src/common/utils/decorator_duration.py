@@ -1,13 +1,14 @@
-# src/common/utils/decorators.py
+# src/common/utils/decorator_duration.py
+
 import datetime
 from functools import wraps
 from typing import Callable, Awaitable, Any
+from dataclasses import replace
 
 def track_duration(func: Callable) -> Callable:
     """
     Dekorator asynchroniczny, który mierzy czas wykonania udekorowanej funkcji.
-    Dodaje atrybut `duration_in_ms` do zwracanego obiektu.
-    Zakłada, że udekorowana funkcja zwraca obiekt, który ma atrybut `duration_in_ms`.
+    Tworzy nową kopię obiektu z zaktualizowanym czasem trwania.
     """
     @wraps(func)
     async def wrapper(*args, **kwargs) -> Awaitable[Any]:
@@ -17,18 +18,17 @@ def track_duration(func: Callable) -> Callable:
             end_time = datetime.datetime.utcnow()
             duration_ms = int((end_time - start_time).total_seconds() * 1000)
             
-            # Weryfikacja i ustawienie atrybutu duration_in_ms
+            # Tworzymy nową instancję z nowym czasem trwania
             if hasattr(result, 'duration_in_ms'):
-                setattr(result, 'duration_in_ms', duration_ms)
+                result = replace(result, duration_in_ms=duration_ms)
             
             return result
         except Exception as e:
             end_time = datetime.datetime.utcnow()
             duration_ms = int((end_time - start_time).total_seconds() * 1000)
             
-            # Jeśli funkcja rzuciła błąd, musimy go obsłużyć i nadal zwrócić IngestionResult
-            # W tym przypadku, nie możemy po prostu dodać atrybutu, bo wynik nie został zwrócony.
-            # Musimy zmodyfikować logikę w metodzie, aby przechwytywała błąd.
+            # W przypadku błędu, Twój `ingest` musi zwrócić
+            # IngestionResult z odpowiednimi danymi.
             raise e
             
     return wrapper

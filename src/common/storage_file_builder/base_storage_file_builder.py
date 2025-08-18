@@ -2,6 +2,7 @@
 from abc import ABC, abstractmethod
 from dataclasses import asdict
 import datetime
+from enum import Enum
 import hashlib
 import json
 from typing import Dict, Any, Tuple
@@ -24,10 +25,13 @@ class BaseStorageFileBuilder(ABC):
         """
         Oblicza skrót SHA256 z znormalizowanego payloadu.
         """
-        if not api_request_payload:
-            return "nohash"
-        
-        normalized_str = json.dumps(api_request_payload.to_dict(), indent=2)
+        payload_dict = asdict(api_request_payload)
+
+        for key, value in payload_dict.items():
+            if isinstance(value, Enum):
+                payload_dict[key] = value.value  # albo str(value)
+
+        normalized_str = json.dumps(payload_dict, indent=2, sort_keys=True)
         return hashlib.sha256(normalized_str.encode("utf-8")).hexdigest()[:8]
 
     def _get_ingestion_date_path(self, ingestion_time_utc: datetime.datetime) -> str:

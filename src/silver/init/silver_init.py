@@ -7,7 +7,4 @@ from src.silver.orchestrator.silver_orchestrator import SilverOrchestrator
 #readers
 from src.silver.readers.nobelprizes_data_reader import NobelPrizeDataReader
 from src.silver.readers.patents_data_reader import PatentsDataReader
-
-
-#manifest parser
-from src.silver.manifest.silver_manifest_parser import SilverManifestParser
+from src.silver.storage_file_builder.silver_storage_file_builder import SilverStorageFileBuilder

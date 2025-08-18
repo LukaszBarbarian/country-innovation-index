@@ -50,7 +50,7 @@ class SilverOrchestrator(BaseOrchestrator):
             return OrchestratorResult(
                 status="COMPLETED",
                 correlation_id=context.correlation_id,
-                layer_name=context.etl_layer,
+                etl_layer=context.etl_layer,
                 env=context.env,
                 message="Silver process completed.",
                 output_paths=final_output_path,

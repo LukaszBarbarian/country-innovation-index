@@ -6,7 +6,7 @@ from typing import Any, Dict
 from src.common.models.processed_result import ProcessedResult
 from src.common.enums.file_format import FileFormat
 
-@DataProcessorRegistry.register(DomainSource.NOBELPRIZE)
-class NobelPrizeProcessor(BaseDataProcessor):
+@DataProcessorRegistry.register(DomainSource.WORLDBANK)
+class WorldbankProcessor(BaseDataProcessor):
     def process(self, raw_data: Any, context: BaseContext) -> ProcessedResult:
         return ProcessedResult(data=raw_data.data.copy(), format=FileFormat.JSON)

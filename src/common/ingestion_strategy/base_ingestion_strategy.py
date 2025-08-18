@@ -16,7 +16,6 @@ class BaseIngestionStrategy(ABC):
     def __init__(self, config: ConfigManager):
         self.config = config
 
-    @track_duration
     @abstractmethod
     async def ingest(self, context: IngestionContext) -> IngestionResult:
         """

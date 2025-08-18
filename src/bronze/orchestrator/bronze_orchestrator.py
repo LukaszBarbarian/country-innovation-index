@@ -30,7 +30,6 @@ class BronzeOrchestrator(BaseOrchestrator):
         self.blob_client_manager = BlobClientManager(container_name=ETLLayer.BRONZE.value)
 
     async def run(self, context: BronzeLayerContext) -> OrchestratorResult:
-        start_time = datetime.datetime.utcnow()
         ingestion_results: List[IngestionResult] = []
         
         tasks = []
@@ -70,6 +69,7 @@ class BronzeOrchestrator(BaseOrchestrator):
                 ingestion_results.append(result)
 
         total_duration_ms = sum(r.duration_in_ms for r in ingestion_results)
+
         
         summary_url = await self._save_ingestion_summary(context, ingestion_results)
         
@@ -100,7 +100,7 @@ class BronzeOrchestrator(BaseOrchestrator):
         return {
             "status": f"{context.etl_layer.name}_COMPLETED",
             "env": context.env.value,
-            "layer_name": context.etl_layer.value,
+            "etl_layer": context.etl_layer.value,
             "correlation_id": context.correlation_id,
             "timestamp": datetime.datetime.utcnow().isoformat(),
             "processed_items": len(ingestion_results),
@@ -133,16 +133,34 @@ class BronzeOrchestrator(BaseOrchestrator):
     
     def _create_final_result(self, context: IngestionContext, ingestion_results: List[IngestionResult], summary_url: str, duration_ms: int) -> OrchestratorResult:
         """Tworzy uproszczony OrchestratorResult, zawierający link do podsumowania."""
-        # Status "COMPLETED" tylko wtedy, gdy wszystkie operacje się powiodły
-        overall_status = "COMPLETED" if all(r.status in ["COMPLETED", "SKIPPED"] for r in ingestion_results) else "FAILED"        
 
+        overall_status = self.get_overall_status(ingestion_results)
         return OrchestratorResult(
             status=overall_status,
             correlation_id=context.correlation_id,
-            layer_name=context.etl_layer,
+            etl_layer=context.etl_layer,
             env=context.env,
             processed_items=1, # W tej implementacji zawsze 1, bo operujesz na pojedynczym IngestionResult
             duration_in_ms=duration_ms,
             summary_url=summary_url,
             message=f"Orchestration {overall_status}. See summary for details."
         )
+    
+
+    def get_overall_status(self, ingestion_results: List[IngestionResult]) -> str:
+        """
+        Ustalanie ogólnego statusu procesu na podstawie statusów poszczególnych wyników.
+        """
+        if not ingestion_results:
+            return "NO_RESULTS"
+            
+        # Sprawdzenie, czy jakikolwiek wynik zakończył się niepowodzeniem
+        if any(r.status == "FAILED" for r in ingestion_results):
+            return "FAILED"
+        
+        # Sprawdzenie, czy są jakieś pominięte wyniki
+        if any(r.status == "SKIPPED" for r in ingestion_results):
+            return "PARTIAL_SUCCESS"
+            
+        # Jeśli nie ma błędów ani pominięć, oznacza to, że wszystko się udało
+        return "COMPLETED"    

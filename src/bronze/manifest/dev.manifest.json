@@ -13,6 +13,18 @@
 								"limit": 100
 							}
 						}
+					},
+					{
+						"source_config_payload": {
+							"domain_source_type": "api",
+							"domain_source": "WORLDBANK",
+							"dataset_name": "population",
+							"request_payload": {
+								"indicator": "SP.POP.TOTL",
+								"format": "json",
+								"per_page": 1000
+							}
+						}
 					}
 			]	
 }

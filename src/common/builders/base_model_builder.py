@@ -46,15 +46,16 @@ class BaseModelBuilder(ABC):
    
     async def run(self) -> EtlModel:
         dataframes_dict = await self._load_data()
-        
-        processed_dfs = {}
-        for dataset_name, df in dataframes_dict.items():
-            processed_df = await self.transform(df, dataset_name)
-            processed_df = await self.normalize(processed_df, dataset_name)
-            processed_df = await self.enrich(processed_df, dataset_name)
-            processed_dfs[dataset_name] = processed_df
-        
-        final_df = await self.combine(processed_dfs)
+
+        if dataframes_dict:
+            processed_dfs = {}
+            for dataset_name, df in dataframes_dict.items():
+                processed_df = await self.transform(df, dataset_name)
+                processed_df = await self.normalize(processed_df, dataset_name)
+                processed_df = await self.enrich(processed_df, dataset_name)
+                processed_dfs[dataset_name] = processed_df
+            
+            final_df = await self.combine(processed_dfs)
         
         return self._create_model(final_df)
 

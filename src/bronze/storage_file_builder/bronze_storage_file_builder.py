@@ -32,8 +32,9 @@ class BronzeStorageFileBuilder(BaseStorageFileBuilder):
         if not processed_records_results:
             raise ValueError("ProcessedResult must be provided for Bronze builder.")
 
-        records_data_only = processed_records_results.data
-        file_content_str = json.dumps(records_data_only, indent=2)
+        records_data_only_dicts = [asdict(r) for r in processed_records_results]
+
+        file_content_str = json.dumps(records_data_only_dicts, indent=2, default=str)
         file_content_bytes = file_content_str.encode('utf-8')
         file_size_bytes = len(file_content_bytes)
 
@@ -47,7 +48,7 @@ class BronzeStorageFileBuilder(BaseStorageFileBuilder):
             "ingestionTimestampUTC": context.ingestion_time_utc.isoformat() + "Z",
             "domainSource": context.source_config.domain_source,
             "datasetName": context.source_config.dataset_name,
-            "recordCount": str(len(records_data_only)),
+            "recordCount": str(len(processed_records_results)),
             "payloadHash": hash_name
         }
 
@@ -83,9 +84,9 @@ class BronzeStorageFileBuilder(BaseStorageFileBuilder):
         """
         # Generowanie zawartości podsumowania
         summary_data = {
-            "status": "BRONZE_COMPLETED" if all(r.status in ["COMPLETED", "SKIPPED"] for r in ingestion_results) else "BRONZE_FAILED",
+            "status": "COMPLETED" if all(r.status in ["COMPLETED", "SKIPPED"] for r in ingestion_results) else "FAILED",
             "env": context.env.value,
-            "layer_name": context.etl_layer.value,
+            "etl_layer": context.etl_layer.value,
             "correlation_id": context.correlation_id,
             "timestamp": datetime.datetime.utcnow().isoformat(),
             "processed_items": len(ingestion_results),

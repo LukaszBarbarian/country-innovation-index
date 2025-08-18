@@ -30,7 +30,7 @@ class NobelPrizeDataReader(BaseDataReader):
 
 
 
-        nobel_results = self._context.get_result_by_domain_source(DomainSource.NOBELPRIZE)
+        nobel_results = self._context.get_ingestion_results_for_domain_source(DomainSource.NOBELPRIZE)
         
         if not nobel_results:
             print("Brak wyników dla DomainSource.NOBELPRIZE w kontekście.")

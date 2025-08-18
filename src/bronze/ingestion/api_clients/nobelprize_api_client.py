@@ -1,6 +1,6 @@
 # src/ingestion/api_clients/nobel_prize_api_client.py
 
-from typing import Dict, Any,  List 
+from typing import Dict, Any, List 
 import logging
 from src.bronze.contexts.bronze_layer_context import BronzeLayerContext
 from src.common.clients.api_clients.base_api_client import ApiClient
@@ -19,10 +19,13 @@ class NobelPrizeApiClient(ApiClient):
     def __init__(self, config: ConfigManager):
         super().__init__(config=config, base_url_setting_name="NOBELPRIZE_API_BASE_URL")
 
-
     async def fetch_all(self, context: IngestionContext) -> List[RawData]:
+        """
+        Pobiera wszystkie dane z NobelPrize API na podstawie IngestionContext.
+        request_payload jest traktowany bezpośrednio jako słownik parametrów.
+        """
         dataset_name = context.source_config.dataset_name
-        request_payload = context.source_config.request_payload
+        request_payload = context.source_config.request_payload  # dict lub RequestConfig
 
         logger.info(f"Fetching dataset '{dataset_name}' from NobelPrize API...")
 
@@ -32,7 +35,7 @@ class NobelPrizeApiClient(ApiClient):
             limit_param="limit",
             page_param="offset",
             endpoint=dataset_name, 
-            initial_payload=request_payload,
-            extractor=lambda r: [r],
+            initial_payload=request_payload,  # przekazujemy słownik bez .params
+            extractor=lambda r: [RawData(data=laureate) for laureate in r.get("laureates", [])]
         )
         return await loader.load()

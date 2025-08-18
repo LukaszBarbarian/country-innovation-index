@@ -33,6 +33,7 @@ class SilverPayloadParser(BaseParser):
                 for item in manifest_payload.get('models', [])
             ]
 
+
             # 3. Zwrócenie instancji kontekstu z sparsowanymi danymi
             return SilverLayerContext(
                 references_tables=references_tables,
@@ -42,7 +43,8 @@ class SilverPayloadParser(BaseParser):
                 # Atrybuty z BaseContext
                 etl_layer=ETLLayer(manifest_payload['etl_layer']),
                 env=Env(manifest_payload['env']),
-                correlation_id=payload['correlation_id']
+                correlation_id=payload['correlation_id'],
+                is_valid=self._validate_context(ingestion_summary)
             )
 
         except KeyError as e:
@@ -51,3 +53,23 @@ class SilverPayloadParser(BaseParser):
             raise ValueError(f"Błąd typowania danych: {e}")
         except Exception as e:
             raise ValueError(f"Ogólny błąd tworzenia kontekstu: {e}")
+        
+
+
+    def _validate_context(self, summary: IngestionSummary) -> bool:
+        """
+        Waliduje kontekst na podstawie statusów w IngestionSummary.
+        Zwraca True, jeśli status podsumowania to "COMPLETED" lub "PARTIAL_SUCCESS",
+        oraz jeśli żaden z wyników nie ma statusu "FAILED".
+        """
+        
+        # 1. Sprawdzenie statusu całego podsumowania
+        if summary.status not in ["COMPLETED", "PARTIAL_SUCCESS"]:
+            return False
+        
+        # 2. Sprawdzenie statusu każdego z wyników
+        # Użycie `any` jest bardziej wydajne i czytelne
+        if any(result.status == "FAILED" for result in summary.results):
+            return False
+            
+        return True
