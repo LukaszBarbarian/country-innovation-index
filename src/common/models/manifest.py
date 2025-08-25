@@ -2,6 +2,11 @@ from dataclasses import dataclass, field, asdict
 from enum import Enum
 from typing import List, Dict, Any
 
+from src.common.enums import domain_source
+from src.common.enums.domain_source import DomainSource
+from src.common.enums.domain_source_type import DomainSourceType
+from src.common.enums.env import Env
+from src.common.enums.etl_layers import ETLLayer
 from src.common.enums.model_type import ModelType
 
 
@@ -11,8 +16,8 @@ from typing import List, Dict, Any
 
 @dataclass
 class SourceConfigPayload:
-    domain_source_type: str
-    domain_source: str
+    domain_source_type: DomainSourceType
+    domain_source: DomainSource
     dataset_name: str
     request_payload: Dict[str, Any]
 
@@ -20,27 +25,51 @@ class SourceConfigPayload:
 @dataclass
 class DataSource:
     source_config_payload: SourceConfigPayload
+    
 
+@dataclass
+class SourceConfigPayload:
+    domain_source_type: DomainSourceType
+    domain_source: DomainSource
+    dataset_name: str
+    request_payload: Dict[str, Any]
+
+@dataclass
+class DataSource:
+    source_config_payload: SourceConfigPayload
 
 @dataclass
 class PipelineConfig:
-    env: str
-    etl_layer: str
+    env: Env
+    etl_layer: ETLLayer
     sources: List[DataSource]
 
 
 
 @dataclass(frozen=True)
+class ModelSourceItem:
+    domain_source: DomainSource
+    dataset_name: str
+
+@dataclass(frozen=True)
 class ManualDataPath:
-    """Reprezentuje pojedynczy plik z danymi w sekcji manual_data_paths."""
-    domain_source: str
+    domain_source: DomainSource
     dataset_name: str
     file_path: str
 
 @dataclass(frozen=True)
 class Model:
-    """Reprezentuje pojedynczy model danych w manifeście Silver."""
     model_name: ModelType
-    source_datasets: List[str]
-    status: str
-    errors: List[Any]
+    table_name: str
+    source_datasets: List[ModelSourceItem]
+    depends_on: List[ModelType] = field(default_factory=list)
+    
+@dataclass(frozen=True)
+class SilverManifest:
+    env: Env
+    etl_layer: ETLLayer
+    references_tables: Dict[str, str]
+    manual_data_paths: List[ManualDataPath]
+    models: List[Model]
+
+

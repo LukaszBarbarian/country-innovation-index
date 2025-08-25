@@ -27,14 +27,12 @@ class PaginationApiLoader(ApiLoader):
         self.extractor = extractor or (lambda r: r.get("data", []) if isinstance(r, dict) else r)
 
     async def load(self) -> List[RawData]:
-        current_offset = self.initial_payload.get(self.page_param, 0)
+        current_page_or_offset = self.initial_payload.get(self.page_param, 0 if self.page_param == "offset" else 1)
         current_limit = self.initial_payload.get(self.limit_param, 100)
         all_results: List[RawData] = []
 
         while True:
-            # Zachowujemy wszystkie parametry i aktualizujemy offset + limit
-            params = {**self.initial_payload, self.page_param: current_offset, self.limit_param: current_limit}
-
+            params = {**self.initial_payload, self.page_param: current_page_or_offset, self.limit_param: current_limit}
             url = f"{self.base_url}/{self.endpoint}"
             logger.info(f"Loading page from {url} with params {params}")
 
@@ -44,24 +42,22 @@ class PaginationApiLoader(ApiLoader):
                 json_data = response.json()
 
                 records = self.extractor(json_data)
+                
                 if not records:
-                    logger.info(f"No records returned from endpoint {self.endpoint}, stopping pagination.")
+                    logger.info("No records returned, stopping pagination.")
                     break
 
                 for record in records:
                     all_results.append(RawData(data=record, dataset_name=self.endpoint))
-
-                if len(records) < current_limit:
-                    logger.info(f"Last page reached at offset {current_offset}, stopping pagination.")
-                    break
-
-                current_offset += current_limit
+                
+                # JEDYNA POTRZEBNA ZMIANA:
+                current_page_or_offset += current_limit if self.page_param == "offset" else 1
 
             except httpx.HTTPStatusError as e:
-                logger.error(f"HTTP error occurred: {e.response.status_code} - {e.response.text}")
+                logger.error(f"HTTP error: {e}")
                 break
             except Exception as e:
-                logger.error(f"An unexpected error occurred during API request: {e}")
+                logger.error(f"An unexpected error occurred: {e}")
                 break
 
         return all_results

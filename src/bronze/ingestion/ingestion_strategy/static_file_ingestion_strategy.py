@@ -9,7 +9,8 @@ from src.common.enums.domain_source_type import DomainSourceType
 from src.common.enums.etl_layers import ETLLayer
 from src.common.factories.storage_file_builder_factory import StorageFileBuilderFactory
 from src.common.ingestion_strategy.base_ingestion_strategy import BaseIngestionStrategy
-from src.common.models.ingestions import IngestionContext, IngestionResult
+from src.common.models.ingestion_context import IngestionContext
+from src.common.models.ingestion_result import IngestionResult
 from src.common.registers.ingestion_strategy_registry import IngestionStrategyRegistry
 
 logger = logging.getLogger(__name__)

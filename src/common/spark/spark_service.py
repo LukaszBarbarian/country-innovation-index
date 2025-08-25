@@ -46,6 +46,19 @@ class SparkService:
         container = path_parts[0].lower() # Zmień na małe litery
         blob_path = path_parts[1] if len(path_parts) > 1 else ''
         return f"abfss://{container}@{account_name}.dfs.core.windows.net/{blob_path}"
+    
+    def read_csv(self, https_url: str, schema: Structure = None) -> DataFrame:
+        """
+        Odczytuje plik JSON z podanego URL-a. 
+        Opcjonalnie przyjmuje schemat dla wydajniejszego parsowania.
+        """
+        abfss_url = self.https_to_abfss(https_url)
+        
+        # Jeśli schemat został podany, użyj go. W przeciwnym razie Spark wnioskuje o nim.
+        if schema:
+            return self.spark.read.option("header", "true").option("inferSchema", "true").schema(schema).csv(abfss_url)
+        else:
+            return self.spark.read.option("header", "true").csv(abfss_url)    
 
     def read_json(self, https_url: str, schema: Structure = None) -> DataFrame:
         """
@@ -60,6 +73,21 @@ class SparkService:
         else:
             return self.spark.read.json(abfss_url)
 
-    def write_json(self, df: DataFrame, https_url: str, mode: str = "overwrite"):
-        abfss_url = self.https_to_abfss(https_url)
-        df.write.format("delta").mode(mode).option("path", abfss_url).save()
+    def write_json(self, df: DataFrame, abfss_url: str, mode: str = "overwrite", format: str = "delta"):
+        df.write.format(format).mode(mode).option("path", abfss_url).save()
+
+
+    def write_delta(self, df: DataFrame, abfss_url: str, mode: str = "overwrite", partition_cols: list = None, options: dict = None):
+        """
+        Zapisuje DataFrame jako tabelę Delta, z opcjonalnymi opcjami i partycjonowaniem.
+        """
+        writer = df.write.format("delta").mode(mode)
+
+        if options:
+            for key, value in options.items():
+                writer = writer.option(key, value)
+
+        if partition_cols:
+            writer = writer.partitionBy(*partition_cols)
+        
+        writer.save(abfss_url)

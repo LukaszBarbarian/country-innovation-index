@@ -44,6 +44,7 @@ class BaseStorageFileBuilder(ABC):
     def build_file_output(self,
                           context: BaseContext,
                           container_name: str,
+                          storage_account_name: str,
                           **kwargs: Any) -> Dict[str, Any]:
         """
         Metoda abstrakcyjna, która ma za zadanie przygotować wszystkie dane do zapisu,
@@ -55,6 +56,8 @@ class BaseStorageFileBuilder(ABC):
     @abstractmethod
     def build_summary_file_output(self,
                             context: BaseContext,
-                            ingestion_results: list,
-                            container_name: str) -> Dict[str, Any]:
+                            results: list,
+                            storage_account_name: str,
+                            container_name: str,
+                            **kwargs: Any) -> Dict[str, Any]:
         pass

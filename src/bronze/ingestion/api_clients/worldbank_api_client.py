@@ -6,7 +6,7 @@ from src.bronze.contexts.bronze_layer_context import BronzeLayerContext
 from src.common.clients.api_clients.base_api_client import ApiClient
 from src.common.clients.api_clients.loaders.pagination_api_loader import PaginationApiLoader
 from src.common.config.config_manager import ConfigManager
-from src.common.models.ingestions import IngestionContext
+from src.common.models.ingestion_context import IngestionContext
 from src.common.models.raw_data import RawData
 from src.common.registers.api_client_registry import ApiClientRegistry
 from src.common.enums.domain_source import DomainSource
@@ -53,6 +53,8 @@ class WorldBankApiClient(ApiClient):
     
 
     def _world_bank_extractor(self, response_json):
+        # Sprawdzamy, czy odpowiedź jest listą, ma co najmniej dwa elementy i drugi element jest listą.
         if isinstance(response_json, list) and len(response_json) > 1 and isinstance(response_json[1], list):
-            return [RawData(data=item) for item in response_json[1]]
+            # Zwracamy czystą listę słowników (surowych danych), bez tworzenia obiektów RawData.
+            return response_json[1]
         return []

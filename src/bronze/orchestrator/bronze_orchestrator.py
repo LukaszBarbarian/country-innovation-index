@@ -13,8 +13,9 @@ from src.common.enums.etl_layers import ETLLayer
 from src.common.factories.ingestion_strategy_factory import IngestionStrategyFactory
 from src.common.factories.storage_file_builder_factory import StorageFileBuilderFactory
 from src.common.models.file_info import FileInfo
+from src.common.models.ingestion_context import IngestionContext
 from src.common.models.orchestrator_result import OrchestratorResult
-from src.common.models.ingestions import IngestionContext, IngestionResult
+from src.common.models.ingestion_result import IngestionResult
 from src.common.orchestrators.base_orchestrator import BaseOrchestrator
 from src.common.registers.orchestrator_registry import OrchestratorRegistry
 from src.common.azure_clients.blob_client_manager import BlobClientManager # Zakładamy, że masz tę klasę
@@ -109,12 +110,15 @@ class BronzeOrchestrator(BaseOrchestrator):
 
     async def _save_ingestion_summary(self, context: IngestionContext, ingestion_results: List[IngestionResult]) -> str:
         file_builder = StorageFileBuilderFactory.get_instance(ETLLayer.BRONZE, config=self.config)
+        storage_account_name = self.config.get_setting("DATA_LAKE_STORAGE_ACCOUNT_NAME")
+
 
         # Używamy nowej, dedykowanej metody do budowania pliku podsumowania
         summary_output = file_builder.build_summary_file_output(
             context=context,
-            ingestion_results=ingestion_results,
-            container_name=ETLLayer.BRONZE.value
+            results=ingestion_results,
+            container_name=context.etl_layer.value.lower(),
+            storage_account_name=storage_account_name
         )
         
         summary_content_bytes = summary_output["file_content_bytes"]

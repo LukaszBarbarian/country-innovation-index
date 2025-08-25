@@ -1,40 +1,135 @@
 # src/silver/storage_file_builder/silver_storage_file_builder.py
-from typing import Dict, Any, Optional
-from src.common.models.base_context import BaseContext
+from dataclasses import asdict
+import datetime
+import json
+import os
+from typing import Dict, Any, List
 from src.common.enums.etl_layers import ETLLayer
+from src.common.models.etl_model_result import EtlModelResult
+from src.common.models.file_info import FileInfo
 from src.common.registers.storage_file_builder_registry import StorageFileBuilderRegistry
 from src.common.storage_file_builder.base_storage_file_builder import BaseStorageFileBuilder
-from src.common.config.config_manager import ConfigManager
+from src.silver.context.silver_context import SilverLayerContext
 
 @StorageFileBuilderRegistry.register(ETLLayer.SILVER)
 class SilverStorageFileBuilder(BaseStorageFileBuilder):
     
-    def __init__(self, config: ConfigManager, context: BaseContext):
-        super().__init__(config)
-        self.context = context
-
-    def get_delta_table_path(self, container_name: str, model_type: str) -> str:
-        ingestion_date_path = self._get_ingestion_date_path(self.context.ingestion_time_utc)
-        return f"{model_type.lower()}/{ingestion_date_path}"
+    def _generate_delta_table_path(self, container_name: str, model_type: str, storage_account_name: str) -> str:
+        """
+        Generuje standardową ścieżkę do tabeli Delta, np. /silver/countries.
+        Ścieżki są zdefiniowane w konfiguracji, co pozwala na łatwą zmianę bez
+        modyfikacji kodu.
+        """
+        
+        return f"abfss://{container_name}@{storage_account_name.lower()}.dfs.core.windows.net/{model_type}"
 
     def build_file_output(self,
-                          context: BaseContext,
+                          context: SilverLayerContext,
                           container_name: str,
+                          storage_account_name: str,
                           **kwargs: Any) -> Dict[str, Any]:
         """
-        Nadpisana metoda do generowania ścieżek dla warstwy Silver.
-        Zwraca tylko ścieżkę, ponieważ Spark zajmuje się resztą.
+        Buduje metadane wyjściowe dla tabeli Delta.
+        Zwraca pełną ścieżkę i metadane pliku Delta.
         """
-
         model_type = kwargs.get("model_type")
         if not model_type:
-            raise ValueError("Model type must be provided for Silver builder.")
+            raise ValueError("Model name must be provided for Silver builder.")
 
-        output_path = self.get_delta_table_path(container_name, model_type)
-        full_path_url = self.build_blob_url(container_name, output_path, self.config.get_setting("DATA_LAKE_STORAGE_ACCOUNT_NAME"))
-
+        # Generowanie ścieżki do tabeli
+        full_path_abfss = self._generate_delta_table_path(container_name=container_name, model_type=model_type, storage_account_name=storage_account_name)
         
+        # Metadane pliku Delta (wersjonowanie i partycjonowanie są zarządzane przez Spark)
+        file_info = FileInfo(
+            container_name=container_name,
+            full_path_in_container=full_path_abfss,
+            file_name=f"{model_type}.delta",
+            file_size_bytes=0,  # Spark zarządza rozmiarem
+            domain_source=None,
+            dataset_name=None,
+            ingestion_date=context.ingestion_time_utc.strftime("%Y-%m-%d"),
+            correlation_id=context.correlation_id,
+            blob_tags={
+                "etlLayer": ETLLayer.SILVER.value,
+                "modelName": model_type,
+                "correlationId": context.correlation_id,
+            },
+            hash_name=None,
+            full_blob_url=full_path_abfss
+        )
+
         return {
-            "output_path": output_path,
-            "full_path_url" : full_path_url
+            "file_info": file_info
+        }
+
+    def build_summary_file_output(self,
+                                  context: SilverLayerContext,
+                                  results: List[EtlModelResult],
+                                  container_name: str,
+                                  storage_account_name: str,
+                                  **kwargs: Any) -> Dict[str, Any]:
+        """
+        Tworzy zawartość i metadane dla pliku podsumowującego procesy w warstwie Silver.
+        """
+        # Generowanie zawartości podsumowania
+        processed_results = []
+        for r in results:
+            # Ręcznie tworzymy słownik z pożądaną strukturą
+            result_dict = {
+                "model": r.model.type.value,
+                "status": r.status,
+                "output_path": r.output_path,
+                "correlation_id": r.correlation_id,
+                "timestamp": r.timestamp,
+                "operation_type": r.operation_type,
+                "record_count": r.record_count,
+                "error_details": r.error_details,
+                "duration_in_ms": r.duration_in_ms
+            }
+            processed_results.append(result_dict)
+
+        # Generowanie zawartości podsumowania
+        summary_data = {
+            "status": "COMPLETED" if all(r.status == "COMPLETED" for r in results) else "FAILED",
+            "env": context.env.value,
+            "etl_layer": "gold",
+            "correlation_id": context.correlation_id,
+            "timestamp": datetime.datetime.utcnow().isoformat(),
+            "processed_models": len(results),
+            "duration_in_ms" : kwargs.get("duration_orchestrator"),
+            "results": processed_results # Używamy ręcznie przetworzonej listy
+        }
+        
+        file_content_str = json.dumps(summary_data, indent=4, default=str)
+        file_content_bytes = file_content_str.encode('utf-8')
+        file_size_bytes = len(file_content_bytes)
+
+        file_name = f"processing_summary__{context.correlation_id}.json"
+        blob_path = f"outputs/summaries/{file_name}"
+        full_blob_url = self.build_blob_url(container_name, blob_path, storage_account_name)
+
+        blob_tags = {
+            "correlationId": context.correlation_id,
+            "ingestionTimestampUTC": datetime.datetime.utcnow().isoformat() + "Z",
+            "type": "goldSummary",
+            "status": summary_data["status"],
+        }
+        
+        file_info = FileInfo(
+            container_name=container_name,
+            full_path_in_container=blob_path,
+            file_name=file_name,
+            file_size_bytes=file_size_bytes,
+            domain_source=None,
+            dataset_name=None,
+            ingestion_date=datetime.datetime.utcnow().strftime("%Y-%m-%d"),
+            correlation_id=context.correlation_id,
+            blob_tags=blob_tags,
+            hash_name=context.correlation_id,
+            full_blob_url=full_blob_url
+        )
+
+        return {
+            "file_content_bytes": file_content_bytes,
+            "file_info": file_info
         }

@@ -5,8 +5,6 @@ from src.common.enums.model_type import ModelType
 from src.common.builders.base_model_builder import BaseModelBuilder
 from src.common.factories.base_factory import BaseFactoryFromRegistry
 
-#from src.silver.model_builders.country_model_builder import CountryModelBuilder
-
 
 class ModelBuilderFactory(BaseFactoryFromRegistry[ModelType, BaseModelBuilder]):
     """

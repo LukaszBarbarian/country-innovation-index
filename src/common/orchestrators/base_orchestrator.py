@@ -11,7 +11,6 @@ from src.common.spark.spark_service import SparkService
 class BaseOrchestrator(ABC):
     def __init__(self, config: ConfigManager, spark: Optional[SparkService] = None):
         self.config = config
-        self.storage_account_name = self.config.get_setting("DATA_LAKE_STORAGE_ACCOUNT_NAME")
         self.spark = spark
         
 
@@ -28,18 +27,27 @@ class BaseOrchestrator(ABC):
 
     
 
-    def _create_final_result_for_error(self, context: BaseContext, error: Exception) -> OrchestratorResult:
+    def _create_final_result_for_error(self, 
+                                     context: BaseContext, 
+                                     e: Exception,
+                                     duration_in_ms: Optional[int] = None) -> OrchestratorResult:
         """
-        Metoda pomocnicza do tworzenia wyniku w przypadku nieoczekiwanego błędu.
+        Tworzy końcowy wynik orkiestracji w przypadku nieobsłużonego błędu.
         """
+        status = "FAILED"
+        message = f"Orchestration failed with error: {str(e)}"
+        
         return OrchestratorResult(
-            status="FAILED",
+            status=status,
             correlation_id=context.correlation_id,
             etl_layer=context.etl_layer,
             env=context.env,
-            message=f"Orchestrator failed due to an internal error: {str(error)}",
+            message=message,
+            output_paths=None,
+            processed_items=0,
+            duration_in_ms=duration_in_ms, # Dodajemy czas trwania
             error_details={
-                "errorType": type(error).__name__,
-                "errorMessage": str(error)
+                "errorType": type(e).__name__,
+                "errorMessage": str(e)
             }
-        )    
+        )

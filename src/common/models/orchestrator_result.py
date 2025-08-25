@@ -15,7 +15,7 @@ class OrchestratorResult(BaseModel):
     timestamp: datetime.datetime = Field(default_factory=datetime.datetime.utcnow)
     processed_items: int
     duration_in_ms: int
-    summary_url: str
+    summary_url: Optional[str] = None
     message: str
     error_details: Optional[Dict[str, Any]] = Field(default_factory=dict)
 

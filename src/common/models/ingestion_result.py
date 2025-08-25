@@ -1,5 +1,6 @@
 from dataclasses import asdict, dataclass
 from enum import Enum
+import os
 from typing import Any, Dict, List, Optional
 
 
@@ -7,21 +8,19 @@ from typing import Any, Dict, List, Optional
 
 from dataclasses import dataclass, field
 from typing import Dict, Any, List, Optional
-import datetime
-from src.common.models.base_context import BaseContext
+
 from src.common.enums.domain_source import DomainSource
 from src.common.enums.domain_source_type import DomainSourceType
-from src.common.enums.etl_layers import ETLLayer
 from src.common.enums.env import Env
-from src.common.models.manifest import SourceConfigPayload
+from src.common.enums.etl_layers import ETLLayer
 
-@dataclass(frozen=True)
+@dataclass
 class IngestionResult:
     correlation_id: str
-    env: str
-    etl_layer: str
-    domain_source: str
-    domain_source_type: str
+    env: Env
+    etl_layer: ETLLayer
+    domain_source: DomainSource
+    domain_source_type: DomainSourceType
     dataset_name: Optional[str] = None
     status: str = "PENDING"
     message: Optional[str] = None
@@ -52,35 +51,13 @@ class IngestionResult:
         return self.status in ["COMPLETED", "SUCCESS"]
 
 
-@dataclass(frozen=True)
-class IngestionSummary:
-    """Klasa dla całego pliku podsumowania po warstwie Bronze."""
-    status: str
-    env: str
-    etl_layer: str
-    correlation_id: str
-    timestamp: str
-    processed_items: int
-    results: List[IngestionResult]
-
-    @property
-    def overall_status(self) -> str:
-        """Oblicza ogólny status na podstawie wszystkich wyników."""
-        if not self.results:
-            return "NO_RESULTS"
-
-        if all(result.is_valid for result in self.results):
-            return "COMPLETED"
-        elif any(not result.is_valid for result in self.results):
-            return "PARTIAL_SUCCESS"
-        else:
-            return "FAILED"    
+    def update_paths(self, base_path: str):
+        self.output_paths = [f"{base_path}/{path.strip('/')}" for path in self.output_paths]
 
 
 
-@dataclass(frozen=True, kw_only=True)
-class IngestionContext(BaseContext):
-    source_config: SourceConfigPayload
+
+
 
     
 

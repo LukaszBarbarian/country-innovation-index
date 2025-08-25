@@ -9,4 +9,4 @@ from src.common.enums.file_format import FileFormat
 @DataProcessorRegistry.register(DomainSource.NOBELPRIZE)
 class NobelPrizeProcessor(BaseDataProcessor):
     def process(self, raw_data: Any, context: BaseContext) -> ProcessedResult:
-        return ProcessedResult(data=raw_data.data.copy(), format=FileFormat.JSON)
+        return ProcessedResult(data=raw_data.copy(), format=FileFormat.JSON)

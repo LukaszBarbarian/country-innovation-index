@@ -3,10 +3,8 @@
 from abc import ABC, abstractmethod
 from typing import Optional, Any, Dict, List
 from src.common.config.config_manager import ConfigManager
-from src.common.models.base_context import BaseContext
-from src.common.enums.domain_source import DomainSource
-from src.common.models.ingestions import IngestionContext, IngestionResult
-from src.common.utils.decorator_duration import track_duration
+from src.common.models.ingestion_context import IngestionContext
+from src.common.models.ingestion_result import IngestionResult
 
 class BaseIngestionStrategy(ABC):
     """

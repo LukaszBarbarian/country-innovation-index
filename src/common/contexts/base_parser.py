@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List
 
+from src.common.config.config_manager import ConfigManager
 from src.common.models.base_context import BaseContext
 from src.common.enums.domain_source import DomainSource
 from src.common.enums.env import Env
@@ -9,8 +10,8 @@ from src.common.enums.etl_layers import ETLLayer
 
 class BaseParser(ABC):
 
-    def __init__(self) -> None:
-        pass
+    def __init__(self, config: ConfigManager) -> None:
+        self._config = config
 
     @abstractmethod
     def parse(self, manifest_payload: Dict[str, Any], payload: Dict[str, Any] = None) -> BaseContext:
@@ -53,3 +54,4 @@ class BaseParser(ABC):
                 return False
         
         return True        
+    

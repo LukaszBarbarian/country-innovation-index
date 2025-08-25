@@ -1,53 +1,62 @@
 # src/silver/model_builders/country_model_builder.py
-from typing import Dict, cast
-from pyspark.sql import DataFrame
 import pyspark.sql.functions as F
+from typing import Dict, Tuple
+from pyspark.sql import DataFrame
 from injector import inject
-from src.common.builders.base_model_builder import BaseModelBuilder
+
 from src.common.enums.model_type import ModelType
 from src.common.enums.domain_source import DomainSource
 from src.common.registers.model_builder_registry import ModelBuilderRegistry
+from src.silver.builders.silver_model_builder import SilverModelBuilder
 
 
 @ModelBuilderRegistry.register(ModelType.COUNTRY)
-class CountryModelBuilder(BaseModelBuilder):
-    
-    async def _load_data(self) -> Dict[str, DataFrame]:
-        nobelprize_reader = self.get_reader(DomainSource.NOBELPRIZE)
-        return nobelprize_reader.load_data()
+class CountryModelBuilder(SilverModelBuilder):
+    async def build(self, datasets: Dict[Tuple, DataFrame], dependencies: Dict[ModelType, DataFrame]) -> DataFrame:
+        country_refs = self.get_references("country_codes")
+        if not country_refs:
+            raise ValueError("Brak danych referencyjnych 'country_codes'.")
 
-    async def transform(self, df: DataFrame, dataset_name: str) -> DataFrame:
-        if dataset_name == "laureates":
-            # 1. Rozbijamy (eksplodujemy) tablicę laureatów na pojedyncze wiersze
-            exploded_df = df.select(F.explode("laureates").alias("laureate"))
-            
-            # 2. Wybieramy tylko kolumnę z krajem urodzenia
-            country_df = exploded_df.select(F.col("laureate.birth.place.countryNow.en").alias("birth_country"))
-            
-            # 3. Wybieramy tylko unikalne wartości z tej kolumny
-            # Ta operacja tworzy DataFrame z jedną kolumną 'birth_country' i tylko unikalnymi wartościami
-            distinct_countries_df = country_df.distinct()
-            
-            return distinct_countries_df
-        else:
-            return df
-
-    async def normalize(self, df: DataFrame, dataset_name: str) -> DataFrame:
-        # Tutaj możesz dodać logikę normalizacji dla różnych datasetów
-        return df
-
-    async def enrich(self, df: DataFrame, dataset_name: str) -> DataFrame:
-        # Tutaj możesz dodać logikę wzbogacania dla różnych datasetów
-        return df
-
-    async def combine(self, dataframes: Dict[str, DataFrame]) -> DataFrame:
-        """
-        Łączy przetworzone DataFrames w jeden finalny.
-        W tym przypadku, jeśli mamy nagrody i laureatów, połącz je.
-        """
-        laureates_df = dataframes.get("laureates")
+        result_df = country_refs.select(
+            F.col("ISO3166-1-Alpha-3"),
+            F.col("official_name_en").alias("country_name")
+        ).withColumn(
+            "country_name_normalized",
+            F.upper(F.trim(F.regexp_replace(F.col("country_name"), r"[^a-zA-Z\s]+", "")))
+        ).withColumn(
+            "ref_worldbank", F.lit(0)
+        ).withColumn(
+            "ref_nobelprize", F.lit(0)
+        )
         
-        if laureates_df:
-            return laureates_df
-        else:
-            raise ValueError("Brak danych do połączenia.")
+
+        # Łączenie z World Bank
+        worldbank_df = datasets.get((DomainSource.WORLDBANK, "population"))
+        if worldbank_df and "ISO3166-1-Alpha-3" in worldbank_df.columns:
+            worldbank_iso_df = worldbank_df.select(
+                F.col("ISO3166-1-Alpha-3")
+            ).distinct()
+
+            result_df = result_df.join(
+                worldbank_iso_df.withColumn("ref_worldbank_flag", F.lit(1)),
+                on="ISO3166-1-Alpha-3",
+                how="left"
+            ).withColumn(
+                "ref_worldbank",
+                F.when(F.col("ref_worldbank_flag").isNotNull(), 1).otherwise(F.col("ref_worldbank"))
+            ).drop("ref_worldbank_flag")
+
+        # Łączenie z Nobel Prize
+        nobel_df = datasets.get((DomainSource.NOBELPRIZE, "laureates"))
+        if nobel_df and "country_normalized" in nobel_df.columns:
+            nobel_countries_df = nobel_df.select("country_normalized").distinct()
+            result_df = result_df.join(
+                nobel_countries_df.withColumn("ref_nobelprize_flag", F.lit(1)),
+                result_df.country_name_normalized == nobel_countries_df.country_normalized,
+                how="left"
+            ).withColumn(
+                "ref_nobelprize",
+                F.when(F.col("ref_nobelprize_flag").isNotNull(), 1).otherwise(F.col("ref_nobelprize"))
+            ).drop("ref_nobelprize_flag", nobel_countries_df.country_normalized)
+
+        return result_df.drop("country_name_normalized")

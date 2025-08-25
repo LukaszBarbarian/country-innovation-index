@@ -6,7 +6,7 @@ from src.bronze.contexts.bronze_layer_context import BronzeLayerContext
 from src.common.clients.api_clients.base_api_client import ApiClient
 from src.common.clients.api_clients.loaders.pagination_api_loader import PaginationApiLoader
 from src.common.config.config_manager import ConfigManager
-from src.common.models.ingestions import IngestionContext
+from src.common.models.ingestion_context import IngestionContext
 from src.common.models.raw_data import RawData
 from src.common.registers.api_client_registry import ApiClientRegistry
 from src.common.enums.domain_source import DomainSource
@@ -36,6 +36,6 @@ class NobelPrizeApiClient(ApiClient):
             page_param="offset",
             endpoint=dataset_name, 
             initial_payload=request_payload,  # przekazujemy słownik bez .params
-            extractor=lambda r: [RawData(data=laureate) for laureate in r.get("laureates", [])]
+            extractor=lambda r: r.get(f"{dataset_name}", [])
         )
         return await loader.load()

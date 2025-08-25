@@ -3,6 +3,7 @@ from injector import Module, singleton, Binder, provider
 from src.common.enums.model_type import ModelType
 from src.common.factories.model_builder_factory import ModelBuilderFactory
 from src.common.di.di_module import DIModule
+from src.silver.builders.silver_model_builder import SilverModelBuilder
 
 
 class BuildersModule(DIModule):
@@ -16,4 +17,5 @@ class BuildersModule(DIModule):
             except KeyError:
                 print(f"Ostrzeżenie: Brak buildera dla typu modelu '{model_type.name}'.")
                 continue
-    
+
+        binder.bind(SilverModelBuilder, to=SilverModelBuilder, scope=singleton)

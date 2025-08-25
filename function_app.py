@@ -87,7 +87,7 @@ async def run_ingestion_activity(input: Dict[str, Any]) -> Dict[str, Any]:
         config = ConfigManager()
         orchestrator = OrchestratorFactory.get_instance(ETLLayer.BRONZE, config=config)
         
-        parser = BronzePayloadParser()
+        parser = BronzePayloadParser(config)
         bronze_context = parser.parse(input_payload)
         
         result = await orchestrator.run(bronze_context)

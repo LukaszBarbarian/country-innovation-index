@@ -9,6 +9,7 @@ from src.common.di.di_module import DIModule
 from src.common.di.builders_module import BuildersModule
 from src.common.di.readers_module import ReadersModule
 from src.common.spark.spark_service import SparkService
+from src.silver.builders.model_director import ModelDirector
 from src.silver.context.silver_context import SilverLayerContext
 
 class SilverModule(DIModule):
@@ -21,8 +22,11 @@ class SilverModule(DIModule):
         binder.install(BuildersModule(self._context, self._config))
         binder.install(ReadersModule(self._context, self._config))
         
+        
         binder.bind(SilverLayerContext, to=self.provide_context, scope=singleton)
         binder.bind(BaseContext, to=self.provide_context, scope=singleton)
+        binder.bind(ModelDirector, to=ModelDirector, scope=singleton)
+        
 
 
 
