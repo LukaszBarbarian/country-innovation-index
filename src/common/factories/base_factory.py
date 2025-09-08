@@ -27,8 +27,8 @@ class BaseFactoryFromRegistry(Generic[K, T], ABC):
         registry = cls.get_registry()
         get_class = registry.get_class if hasattr(registry, "get_class") else registry.get
         klass = get_class(key)
-        if klass is None:
-            raise ValueError(f"Brak klasy zarejestrowanej pod kluczem: {key}")
+        # if klass is None:
+        #     raise ValueError(f"Brak klasy zarejestrowanej pod kluczem: {key}")
         return klass
 
     @classmethod

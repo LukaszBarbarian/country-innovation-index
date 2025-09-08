@@ -11,7 +11,7 @@ print("sys.path:", sys.path)
 
 from src.common.azure_clients.event_grid_client_manager import EventGridClientManager
 from src.common.models.orchestrator_result import OrchestratorResult
-from src.silver.context.silver_parser import SilverPayloadParser
+from src.silver.context.silver_parser import SilverParser
 from src.common.spark.spark_service import SparkService
 from src.common.config.config_manager import ConfigManager
 from src.common.enums.etl_layers import ETLLayer
@@ -42,99 +42,106 @@ summary_json = """
     "status": "COMPLETED",
     "env": "dev",
     "etl_layer": "bronze",
-    "correlation_id": "b9e88694-8b9b-4430-aab2-cd1e87bc05b3",
-    "timestamp": "2025-08-23T09:29:32.874749",
+    "correlation_id": "56f0510e-47c5-4f42-9fa8-7d3d65254e2b",
+    "timestamp": "2025-09-03T16:29:05.373451",
     "processed_items": 6,
+    "duration_in_ms": 111100,
     "results": [
         {
-            "correlation_id": "b9e88694-8b9b-4430-aab2-cd1e87bc05b3",
-            "env": "dev",
+            "status": "COMPLETED",
+            "correlation_id": "56f0510e-47c5-4f42-9fa8-7d3d65254e2b",
             "etl_layer": "bronze",
+            "env": "dev",
+            "duration_in_ms": 6901,
+            "record_count": 1004,
             "domain_source": "NOBELPRIZE",
             "domain_source_type": "api",
             "dataset_name": "laureates",
-            "status": "COMPLETED",
-            "message": "API data successfully processed and stored. Uploaded 1 file with 1004 processed results.",
+            "message": "API data successfully processed. Uploaded 1 file with 1004 records.",
             "output_paths": [
-                "nobelprize/2025/08/25/laureates_b9e88694-8b9b-4430-aab2-cd1e87bc05b3_d2b028b2.json"
+                "https://demosurdevdatalake4418sa.blob.core.windows.net/bronze/nobelprize/2025/09/03/laureates_56f0510e-47c5-4f42-9fa8-7d3d65254e2b_d2b028b2.json"
             ],
-            "error_details": {},
-            "duration_in_ms": 13650
+            "error_details": {}
         },
         {
-            "correlation_id": "b9e88694-8b9b-4430-aab2-cd1e87bc05b3",
-            "env": "dev",
+            "status": "COMPLETED",
+            "correlation_id": "56f0510e-47c5-4f42-9fa8-7d3d65254e2b",
             "etl_layer": "bronze",
+            "env": "dev",
+            "duration_in_ms": 19600,
+            "record_count": 17290,
             "domain_source": "WORLDBANK",
             "domain_source_type": "api",
             "dataset_name": "population",
-            "status": "COMPLETED",
-            "message": "API data successfully processed and stored. Uploaded 1 file with 1000 processed results.",
+            "message": "API data successfully processed. Uploaded 1 file with 17290 records.",
             "output_paths": [
-                "worldbank/2025/08/25/population_b9e88694-8b9b-4430-aab2-cd1e87bc05b3_e643b2b9.json"
+                "https://demosurdevdatalake4418sa.blob.core.windows.net/bronze/worldbank/2025/09/03/population_56f0510e-47c5-4f42-9fa8-7d3d65254e2b_e643b2b9.json"
             ],
-            "error_details": {},
-            "duration_in_ms": 9406
+            "error_details": {}
         },
         {
-            "correlation_id": "b9e88694-8b9b-4430-aab2-cd1e87bc05b3",
-            "env": "dev",
+            "status": "COMPLETED",
+            "correlation_id": "56f0510e-47c5-4f42-9fa8-7d3d65254e2b",
             "etl_layer": "bronze",
+            "env": "dev",
+            "duration_in_ms": 26026,
+            "record_count": 17290,
             "domain_source": "WORLDBANK",
             "domain_source_type": "api",
             "dataset_name": "pkb",
-            "status": "COMPLETED",
-            "message": "API data successfully processed and stored. Uploaded 1 file with 1000 processed results.",
+            "message": "API data successfully processed. Uploaded 1 file with 17290 records.",
             "output_paths": [
-                "worldbank/2025/08/25/pkb_b9e88694-8b9b-4430-aab2-cd1e87bc05b3_0cf75120.json"
+                "https://demosurdevdatalake4418sa.blob.core.windows.net/bronze/worldbank/2025/09/03/pkb_56f0510e-47c5-4f42-9fa8-7d3d65254e2b_0cf75120.json"
             ],
-            "error_details": {},
-            "duration_in_ms": 9071
+            "error_details": {}
         },
         {
-            "correlation_id": "b9e88694-8b9b-4430-aab2-cd1e87bc05b3",
-            "env": "dev",
+            "status": "COMPLETED",
+            "correlation_id": "56f0510e-47c5-4f42-9fa8-7d3d65254e2b",
             "etl_layer": "bronze",
+            "env": "dev",
+            "duration_in_ms": 19272,
+            "record_count": 17290,
             "domain_source": "WORLDBANK",
             "domain_source_type": "api",
             "dataset_name": "rd",
-            "status": "COMPLETED",
-            "message": "API data successfully processed and stored. Uploaded 1 file with 1000 processed results.",
+            "message": "API data successfully processed. Uploaded 1 file with 17290 records.",
             "output_paths": [
-                "worldbank/2025/08/25/r&d_b9e88694-8b9b-4430-aab2-cd1e87bc05b3_fb7ec9e1.json"
+                "https://demosurdevdatalake4418sa.blob.core.windows.net/bronze/worldbank/2025/09/03/rd_56f0510e-47c5-4f42-9fa8-7d3d65254e2b_fb7ec9e1.json"
             ],
-            "error_details": {},
-            "duration_in_ms": 8731
+            "error_details": {}
         },
         {
-            "correlation_id": "b9e88694-8b9b-4430-aab2-cd1e87bc05b3",
-            "env": "dev",
+            "status": "COMPLETED",
+            "correlation_id": "56f0510e-47c5-4f42-9fa8-7d3d65254e2b",
             "etl_layer": "bronze",
+            "env": "dev",
+            "duration_in_ms": 18925,
+            "record_count": 17290,
             "domain_source": "WORLDBANK",
             "domain_source_type": "api",
             "dataset_name": "researchers",
-            "status": "COMPLETED",
-            "message": "API data successfully processed and stored. Uploaded 1 file with 1000 processed results.",
+            "message": "API data successfully processed. Uploaded 1 file with 17290 records.",
             "output_paths": [
-                "worldbank/2025/08/25/researchers_b9e88694-8b9b-4430-aab2-cd1e87bc05b3_65d57308.json"
+                "https://demosurdevdatalake4418sa.blob.core.windows.net/bronze/worldbank/2025/09/03/researchers_56f0510e-47c5-4f42-9fa8-7d3d65254e2b_65d57308.json"
             ],
-            "error_details": {},
-            "duration_in_ms": 9423
+            "error_details": {}
         },
         {
-            "correlation_id": "b9e88694-8b9b-4430-aab2-cd1e87bc05b3",
-            "env": "dev",
+            "status": "COMPLETED",
+            "correlation_id": "56f0510e-47c5-4f42-9fa8-7d3d65254e2b",
             "etl_layer": "bronze",
+            "env": "dev",
+            "duration_in_ms": 20376,
+            "record_count": 17290,
             "domain_source": "WORLDBANK",
             "domain_source_type": "api",
             "dataset_name": "unemployment",
-            "status": "COMPLETED",
-            "message": "API data successfully processed and stored. Uploaded 1 file with 1000 processed results.",
+            "message": "API data successfully processed. Uploaded 1 file with 17290 records.",
             "output_paths": [
-                "worldbank/2025/08/25/unemployment_b9e88694-8b9b-4430-aab2-cd1e87bc05b3_86116269.json"
+                "https://demosurdevdatalake4418sa.blob.core.windows.net/bronze/worldbank/2025/09/03/unemployment_56f0510e-47c5-4f42-9fa8-7d3d65254e2b_86116269.json"
             ],
-            "error_details": {},
-            "duration_in_ms": 8070
+            "error_details": {}
         }
     ]
 }"""
@@ -145,15 +152,13 @@ manifest_json = """
   "env": "dev",
   "etl_layer": "silver",
   "references_tables": {
-    "boolean_mappings": "/references/boolean_mappings/boolean_mapping.csv",
-    "country_codes": "/references/country_codes/country-codes.csv",
-    "date_formats": "/references/date_formats/date_formats.csv"
+    "country_codes": "/references/country_codes/country-codes.csv"
   },
   "manual_data_paths": [
     {
       "domain_source": "PATENTS",
       "dataset_name": "patents",
-      "file_path": "/manual/patents/patents.json"
+      "file_path": "/manual/patents/patents.csv"
     }
   ],
   "models": [
@@ -168,8 +173,28 @@ manifest_json = """
 							{
 							  "domain_source": "WORLDBANK",
 							  "dataset_name": "population"							  
-							}							
+							},
+              {
+							  "domain_source": "PATENTS",
+							  "dataset_name": "patents"							  
+							}		
 						]
+    },
+    {
+      "model_name": "YEAR",
+	    "table_name": "",
+      "source_datasets": []
+    },
+    {
+      "model_name": "NOBEL_LAUREATES",
+	    "table_name": "",
+      "source_datasets": [
+							{
+							  "domain_source": "NOBELPRIZE",
+							  "dataset_name": "laureates"							  
+							}
+						 ],
+      "depends_on": ["COUNTRY"]
     },
     {
       "model_name": "GRADUATE_UNEMPLOYMENT",
@@ -213,12 +238,34 @@ manifest_json = """
 							}
 						 ],
       "depends_on": ["COUNTRY"]
+    },
+    {
+      "model_name": "PATENTS",
+	    "table_name": "",
+      "source_datasets": [
+							{
+							  "domain_source": "PATENTS",
+							  "dataset_name": "patents"							  
+							}
+						 ],
+      "depends_on": ["COUNTRY"]
+    },
+    {
+      "model_name": "POPULATION",
+	    "table_name": "",
+      "source_datasets": [
+							{
+							  "domain_source": "WORLDBANK",
+							  "dataset_name": "population"							  
+							}
+						 ],
+      "depends_on": ["COUNTRY"]
     }
   ]
 }
 """
 
-async def send_event_grid_notification(config: ConfigManager, orchestrator_result: OrchestratorResult):
+def send_event_grid_notification(config: ConfigManager, orchestrator_result: OrchestratorResult):
         """
         Tworzy i wysyła powiadomienie Event Grid na podstawie OrchestratorResult.
         """
@@ -239,14 +286,14 @@ async def send_event_grid_notification(config: ConfigManager, orchestrator_resul
             "status": orchestrator_result.status,
             "message_date": orchestrator_result.timestamp.isoformat(),
             "correlation_id": orchestrator_result.correlation_id,
-            "manifest": "",
+            "manifest": "/gold/manifest/dev.manifest.json",
             "summary_processing_uri": orchestrator_result.summary_url,
             "duration_in_ms": orchestrator_result.duration_in_ms
         }
 
         try:
-            await event_grid_client.send_event(
-                event_type=f"{orchestrator_result.etl_layer.value.capitalize()}IngestionCompleted",
+            event_grid_client.send_event(
+                event_type=f"{orchestrator_result.etl_layer.value.capitalize()}ProcessCompleted",
                 subject=f"/{orchestrator_result.etl_layer.value}/processing/{orchestrator_result.correlation_id}",
                 data=payload
             )
@@ -260,14 +307,15 @@ async def send_event_grid_notification(config: ConfigManager, orchestrator_resul
 
 
 config = ConfigManager()
-spark = SparkService(config)
-spark.start_local()
+config.get("AZURE_WEB_JOBS_STORAGE")
+# spark = SparkService(config)
+# spark.start_local()
 
 
-context = SilverPayloadParser(config).parse(manifest_payload=json.loads(manifest_json), payload=json.loads(summary_json))
+# context = SilverParser().parse(manifest_json, summary_json)
 
-orchestrator = OrchestratorFactory.get_instance(ETLLayer.SILVER, spark=spark, config=config)
-result = asyncio.run(orchestrator.run(context))
-asyncio.run(send_event_grid_notification(config=config, orchestrator_result=result))
+# orchestrator = OrchestratorFactory.get_instance(ETLLayer.SILVER, spark=spark, config=config)
+# result = asyncio.run(orchestrator.execute(context))
+# send_event_grid_notification(config=config, orchestrator_result=result)
 
 

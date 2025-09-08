@@ -14,7 +14,7 @@ class WorldBankTransformer(BaseTransformer):
         """
         # Wszystkie dataset-y WB mają podobną strukturę
         value_column_map = {
-            "population": "population",
+            "population": "value",
             "unemployment": "unemployment_rate",
             "researchers": "value",   # możesz później doprecyzować
             "rd": "value",

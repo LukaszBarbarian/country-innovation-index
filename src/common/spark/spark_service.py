@@ -1,4 +1,7 @@
 from ctypes import Structure
+from pathlib import Path
+import subprocess
+import time
 from urllib.parse import urlparse
 import os
 from pyspark.sql import SparkSession
@@ -33,12 +36,22 @@ class SparkService:
 
         spark = configure_spark_with_delta_pip(builder).getOrCreate()
 
+
         self.spark = spark
         print(f"✅ SparkSession gotowa! ver: {spark.version}")
 
 
 
-        
+        # try:
+        #     print("Spark uruchomiony. Ctrl+C aby zakończyć.")
+        #     while True:
+        #         time.sleep(60)  # możesz tu też wykonywać jakieś zadania
+        # except KeyboardInterrupt:
+        #     print("Zamykam Spark...")
+        #     spark.stop()        
+
+
+   
     def https_to_abfss(self, https_url: str) -> str:
         parsed = urlparse(https_url)
         account_name = parsed.netloc.split('.')[0]
@@ -47,7 +60,7 @@ class SparkService:
         blob_path = path_parts[1] if len(path_parts) > 1 else ''
         return f"abfss://{container}@{account_name}.dfs.core.windows.net/{blob_path}"
     
-    def read_csv(self, https_url: str, schema: Structure = None) -> DataFrame:
+    def read_csv_https(self, https_url: str, schema: Structure = None) -> DataFrame:
         """
         Odczytuje plik JSON z podanego URL-a. 
         Opcjonalnie przyjmuje schemat dla wydajniejszego parsowania.
@@ -60,7 +73,7 @@ class SparkService:
         else:
             return self.spark.read.option("header", "true").csv(abfss_url)    
 
-    def read_json(self, https_url: str, schema: Structure = None) -> DataFrame:
+    def read_json_https(self, https_url: str, schema: Structure = None) -> DataFrame:
         """
         Odczytuje plik JSON z podanego URL-a. 
         Opcjonalnie przyjmuje schemat dla wydajniejszego parsowania.
@@ -72,6 +85,21 @@ class SparkService:
             return self.spark.read.option("multiline", "true").schema(schema).json(abfss_url)
         else:
             return self.spark.read.json(abfss_url)
+        
+
+    def read_delta_abfss(self, abfss_url: str) -> DataFrame:
+        """
+        Odczytuje dane w formacie Delta z podanego URL-a.
+        """
+        return self.spark.read.format("delta").load(abfss_url)   
+
+
+    def read_delta_https(self, https_url: str) -> DataFrame:
+        """
+        Odczytuje dane w formacie Delta z podanego URL-a.
+        """
+        abfss_url = self.https_to_abfss(https_url)
+        return self.read_delta_abfss(abfss_url)
 
     def write_json(self, df: DataFrame, abfss_url: str, mode: str = "overwrite", format: str = "delta"):
         df.write.format(format).mode(mode).option("path", abfss_url).save()
@@ -91,3 +119,16 @@ class SparkService:
             writer = writer.partitionBy(*partition_cols)
         
         writer.save(abfss_url)
+
+
+
+
+class DbtRunner:
+    def __init__(self, project_dir: str):
+        self.project_dir = Path(project_dir)
+
+    def run_models(self, models: str = "all"):
+        cmd = f"dbt run --models {models}"
+        print(f"🚀 Uruchamiam dbt: {cmd}")
+        subprocess.run(cmd, shell=True, cwd=self.project_dir, check=True)
+        print("✅ dbt zakończone")                

@@ -1,65 +1,96 @@
-# src/silver/orchestrators/model_director.py
-
-from typing import Dict, Tuple
+import asyncio
+from typing import Dict, Tuple, List
 from pyspark.sql import DataFrame
 from injector import inject, Injector, singleton
 
 from src.common.enums.model_type import ModelType
-from src.common.factories.model_builder_factory import ModelBuilderFactory
-from src.common.models.etl_model import EtlModel
 from src.common.enums.domain_source import DomainSource
+from src.common.factories.model_builder_factory import ModelBuilderFactory
 from src.common.factories.domain_transformer_factory import DomainTransformerFactory
-from src.silver.context.silver_context import SilverLayerContext
+from src.silver.context.silver_context import SilverContext
+from src.silver.models.models import SilverManifestModel
+from src.silver.models.process_model import SilverProcessModel
 
 
 @singleton
 class ModelDirector:
     @inject
-    def __init__(self, injector: Injector, context: SilverLayerContext):
+    def __init__(self, injector: Injector, context: SilverContext):
         self._context = context
         self._injector = injector
 
-    async def get_built_model(self, model_type: ModelType) -> EtlModel:
-        cache_key = f"silver_model:{model_type.value}"
+    async def get_built_model(self, model: SilverManifestModel) -> SilverProcessModel:
+        """
+        Buduje model silver na podstawie manifestu. 
+        Obsługuje zależności (rekurencyjnie) i cache.
+        """
+        cache_key = f"silver_model:{model.model_name.value}"
 
+        # 🔹 Sprawdzenie cache
         if self._context._cache.exists(cache_key):
-            print(f"Pobrano model '{model_type.value}' z cache.")
+            print(f"[CACHE HIT] Pobrano model '{model.model_name.value}' z cache.")
             return self._context._cache.get(cache_key)
 
-        builder_class = ModelBuilderFactory.get_class(model_type)
+        # 🔹 Pobranie buildera
+        builder_class = ModelBuilderFactory.get_class(model.model_name)
         builder = self._injector.get(builder_class)
-        builder.set_identity(model_type)
+        builder.set_identity(model.model_name)
 
-        # Pobranie konfiguracji modelu
-        model_config = next(m for m in self._context.models if m.model_name == model_type)
+        # 🔹 Pobranie konfiguracji modelu z manifestu
+        model_config = next(
+            (m for m in self._context.manifest.models if m.model_name == model.model_name),
+            None,
+        )
+        if model_config is None:
+            raise RuntimeError(
+                f"Brak konfiguracji dla modelu '{model.model_name.value}' w SilverManifest."
+            )
 
-        # Budowa zależności
-        dependencies = {}
-        for dep_model_type in getattr(model_config, "depends_on", []) or []:
-            dep_model = await self.get_built_model(dep_model_type)
-            dependencies[dep_model_type] = dep_model.data
+        # 🔹 Obsługa zależności
+        dependencies: Dict[ModelType, DataFrame] = {}
+        depends_on: List[ModelType] = getattr(model_config, "depends_on", []) or []
 
-        # Pobranie surowych danych
+        if depends_on:
+            dep_tasks = []
+            for dep_type in depends_on:
+                dep_manifest = next(
+                    (m for m in self._context.manifest.models if m.model_name == dep_type),
+                    None,
+                )
+                if dep_manifest is None:
+                    raise RuntimeError(
+                        f"Dependency '{dep_type}' not found in manifest for model '{model.model_name.value}'"
+                    )
+                dep_tasks.append(self.get_built_model(dep_manifest))  # rekurencja
+
+            dep_results: List[SilverProcessModel] = await asyncio.gather(*dep_tasks)
+            for dep_res in dep_results:
+                dependencies[dep_res.model_type] = dep_res.data
+
+        # 🔹 Pobranie surowych danych
         raw_dataframes: Dict[DomainSource, Dict[str, DataFrame]] = builder.load_data()
         if not raw_dataframes:
-            raise RuntimeError(f"Brak surowych danych do budowy modelu '{model_type.value}'.")
+            if builder.synthetic:
+                raw_dataframes = {}
+            else:
+                raise RuntimeError(f"Brak surowych danych do budowy modelu '{model.model_name.value}'.")
 
-        # Przetworzenie surowych danych przez transformery
+        # 🔹 Przetworzenie danych przez transformatory
         processed_dfs: Dict[Tuple[DomainSource, str], DataFrame] = await self._process_dataframes(raw_dataframes)
 
-        # Budowa modelu z przetworzonych danych
+        # 🔹 Budowa modelu końcowego
         final_df = await builder.build(processed_dfs, dependencies)
         built_model = builder.create_model(final_df)
 
-        # Cache'owanie
+        # 🔹 Cache'owanie modelu
         built_model.data.cache()
         self._context._cache.set(cache_key, built_model)
-        print(f"Model '{model_type.value}' został zbudowany i zcache'owany.")
+        print(f"[BUILD] Model '{model.model_name.value}' został zbudowany i zapisany w cache.")
 
         return built_model
 
     async def _process_dataframes(
-        self, 
+        self,
         raw_dataframes: Dict[DomainSource, Dict[str, DataFrame]]
     ) -> Dict[Tuple[DomainSource, str], DataFrame]:
         """
@@ -67,7 +98,6 @@ class ModelDirector:
         - transform
         - normalize
         - enrich
-        Zwraca słownik z kluczem (DomainSource, dataset_name)
         """
         processed_dfs: Dict[Tuple[DomainSource, str], DataFrame] = {}
 
@@ -79,7 +109,6 @@ class ModelDirector:
                 normalized_df = await transformer.normalize(transformed_df, dataset_name)
                 enriched_df = await transformer.enrich(normalized_df, dataset_name)
 
-                # Klucz jako krotka (źródło, nazwa datasetu)
                 processed_dfs[(domain_source, dataset_name)] = enriched_df
 
         return processed_dfs

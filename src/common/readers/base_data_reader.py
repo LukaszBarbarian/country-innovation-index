@@ -4,12 +4,13 @@ from asyncio.log import logger
 from pyspark.sql import DataFrame
 from src.common.config.config_manager import ConfigManager
 from src.common.enums.domain_source import DomainSource
-from src.common.models.base_context import BaseContext
+from src.common.models.base_context import ContextBase
 from injector import inject
 from typing import Dict, List, Optional
 import asyncio # Ważne: import asyncio do użycia w klasach potomnych
 
 from src.common.models.ingestion_result import IngestionResult
+from src.common.models.models import SummaryResultBase
 from src.common.spark.spark_service import SparkService
 
 class BaseDataReader(ABC):
@@ -18,7 +19,7 @@ class BaseDataReader(ABC):
     Zapewnia automatyczne zarządzanie cache'owaniem danych.
     """
     @inject
-    def __init__(self, spark: SparkService, context: BaseContext, config: ConfigManager):
+    def __init__(self, spark: SparkService, context: ContextBase, config: ConfigManager):
         self._spark = spark
         self._context = context
         self._config = config
@@ -51,13 +52,14 @@ class BaseDataReader(ABC):
         
         logger.info(f"[{self._domain_source.name}] Loading data from source.")
 
-        ingestion_results = self._context.get_ingestion_result(self._domain_source)
-        
-        if not ingestion_results:
+        valid_ingestion_results = self._get_valid_ingestion_results()
+
+
+        if not valid_ingestion_results:
             logger.warning(f"No ingestion results found for domain source '{self._domain_source.name}'.")
             return {}
 
-        all_dataframes = self._load_from_source(ingestion_results)
+        all_dataframes = self._load_from_source(valid_ingestion_results)
         
         if all_dataframes:
             self._context._cache.set(cache_key, all_dataframes)
@@ -69,8 +71,24 @@ class BaseDataReader(ABC):
     
 
 
+    def _get_valid_ingestion_results(self) -> List[SummaryResultBase]:
+        """
+        Prywatna metoda pomocnicza do filtrowania wyników
+        z kontekstu na podstawie domain_source.
+        """
+        if not self._context.summary or not self._context.summary.results:
+            return []
+        
+        results = []
+        for result in self._context.summary.results:
+            if isinstance(result, SummaryResultBase) and result.domain_source == self._domain_source:
+                results.append(result)
+
+        return [r for r in results if r.is_valid()]
+
+
     @abstractmethod
-    def _load_from_source(self, all_readers: Optional[List[IngestionResult]]) -> Dict[str, DataFrame]:
+    def _load_from_source(self, all_readers: Optional[List[SummaryResultBase]]) -> Dict[str, DataFrame]:
         """
         Abstrakcyjna metoda, która powinna zawierać logikę faktycznego
         ładowania danych z pliku i zwracać słownik DataFrame'ów.

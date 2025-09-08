@@ -1,0 +1,23 @@
+{
+  "env": "dev",
+  "etl_layer": "gold",
+  "dims": [
+    {
+      "name": "dim_country",
+      "source_models": ["COUNTRY"],
+      "primary_keys": ["country_code"]
+    },
+    {
+      "name": "dim_year",
+      "source_models": ["YEAR"],
+      "primary_keys": ["year"]
+    }
+  ],
+  "facts": [
+    {
+      "name": "fact_innovation",
+      "source_models": ["COUNTRY", "POPULATION", "GRADUATE_UNEMPLOYMENT", "RESEARCHERS", "PKB", "RD_EXPENDITURE", "PATENTS", "NOBEL_LAUREATES", "YEAR"],
+      "primary_keys": ["country_code"]
+    }
+  ]
+}

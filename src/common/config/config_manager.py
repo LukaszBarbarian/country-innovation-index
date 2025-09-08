@@ -1,65 +1,44 @@
 import os
 import json
-import logging
-from typing import Any, Dict, Optional, List, cast
-from pathlib import Path
-from dataclasses import dataclass, field
+from azure.identity import DefaultAzureCredential
+from azure.appconfiguration import AzureAppConfigurationClient
+from azure.keyvault.secrets import SecretClient
+from urllib.parse import urlparse
 
-logger = logging.getLogger(__name__)
-
-# Data classes for reference configuration
-
-
-# Main ConfigManager class, now with a constructor that takes the pre-parsed object
 class ConfigManager:
-    _instance: Optional['ConfigManager'] = None
-    _config_cache: Dict[str, str] = {}
-    _local_settings_loaded: bool = False
+    def __init__(self, app_config_endpoint: str = "https://demosur-dev-appconf.azconfig.io"):
+        """
+        app_config_endpoint: np. "https://<twoja_nazwa>.azconfig.io"
+        """
+        self.credential = DefaultAzureCredential()
+        self.app_config_client = AzureAppConfigurationClient(app_config_endpoint, self.credential)
+        self.keyvault_clients = {}
 
+    def get(self, key: str) -> str:
+        """Pobiera wartość z App Configuration (rozwija referencje do Key Vault)."""
+        setting = self.app_config_client.get_configuration_setting(key=key)
 
-    def _load_config(self):
-        for key, value in os.environ.items():
-            self._config_cache[key.upper()] = value
-        logger.info("Configuration loaded from environment.")
+        # Jeśli to Key Vault reference
+        if setting.content_type and setting.content_type.startswith(
+            "application/vnd.microsoft.appconfig.keyvaultref"
+        ):
+            ref = json.loads(setting.value)
+            secret_uri = ref["uri"]
+            return self._get_secret(secret_uri)
 
-    def _try_load_from_local_settings(self, key: str, settings_path: Optional[str] = None):
-        if self._local_settings_loaded:
-            return
+        # Wartość jawna
+        return setting.value
 
-        if settings_path is None:
-            project_root = Path.cwd()
-            for parent in [project_root] + list(project_root.parents):
-                potential = parent / "local.settings.json"
-                if potential.exists():
-                    settings_path = potential
-                    break
-            else:
-                logger.warning("local.settings.json not found.")
-                return
+    def _get_secret(self, secret_uri: str) -> str:
+        """Pobiera sekret z Key Vault na podstawie pełnego URI."""
+        parsed = urlparse(secret_uri)
+        vault_url = f"{parsed.scheme}://{parsed.netloc}"
 
-        try:
-            with open(settings_path, "r") as f:
-                data = json.load(f)
-                for k, v in data.get("Values", {}).items():
-                    key_upper = k.upper()
-                    if key_upper not in self._config_cache:
-                        self._config_cache[key_upper] = v
-                self._local_settings_loaded = True
-            logger.info(f"Loaded settings from {settings_path}")
-        except Exception as e:
-            logger.warning(f"Failed to load local.settings.json: {e}")
+        if vault_url not in self.keyvault_clients:
+            self.keyvault_clients[vault_url] = SecretClient(vault_url=vault_url, credential=self.credential)
 
-    def get_setting(self, key: str, default: Optional[str] = None, try_local_settings: bool = True) -> str:
-        key_upper = key.upper()
-        value = self._config_cache.get(key_upper)
+        client = self.keyvault_clients[vault_url]
+        secret_name = parsed.path.split("/")[2]
+        secret_version = parsed.path.split("/")[3] if len(parsed.path.split("/")) > 3 else None
 
-        if value is None and try_local_settings:
-            self._try_load_from_local_settings(key)
-            value = self._config_cache.get(key_upper)
-
-        if value is None:
-            if default is not None:
-                return default
-            raise ValueError(f"Configuration setting '{key}' not found.")
-
-        return value
+        return client.get_secret(secret_name, secret_version).value

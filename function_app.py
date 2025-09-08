@@ -3,9 +3,10 @@ import json
 import os
 import traceback
 from typing import Any, Dict
+import uuid
 import azure.functions as func
 import azure.durable_functions as df
-from src.bronze.contexts.bronze_parser import BronzePayloadParser
+from src.bronze.contexts.bronze_parser import BronzeParser
 from src.common.azure_clients.event_grid_client_manager import EventGridClientManager
 from src.common.factories.orchestrator_factory import OrchestratorFactory
 from src.common.config.config_manager import ConfigManager
@@ -41,9 +42,7 @@ async def start_ingestion_http(req: func.HttpRequest, starter: df.DurableOrchest
         logging.exception(f"Błąd podczas uruchamiania orkiestracji: {e}")
         return func.HttpResponse(f"Błąd podczas uruchamiania orkiestracji: {e}", status_code=500)
 
-# ---------------------------------------------------------------------
-# 2) Orchestrator
-# ---------------------------------------------------------------------
+
 @app.orchestration_trigger(context_name="context")
 def ingest_orchestrator(context: df.DurableOrchestrationContext):
     logger.info("ingest_orchestrator started.")
@@ -67,9 +66,10 @@ def ingest_orchestrator(context: df.DurableOrchestrationContext):
         "env": input_payload.get("env"),
         "status": orchestrator_result_dict.get("status"),
         "message_date": context.current_utc_datetime.isoformat(),
-        "correlation_id": orchestrator_result_dict.get("correlation_id"), # 🚨 Pobieramy z oryginalnego payloadu
+        "correlation_id": orchestrator_result_dict.get("correlation_id"), 
         "manifest": silver_manifest_path,
-        "summary_ingestion_uri": orchestrator_result_dict.get("summary_url")
+        "summary_ingestion_uri": orchestrator_result_dict.get("summary_url"),
+        "duration_in_ms" : 0
     }
 
     yield context.call_activity("write_to_queue", {"payload": event_grid_payload})
@@ -87,16 +87,17 @@ async def run_ingestion_activity(input: Dict[str, Any]) -> Dict[str, Any]:
         config = ConfigManager()
         orchestrator = OrchestratorFactory.get_instance(ETLLayer.BRONZE, config=config)
         
-        parser = BronzePayloadParser(config)
+        parser = BronzeParser()
         bronze_context = parser.parse(input_payload)
+        bronze_context.correlation_id = str(uuid.uuid4())
         
-        result = await orchestrator.run(bronze_context)
+        result = await orchestrator.execute(bronze_context)
 
         return result.to_dict()
 
     except Exception as e:
         logger.exception(f"Błąd podczas uruchamiania BronzeOrchestrator: {e}")
-        # Próba odtworzenia correlation_id w przypadku błędu
+        
         correlation_id = input_payload.get("correlation_id", "NOT_PROVIDED")
         return {
             "status": "FAILED",

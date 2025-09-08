@@ -13,21 +13,11 @@ from src.common.enums.domain_source import DomainSource
 from src.common.enums.domain_source_type import DomainSourceType
 from src.common.enums.env import Env
 from src.common.enums.etl_layers import ETLLayer
+from src.common.models.base_process_result import BaseProcessResult
 
 @dataclass
-class IngestionResult:
-    correlation_id: str
-    env: Env
-    etl_layer: ETLLayer
-    domain_source: DomainSource
-    domain_source_type: DomainSourceType
-    dataset_name: Optional[str] = None
-    status: str = "PENDING"
-    message: Optional[str] = None
-    output_paths: List[str] = field(default_factory=list)
-    error_details: Dict[str, Any] = field(default_factory=dict)
-    
-    duration_in_ms: int = 0
+class IngestionResult(BaseProcessResult):
+    pass
 
     
     def to_dict(self) -> dict[str, Any]:

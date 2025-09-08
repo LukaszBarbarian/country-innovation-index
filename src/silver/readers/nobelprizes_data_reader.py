@@ -3,6 +3,7 @@ from ctypes import Structure
 from pyspark.sql import DataFrame
 from injector import inject
 from src.common.models.ingestion_result import IngestionResult
+from src.common.models.models import SummaryResultBase
 from src.common.readers.base_data_reader import BaseDataReader
 from src.common.enums.domain_source import DomainSource
 from src.common.registers.data_reader_registry import DataReaderRegistry
@@ -17,30 +18,29 @@ class NobelPrizeDataReader(BaseDataReader):
     Wczytuje plik JSON z lokalizacji podanej w kontekście.
     """
 
-    def _load_from_source(self, all_readers: Optional[List[IngestionResult]]) -> Dict[str, DataFrame]:
+    def _load_from_source(self, all_readers: Optional[List[SummaryResultBase]]) -> Dict[str, DataFrame]:
         if not all_readers:
             print("Brak wyników dla DomainSource.NOBELPRIZE w kontekście.")
             return {}
         
         dataframes_dict: Dict[str, DataFrame] = {}
         for result in all_readers:
-            if result.is_valid:
-                dataset_name = result.dataset_name
+            dataset_name = result.dataset_name
+            
+            for path in result.output_paths:
+                try:
+                    if dataset_name == "laureates":
+                        # Używamy zaktualizowanego schematu
+                        schema = self._get_schema_laureates()
+                        
+                        df = self._spark.read_json_https(path, schema=schema)
+                        
+                        dataframes_dict[dataset_name] = df
+                        print(f"Załadowano dane dla datasetu '{dataset_name}' z pliku: {path}")
                 
-                for path in result.output_paths:
-                    try:
-                        if dataset_name == "laureates":
-                            # Używamy zaktualizowanego schematu
-                            schema = self._get_schema_laureates()
-                            
-                            df = self._spark.read_json(path, schema=schema)
-                            
-                            dataframes_dict[dataset_name] = df
-                            print(f"Załadowano dane dla datasetu '{dataset_name}' z pliku: {path}")
-                    
-                    except Exception as e:
-                        print(f"Błąd podczas ładowania pliku {path}: {e}")
-        
+                except Exception as e:
+                    print(f"Błąd podczas ładowania pliku {path}: {e}")
+    
         return dataframes_dict
 
     def _get_schema_laureates(self) -> StructType:

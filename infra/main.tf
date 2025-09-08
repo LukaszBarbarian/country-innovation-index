@@ -11,6 +11,7 @@ locals {
   function_storage_account_name_final = lower(replace("${var.project_prefix}${var.environment}func${local.unique_suffix}sa", "-", "")) # Nazwy kont storage muszą być małe litery i bez myślników
   queue_storage_account_name_final = lower(replace("${var.project_prefix}${var.environment}queue${local.unique_suffix}sa", "-", "")) # Nowe konto storage dla kolejki
   queue_name_final = "bronze-tasks"
+  app_config_name = "${var.project_prefix}-${var.environment}-appconf"
 
 
   # Ścieżki do kodu funkcji i skryptu do pakowania
@@ -76,6 +77,24 @@ resource "azurerm_service_plan" "app_service_plan" {
   }
 }
 
+
+
+  
+# 1. App Configuration
+resource "azurerm_app_configuration" "main_app_config" {
+  name                = local.app_config_name
+  resource_group_name = azurerm_resource_group.rg_functions.name
+  location            = azurerm_resource_group.rg_functions.location
+  sku                 = "standard"
+
+  tags = {
+    Environment = var.environment
+    Project     = var.project_prefix
+  }
+}
+
+
+
 ### 4. Application Insights
 # Do monitorowania i logowania funkcji
 resource "azurerm_application_insights" "app_insights" {
@@ -109,6 +128,12 @@ resource "azurerm_function_app" "main_function_app" {
   version    = "~4"
   https_only = true
 
+
+
+
+
+
+
   # Ustawienia aplikacji dla Function App
   app_settings = {
     FUNCTIONS_WORKER_RUNTIME          = "python"                                          # Określa runtime funkcji (python, dotnet, node, java, powershell)
@@ -120,13 +145,11 @@ resource "azurerm_function_app" "main_function_app" {
     DATA_LAKE_STORAGE_ACCOUNT_NAME = azurerm_storage_account.sadatalake.name
     QUEUE_NAME = azurerm_storage_queue.queue_bronze_tasks.name
     QUEUE_STORAGE_ACCOUNT = azurerm_storage_account.sa_queue.name
-    QUEUE_CONNECTION_STRING = azurerm_storage_account.sa_queue.primary_connection_string
     NOBELPRIZE_API_BASE_URL = "https://api.nobelprize.org/2.1/"
-    AzureWebJobsStorageQueue = azurerm_storage_account.sa_queue.primary_connection_string
     EVENT_GRID_ENDPOINT             = azurerm_eventgrid_topic.etl_events_topic.endpoint
     EVENT_GRID_KEY                  = azurerm_eventgrid_topic.etl_events_topic.primary_access_key
     WORLDBANK_API_BASE_URL = "https://api.worldbank.org/v2/"
-
+    APP_CONFIG_ENDPOINT = azurerm_app_configuration.main_app_config.endpoint
 
 
   }
@@ -151,6 +174,8 @@ module "adf" {
   silver_container_name              = azurerm_storage_container.container_silver.name
   gold_container_name                = azurerm_storage_container.container_gold.name
   storage_account_name = azurerm_storage_account.sadatalake.name
+  app_config_endpoint = azurerm_app_configuration.main_app_config.endpoint
+
 }
 
 
@@ -175,42 +200,114 @@ resource "azurerm_role_assignment" "adf_datalake_contributor" {
 }
 
 
+# 1. Key Vault
+resource "azurerm_key_vault" "main_keyvault" {
+  name                = "${var.project_prefix}-${var.environment}-kv"
+  location            = azurerm_resource_group.rg_functions.location
+  resource_group_name = azurerm_resource_group.rg_functions.name
+  sku_name            = "standard"
+  tenant_id           = data.azurerm_client_config.current.tenant_id
 
-# module "databricks" {
-#   source                  = "./databricks"
+  access_policy {
+    tenant_id = data.azurerm_client_config.current.tenant_id
+    # Principal ID Terraform, który ma uprawnienia
+    object_id = data.azurerm_client_config.current.object_id
+    # Pełne uprawnienia do zarządzania sekretami
+    secret_permissions = ["Get", "List", "Set", "Delete"]
+  }
 
-#   # Przekazywanie wymaganych zmiennych do modułu databricks
-#   databricks_name         = "${var.project_prefix}-${var.environment}-ws"
-#   resource_group_name     = azurerm_resource_group.rg_functions.name # Referencja do RG zdefiniowanego w tym module
-#   location                = var.location
-#   project_prefix          = var.project_prefix
-#   environment             = var.environment
+  tags = {
+    Environment = var.environment
+    Project     = var.project_prefix
+  }
+}
 
-#   # Przekazywanie informacji o Storage Account z modułu głównego do modułu databricks
-#   storage_account_name    = azurerm_storage_account.sadatalake.name
-#   storage_account_id      = azurerm_storage_account.sadatalake.id
-#   bronze_container_name   = azurerm_storage_container.container_bronze.name # Pamiętaj o container_bronze
-#   silver_container_name   = azurerm_storage_container.container_silver.name # Pamiętaj o container_bronze
+# 2. Sekret w Key Vault
+resource "azurerm_key_vault_secret" "storage_account_key" {
+  name         = "storage-account-key"
+  value        = azurerm_storage_account.sadatalake.primary_access_key
+  key_vault_id = azurerm_key_vault.main_keyvault.id
+}
 
-#   key_vault_id            = azurerm_key_vault.main_keyvault.id
-#   key_vault_uri           = azurerm_key_vault.main_keyvault.vault_uri
-#   azure_data_factory_managed_identity_principal_id = module.adf.adf_principal_id
-# }
+resource "azurerm_key_vault_secret" "azure_web_jobs_storage" {
+  name         = "azure-web-jobs-storage"
+  value        = azurerm_storage_account.sa_functions.primary_connection_string
+  key_vault_id = azurerm_key_vault.main_keyvault.id
+}
 
-# resource "azurerm_eventgrid_topic" "ingestion_topic" {
-#   name                = "${var.project_prefix}-${var.environment}-ingestion-topic"
-#   location            = azurerm_resource_group.rg_functions.location
-#   resource_group_name = azurerm_resource_group.rg_functions.name
-
-#   tags = {
-#     Environment = var.environment
-#     Project     = var.project_prefix
-#   }
-# }
+resource "azurerm_key_vault_secret" "event_grid_key" {
+  name         = "event-grid-key"
+  value        = azurerm_eventgrid_topic.etl_events_topic.primary_access_key
+  key_vault_id = azurerm_key_vault.main_keyvault.id
+}
 
 
-# resource "azurerm_role_assignment" "function_app_event_grid_publisher" {
-#   scope                = azurerm_eventgrid_topic.ingestion_topic.id
-#   role_definition_name = "EventGrid Data Sender"
-#   principal_id         = azurerm_function_app.main_function_app.identity[0].principal_id
-# }
+
+
+
+resource "azurerm_role_assignment" "app_config_owner_role" {
+  # Zakres (scope) to ID zasobu App Configuration
+  scope                = azurerm_app_configuration.main_app_config.id
+  # Nazwa roli, którą nadajemy
+  role_definition_name = "App Configuration Data Owner"
+  # ID tożsamości, której nadajemy uprawnienia (Service Principal lub użytkownik)
+  principal_id         = data.azurerm_client_config.current.object_id
+  
+  depends_on = [azurerm_app_configuration.main_app_config]
+}
+
+
+resource "azurerm_app_configuration_key" "data_lake_storage_account_name" {
+  configuration_store_id = azurerm_app_configuration.main_app_config.id
+  key   = "DATA_LAKE_STORAGE_ACCOUNT_NAME"
+  value = azurerm_storage_account.sadatalake.name
+ 
+}
+
+resource "azurerm_app_configuration_key" "queue_storage_account" {
+  configuration_store_id = azurerm_app_configuration.main_app_config.id
+  key   = "QUEUE_STORAGE_ACCOUNT"
+  value = azurerm_storage_account.sa_queue.name
+}
+
+resource "azurerm_app_configuration_key" "nobel_prize_api_base_url" {
+  configuration_store_id = azurerm_app_configuration.main_app_config.id
+  key   = "NOBELPRIZE_API_BASE_URL"
+  value = "https://api.nobelprize.org/2.1/"
+}
+
+resource "azurerm_app_configuration_key" "worldbank_api_base_url" {
+  configuration_store_id = azurerm_app_configuration.main_app_config.id
+  key   = "WORLDBANK_API_BASE_URL"
+  value = "https://api.worldbank.org/v2/"
+}
+
+resource "azurerm_app_configuration_key" "event_grid_endpoint" {
+  configuration_store_id = azurerm_app_configuration.main_app_config.id
+  key   = "EVENT_GRID_ENDPOINT"
+  value = azurerm_eventgrid_topic.etl_events_topic.endpoint
+}
+
+
+
+# --- Sekrety jako referencje do Key Vault ---
+resource "azurerm_app_configuration_key" "storage_account_key_ref" {
+  configuration_store_id = azurerm_app_configuration.main_app_config.id
+  key   = "STORAGE_ACCOUNT_KEY"
+  value = jsonencode({ uri = azurerm_key_vault_secret.storage_account_key.id })
+  content_type = "application/vnd.microsoft.appconfig.keyvaultref+json;charset=utf-8"
+}
+
+resource "azurerm_app_configuration_key" "azure_web_jobs_storage_ref" {
+  configuration_store_id = azurerm_app_configuration.main_app_config.id
+  key   = "AZURE_WEB_JOBS_STORAGE"
+  value = jsonencode({ uri = azurerm_key_vault_secret.azure_web_jobs_storage.id })
+  content_type = "application/vnd.microsoft.appconfig.keyvaultref+json;charset=utf-8"
+}
+
+resource "azurerm_app_configuration_key" "event_grid_key_ref" {
+  configuration_store_id = azurerm_app_configuration.main_app_config.id
+  key   = "EVENT_GRID_KEY"
+  value = jsonencode({ uri = azurerm_key_vault_secret.event_grid_key.id })
+  content_type = "application/vnd.microsoft.appconfig.keyvaultref+json;charset=utf-8"
+}

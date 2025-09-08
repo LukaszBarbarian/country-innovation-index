@@ -40,6 +40,12 @@ resource "azurerm_data_factory" "adf_instance" {
     type  = "String"
     value = format("https://%s.dfs.core.windows.net/%s/outputs/ingestion_summaries", var.storage_account_name, var.bronze_container_name)
   }
+
+  global_parameter {
+    name  = "app_config_endpoint"
+    type  = "String"
+    value = var.app_config_endpoint # <-- przekaż do modułu ADF z main.tf
+  }
 }
 
 resource "azurerm_data_factory_trigger_custom_event" "bronze_trigger" {
@@ -88,3 +94,4 @@ resource "azurerm_data_factory_trigger_schedule" "bronze_daily_trigger" {
     hours   = [0]
   }
 }
+

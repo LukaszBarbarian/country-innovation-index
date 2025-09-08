@@ -1,19 +1,18 @@
 # src/silver/di/silver_module.py
 
 from injector import Module, Binder, singleton, provider
-from pyspark.sql import SparkSession
 from src.common.config.config_manager import ConfigManager
-from src.common.models.base_context import BaseContext
-
 from src.common.di.di_module import DIModule
 from src.common.di.builders_module import BuildersModule
 from src.common.di.readers_module import ReadersModule
+from src.common.models.base_context import ContextBase
 from src.common.spark.spark_service import SparkService
 from src.silver.builders.model_director import ModelDirector
-from src.silver.context.silver_context import SilverLayerContext
+from src.silver.builders.silver_model_builder import SilverModelBuilder
+from src.silver.context.silver_context import SilverContext
 
 class SilverModule(DIModule):
-    def __init__(self, context: SilverLayerContext, spark_session: SparkService, config: ConfigManager):
+    def __init__(self, context: SilverContext, spark_session: SparkService, config: ConfigManager):
         super().__init__(context, config)
         self._spark_session = spark_session
 
@@ -23,9 +22,11 @@ class SilverModule(DIModule):
         binder.install(ReadersModule(self._context, self._config))
         
         
-        binder.bind(SilverLayerContext, to=self.provide_context, scope=singleton)
-        binder.bind(BaseContext, to=self.provide_context, scope=singleton)
+        binder.bind(SilverContext, to=self.provide_context, scope=singleton)
+        binder.bind(ContextBase, to=self.provide_context, scope=singleton)
         binder.bind(ModelDirector, to=ModelDirector, scope=singleton)
+        binder.bind(SilverModelBuilder, to=SilverModelBuilder, scope=singleton)
+        
         
 
 
@@ -37,5 +38,5 @@ class SilverModule(DIModule):
     
     @singleton
     @provider
-    def provide_context(self) -> SilverLayerContext:
+    def provide_context(self) -> SilverContext:
         return self._context

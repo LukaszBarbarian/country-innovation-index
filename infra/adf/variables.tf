@@ -62,3 +62,8 @@ variable "gold_container_name" {
 variable "storage_account_name" {
   type = string
 }
+
+
+variable "app_config_endpoint" {
+  type = string
+}

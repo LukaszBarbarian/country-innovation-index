@@ -19,4 +19,3 @@ from src.bronze.ingestion.processors.worldbank_processor import WorldbankProcess
 
 #strategy ingestion
 from src.bronze.ingestion.ingestion_strategy.api_ingestion_strategy import ApiIngestionStrategy
-from src.bronze.ingestion.ingestion_strategy.static_file_ingestion_strategy import StaticFileIngestionStrategy

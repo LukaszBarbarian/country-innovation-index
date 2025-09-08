@@ -9,3 +9,5 @@ class ModelType(Enum):
     RD_EXPENDITURE = "RD_EXPENDITURE"
     RESEARCHERS = "RESEARCHERS"
     PKB = "PKB"
+    POPULATION = "POPULATION"
+    YEAR = "YEAR"

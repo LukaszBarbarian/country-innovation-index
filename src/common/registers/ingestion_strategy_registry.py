@@ -1,7 +1,7 @@
 
 from typing import Dict, Type
 from src.common.enums.domain_source_type import DomainSourceType
-from src.common.ingestion_strategy.base_ingestion_strategy import BaseIngestionStrategy
+from src.bronze.ingestion.ingestion_strategy.base_ingestion_strategy import BaseIngestionStrategy
 from src.common.registers.base_registry import BaseRegistry
 
 

@@ -1,14 +1,9 @@
 # src/common/storage_file_builder/base_storage_file_builder.py
 from abc import ABC, abstractmethod
 from dataclasses import asdict
-import datetime
-from enum import Enum
-import hashlib
-import json
 from typing import Dict, Any, Tuple
 from src.common.config.config_manager import ConfigManager
-from src.common.models.base_context import BaseContext
-from src.common.models.manifest import SourceConfigPayload
+from src.common.models.base_context import ContextBase
 
 class BaseStorageFileBuilder(ABC):
     def __init__(self, config: ConfigManager):
@@ -21,28 +16,11 @@ class BaseStorageFileBuilder(ABC):
         clean_path = blob_path.lstrip("/")
         return f"https://{account_name}.blob.core.windows.net/{container_name.lower()}/{clean_path}"
 
-    def _compute_hash_name(self, api_request_payload: SourceConfigPayload) -> str:
-        """
-        Oblicza skrót SHA256 z znormalizowanego payloadu.
-        """
-        payload_dict = asdict(api_request_payload)
 
-        for key, value in payload_dict.items():
-            if isinstance(value, Enum):
-                payload_dict[key] = value.value  # albo str(value)
-
-        normalized_str = json.dumps(payload_dict, indent=2, sort_keys=True)
-        return hashlib.sha256(normalized_str.encode("utf-8")).hexdigest()[:8]
-
-    def _get_ingestion_date_path(self, ingestion_time_utc: datetime.datetime) -> str:
-        """
-        Generuje ścieżkę partycjonowania na podstawie daty.
-        """
-        return ingestion_time_utc.strftime("%Y/%m/%d")
 
     @abstractmethod
-    def build_file_output(self,
-                          context: BaseContext,
+    def build_file(self,
+                          correlation_id: str,
                           container_name: str,
                           storage_account_name: str,
                           **kwargs: Any) -> Dict[str, Any]:
@@ -55,7 +33,7 @@ class BaseStorageFileBuilder(ABC):
 
     @abstractmethod
     def build_summary_file_output(self,
-                            context: BaseContext,
+                            context: ContextBase,
                             results: list,
                             storage_account_name: str,
                             container_name: str,

@@ -46,30 +46,7 @@ class PipelineConfig:
 
 
 
-@dataclass(frozen=True)
-class ModelSourceItem:
-    domain_source: DomainSource
-    dataset_name: str
-
-@dataclass(frozen=True)
-class ManualDataPath:
-    domain_source: DomainSource
-    dataset_name: str
-    file_path: str
-
-@dataclass(frozen=True)
-class Model:
-    model_name: ModelType
-    table_name: str
-    source_datasets: List[ModelSourceItem]
-    depends_on: List[ModelType] = field(default_factory=list)
-    
-@dataclass(frozen=True)
-class SilverManifest:
+@dataclass
+class ManifestBase:
     env: Env
     etl_layer: ETLLayer
-    references_tables: Dict[str, str]
-    manual_data_paths: List[ManualDataPath]
-    models: List[Model]
-
-

@@ -1,70 +1,38 @@
-# src/bronze/parsers/bronze_payload_parser.py
-import uuid
-from typing import Dict, Any, List
-
+import json
+from typing import Optional
 from dacite import Config, from_dict
-
-from src.bronze.contexts.bronze_layer_context import BronzeLayerContext
+from src.bronze.contexts.bronze_context import BronzeContext
+from src.bronze.models.manifest import BronzeManifest
 from src.common.contexts.base_parser import BaseParser
-from src.common.models.manifest import PipelineConfig
-from src.common.models.ingestion_context import IngestionContext
-from src.common.enums.env import Env
-from src.common.enums.etl_layers import ETLLayer
 from src.common.enums.domain_source import DomainSource
 from src.common.enums.domain_source_type import DomainSourceType
+from src.common.enums.env import Env
+from src.common.enums.etl_layers import ETLLayer
 
 
-class BronzePayloadParser(BaseParser):
-    def parse(self, manifest_payload: Dict[str, Any]) -> BronzeLayerContext:
-        """
-        Parsuje manifest JSON do BronzeLayerContext.
-        Używa dacite do automatycznego mapowania zagnieżdżonych struktur.
-        """
-        try:
-            # 1. Parsowanie całego manifestu za pomocą dacite
-            pipeline_config = from_dict(
-                data_class=PipelineConfig, 
-                data=manifest_payload, 
-                config=Config(
-                    type_hooks={
-                        Env: Env,
-                        ETLLayer: ETLLayer,
-                        DomainSource: DomainSource,
-                        DomainSourceType: DomainSourceType,
-                    }
-                )
-            )
+class BronzeParser(BaseParser):
+    def parse(self, manifest_json: str, summary_json: Optional[str] = None) -> BronzeContext:
 
-            # Pobranie correlation_id z payloadu lub wygenerowanie nowego
-            correlation_id = manifest_payload.get("correlation_id", str(uuid.uuid4()))
+        # --- manifest mapping ---
+        manifest_json['env'] = Env(manifest_json.get('env', 'unknown'))
 
-            ingest_contexts: List[IngestionContext] = []
+        for src in manifest_json.get("sources", []):
+            scp = src.get("source_config_payload", {})
+            scp["domain_source_type"] = DomainSourceType(scp.get("domain_source_type", "unknown"))
+            scp["domain_source"] = DomainSource(scp.get("domain_source", "UNKNOWN"))
 
-            # 2. Iteracja po sparsowanych obiektach, a nie słownikach
-            for ds in pipeline_config.sources:
-                # Obiekt SourceConfigPayload został już utworzony przez dacite
-                scp = ds.source_config_payload
+        manifest: BronzeManifest = from_dict(
+            BronzeManifest,
+            manifest_json,
+            config=Config(cast=[str, Env, DomainSource, DomainSourceType, ETLLayer])
+        )
 
-                ingest_contexts.append(
-                    IngestionContext(
-                        correlation_id=correlation_id,
-                        etl_layer=pipeline_config.etl_layer, # Używamy obiektu zmapowanego przez dacite
-                        env=pipeline_config.env, # Używamy obiektu zmapowanego przez dacite
-                        source_config=scp, # Cały obiekt, nie ręcznie tworzony
-                    )
-                )
 
-            return BronzeLayerContext(
-                correlation_id=correlation_id,
-                etl_layer=pipeline_config.etl_layer,
-                env=pipeline_config.env,
-                ingest_contexts=ingest_contexts
-            )
+        # --- context ---
+        context = BronzeContext(
+            env=manifest.env,
+            etl_layer=ETLLayer.BRONZE,
+            manifest=manifest
+        )        
 
-        except KeyError as e:
-            raise ValueError(f"Błąd parsowania manifestu: brak klucza {e}") from e
-        except ValueError as e:
-            raise ValueError(f"Nieprawidłowa wartość w manifeście: {e}") from e
-        except Exception as e:
-            # Warto dodać ogólne przechwytywanie, np. dla błędów dacite
-            raise ValueError(f"Ogólny błąd parsowania manifestu: {e}") from e
+        return context

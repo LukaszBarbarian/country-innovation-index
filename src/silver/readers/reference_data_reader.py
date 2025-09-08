@@ -4,22 +4,23 @@ from injector import inject
 from pyspark.sql import DataFrame
 import os
 
+from src.common.enums.reference_source import ReferenceSource
 from src.common.spark.spark_service import SparkService
-from src.silver.context.silver_context import SilverLayerContext
+from src.silver.context.silver_context import SilverContext
 
 class ReferenceDataReader:
     @inject
-    def __init__(self, spark: SparkService, context: SilverLayerContext):
+    def __init__(self, spark: SparkService, context: SilverContext):
         self._context = context
         self._spark = spark
 
-    def load_for_dataset(self, dataset: str) -> Optional[DataFrame]:
+    def load_for_dataset(self, dataset: ReferenceSource) -> Optional[DataFrame]:
         """
         Ładuje konkretny dataset referencyjny z plików i zwraca DataFrame.
         Metoda jest synchroniczna i nie używa asyncio.
         """
 
-        file_path = self._context.references_tables.get(dataset)
+        file_path = self._context.manifest.references_tables.get(dataset)
         
         if not file_path:
             print(f"Błąd: Nie znaleziono ścieżki dla datasetu referencyjnego: '{dataset}'.")
@@ -27,7 +28,7 @@ class ReferenceDataReader:
         
         try:
             # 2. Używamy Sparka do odczytu pliku
-            df = self._spark.read_csv(file_path)
+            df = self._spark.read_csv_https(file_path)
             return df
 
         except Exception as e:

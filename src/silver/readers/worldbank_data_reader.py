@@ -3,6 +3,7 @@ from typing import Dict, List, Any, Optional
 from pandas import DataFrame
 from src.common.enums.domain_source import DomainSource
 from src.common.models.ingestion_result import IngestionResult
+from src.common.models.models import SummaryResultBase
 from src.common.readers.base_data_reader import BaseDataReader
 from src.common.registers.data_reader_registry import DataReaderRegistry
 from pyspark.sql.types import StructType, StructField, StringType, IntegerType, DoubleType, ArrayType
@@ -10,7 +11,7 @@ from pyspark.sql.types import StructType, StructField, StringType, IntegerType, 
 
 @DataReaderRegistry.register(DomainSource.WORLDBANK)
 class WorldbankDataReader(BaseDataReader):
-    def _load_from_source(self, all_readers: Optional[List[IngestionResult]]) -> Dict[str, DataFrame]:
+    def _load_from_source(self, all_readers: Optional[List[SummaryResultBase]]) -> Dict[str, DataFrame]:
         """
         Ładuje dane z plików JSON dla danego DomainSource,
         używając odpowiedniego schematu dla każdego datasetu.
@@ -22,24 +23,23 @@ class WorldbankDataReader(BaseDataReader):
         dataframes_dict: Dict[str, Any] = {}
         
         for result in all_readers:
-            if result.is_valid:
-                dataset_name = result.dataset_name
-                
-                schema = self._get_schema(dataset_name)
-                
-                if schema is None:
-                    print(f"Brak zdefiniowanego schematu dla datasetu: '{dataset_name}'. Pomijam.")
-                    continue
+            dataset_name = result.dataset_name
+            
+            schema = self._get_schema(dataset_name)
+            
+            if schema is None:
+                print(f"Brak zdefiniowanego schematu dla datasetu: '{dataset_name}'. Pomijam.")
+                continue
 
-                for path in result.output_paths:
-                    try:
-                        df = self._spark.read_json(path, schema=schema)
-                        
-                        dataframes_dict[dataset_name] = df
-                        print(f"Załadowano dane dla datasetu '{dataset_name}' z pliku: {path}")
+            for path in result.output_paths:
+                try:
+                    df = self._spark.read_json_https(path, schema=schema)
+                    
+                    dataframes_dict[dataset_name] = df
+                    print(f"Załadowano dane dla datasetu '{dataset_name}' z pliku: {path}")
 
-                    except Exception as e:
-                        print(f"Błąd podczas ładowania pliku {path}: {e}")
+                except Exception as e:
+                    print(f"Błąd podczas ładowania pliku {path}: {e}")
         
         return dataframes_dict
 
