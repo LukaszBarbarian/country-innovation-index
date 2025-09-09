@@ -105,6 +105,10 @@ jobs:
   upload-manifest:
     runs-on: ubuntu-latest
     needs: terraform
+    env:
+      # Use environment variables for easier access in the script
+      AZURE_STORAGE_ACCOUNT_NAME: ${{ needs.terraform.outputs.storage_account_name }}
+      AZURE_STORAGE_CONTAINER_NAME: ${{ needs.terraform.outputs.storage_container_name }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -113,22 +117,15 @@ jobs:
         uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
-          
+
       - name: Upload dev.manifest.json to Azure Storage
         run: |
-          AZURE_STORAGE_ACCOUNT_NAME=$(echo '${{ needs.terraform.outputs.storage_account_name }}')
-          AZURE_STORAGE_CONTAINER_NAME=$(echo '${{ needs.terraform.outputs.storage_container_name }}')
-          
           az storage blob upload \
-            --account-name $AZURE_STORAGE_ACCOUNT_NAME \
-            --container-name $AZURE_STORAGE_CONTAINER_NAME \
+            --account-name "$AZURE_STORAGE_ACCOUNT_NAME" \
+            --container-name "$AZURE_STORAGE_CONTAINER_NAME" \
             --file dev.manifest.json \
             --name "bronze/manifest/dev.manifest.json" \
             --overwrite true
-            
-      - name: Logout from Azure
-        run: az logout
-        if: always()
 
 
 
