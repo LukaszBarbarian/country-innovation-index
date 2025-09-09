@@ -102,34 +102,34 @@ jobs:
       if: always()
 
 
-  upload-manifest:
-    runs-on: ubuntu-latest
-    needs: terraform
-    env:
-      AZURE_STORAGE_ACCOUNT_NAME: ${{ needs.terraform.outputs.storage_account_name }}
-      AZURE_STORAGE_CONTAINER_NAME: ${{ needs.terraform.outputs.storage_container_name }}
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+  # upload-manifest:
+  #   runs-on: ubuntu-latest
+  #   needs: terraform
+  #   env:
+  #     AZURE_STORAGE_ACCOUNT_NAME: ${{ needs.terraform.outputs.storage_account_name }}
+  #     AZURE_STORAGE_CONTAINER_NAME: ${{ needs.terraform.outputs.storage_container_name }}
+  #   steps:
+  #     - name: Checkout repository
+  #       uses: actions/checkout@v4
 
-      - name: 'Login to Azure'
-        uses: azure/login@v2
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+  #     - name: 'Login to Azure'
+  #       uses: azure/login@v2
+  #       with:
+  #         creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Upload dev.manifest.json to Azure Storage
-        run: |
-          az storage blob upload \
-            --account-name "$AZURE_STORAGE_ACCOUNT_NAME" \
-            --container-name "$AZURE_STORAGE_CONTAINER_NAME" \
-            --file src/bronze/manifest/dev.manifest.json \
-            --name "bronze/manifest/dev.manifest.json" \
-            --overwrite true \
-            --auth-mode login
+  #     - name: Upload dev.manifest.json to Azure Storage
+  #       run: |
+  #         az storage blob upload \
+  #           --account-name "$AZURE_STORAGE_ACCOUNT_NAME" \
+  #           --container-name "$AZURE_STORAGE_CONTAINER_NAME" \
+  #           --file src/bronze/manifest/dev.manifest.json \
+  #           --name "bronze/manifest/dev.manifest.json" \
+  #           --overwrite true \
+  #           --auth-mode login
 
   deploy-function:
     runs-on: ubuntu-latest
-    needs: [terraform, upload-manifest]
+    needs: [terraform]
     if: success()
     env:
       FUNCTION_APP_NAME: ${{ needs.terraform.outputs.function_app_name }}
