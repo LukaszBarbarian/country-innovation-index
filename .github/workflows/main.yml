@@ -139,7 +139,7 @@ jobs:
 
   deploy-function:
     runs-on: ubuntu-latest
-    needs: terraform
+    needs: [terraform, upload-manifest]
     if: success()
     env:
       FUNCTION_APP_NAME: ${{ needs.terraform.outputs.function_app_name }}
