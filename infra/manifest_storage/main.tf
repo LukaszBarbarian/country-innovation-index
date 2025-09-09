@@ -5,5 +5,5 @@ resource "azurerm_storage_blob" "manifest" {
   storage_account_name   = var.storage_account_name
   storage_container_name = each.value.container
   type                   = "Block"
-  source                 = each.value.path
+  source                 = abspath(each.value.path)
 }
