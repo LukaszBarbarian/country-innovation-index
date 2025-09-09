@@ -122,10 +122,10 @@ jobs:
           az storage blob upload \
             --account-name "$AZURE_STORAGE_ACCOUNT_NAME" \
             --container-name "$AZURE_STORAGE_CONTAINER_NAME" \
-            --file dev.manifest.json \
+            --file src/bronze/manifest/dev.manifest.json \
             --name "bronze/manifest/dev.manifest.json" \
-            --overwrite true
-
+            --overwrite true \
+            --auth-mode login
 
   deploy-function:
     runs-on: ubuntu-latest
