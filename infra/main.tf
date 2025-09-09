@@ -317,43 +317,47 @@ resource "azurerm_app_configuration_key" "event_grid_key_ref" {
 
 
 
-
 module "manifest_storage" {
   source = "./manifest_storage"
 
   storage_account_name = azurerm_storage_account.sadatalake.name
-  container_name       = azurerm_storage_container.container_bronze.name # możesz też zrobić osobny kontener "manifests"
 
   manifests = [
     {
-      layer = "bronze"
-      env   = "dev"
-      path  = "${path.module}/../src/bronze/manifest/dev.manifest.json"
+      layer     = "bronze"
+      env       = "dev"
+      path      = "${path.module}/../src/bronze/manifest/dev.manifest.json"
+      container = azurerm_storage_container.container_bronze.name
     },
     {
-      layer = "bronze"
-      env   = "prod"
-      path  = "${path.module}/../src/bronze/manifest/prod.manifest.json"
+      layer     = "bronze"
+      env       = "prod"
+      path      = "${path.module}/../src/bronze/manifest/prod.manifest.json"
+      container = azurerm_storage_container.container_bronze.name
     },
     {
-      layer = "silver"
-      env   = "dev"
-      path  = "${path.module}/../src/silver/manifest/dev.manifest.json"
+      layer     = "silver"
+      env       = "dev"
+      path      = "${path.module}/../src/silver/manifest/dev.manifest.json"
+      container = azurerm_storage_container.container_silver.name
     },
     {
-      layer = "silver"
-      env   = "prod"
-      path  = "${path.module}/../src/silver/manifest/prod.manifest.json"
+      layer     = "silver"
+      env       = "prod"
+      path      = "${path.module}/../src/silver/manifest/prod.manifest.json"
+      container = azurerm_storage_container.container_silver.name
     },
     {
-      layer = "gold"
-      env   = "dev"
-      path  = "${path.module}/../src/gold/manifest/dev.manifest.json"
+      layer     = "gold"
+      env       = "dev"
+      path      = "${path.module}/../src/gold/manifest/dev.manifest.json"
+      container = azurerm_storage_container.container_gold.name
     },
     {
-      layer = "gold"
-      env   = "prod"
-      path  = "${path.module}/../src/gold/manifest/prod.manifest.json"
+      layer     = "gold"
+      env       = "prod"
+      path      = "${path.module}/../src/gold/manifest/prod.manifest.json"
+      container = azurerm_storage_container.container_gold.name
     }
   ]
 }
