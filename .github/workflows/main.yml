@@ -1,4 +1,4 @@
-name: actions cv-demo1
+name: CV Demo1 CI/CD
 
 on:
   push:
@@ -19,93 +19,97 @@ env:
   AZURE_FUNCTION_APP_PACKAGE_FULL_PATH: '${{ github.workspace }}/function_app_package.zip'
 
 jobs:
+
   terraform:
+    name: "Terraform: Provision Azure Infrastructure"
     runs-on: ubuntu-latest
     outputs:
       function_app_name: ${{ steps.tf_outputs.outputs.function_app_name }}
       resource_group_name: ${{ steps.tf_outputs.outputs.resource_group_name }}
       storage_account_name: ${{ steps.tf_outputs.outputs.storage_account_name }}
       storage_container_name: ${{ steps.tf_outputs.outputs.storage_container_name }}
-      data_lake_storage_account_name: ${{ steps.tf_outputs.outputs.data_lake_storage_account_name}}
+      data_lake_storage_account_name: ${{ steps.tf_outputs.outputs.data_lake_storage_account_name }}
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-    - name: 'Login to Azure for Terraform'
-      uses: azure/login@v2
-      with:
-        creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: Azure Login for Terraform
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-    - name: Export Azure credentials for Terraform
-      run: |
-        echo "ARM_CLIENT_ID=${{ fromJson(secrets.AZURE_CREDENTIALS).clientId }}" >> $GITHUB_ENV
-        echo "ARM_CLIENT_SECRET=${{ fromJson(secrets.AZURE_CREDENTIALS).clientSecret }}" >> $GITHUB_ENV
-        echo "ARM_SUBSCRIPTION_ID=${{ fromJson(secrets.AZURE_CREDENTIALS).subscriptionId }}" >> $GITHUB_ENV
-        echo "ARM_TENANT_ID=${{ fromJson(secrets.AZURE_CREDENTIALS).tenantId }}" >> $GITHUB_ENV
-    - name: Setup Terraform
-      uses: hashicorp/setup-terraform@v3
-      with:
-        terraform_version: 1.5.0
+      - name: Export Azure Credentials to Environment
+        run: |
+          echo "ARM_CLIENT_ID=${{ fromJson(secrets.AZURE_CREDENTIALS).clientId }}" >> $GITHUB_ENV
+          echo "ARM_CLIENT_SECRET=${{ fromJson(secrets.AZURE_CREDENTIALS).clientSecret }}" >> $GITHUB_ENV
+          echo "ARM_SUBSCRIPTION_ID=${{ fromJson(secrets.AZURE_CREDENTIALS).subscriptionId }}" >> $GITHUB_ENV
+          echo "ARM_TENANT_ID=${{ fromJson(secrets.AZURE_CREDENTIALS).tenantId }}" >> $GITHUB_ENV
 
-    - name: Terraform Init
-      run: terraform init
-      working-directory: ${{ env.TERRAFORM_DIR }}
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.5.0
 
-    - name: Terraform Validate
-      run: terraform validate
-      working-directory: ${{ env.TERRAFORM_DIR }}
+      - name: Terraform Init
+        run: terraform init
+        working-directory: ${{ env.TERRAFORM_DIR }}
 
-    - name: Terraform Plan
-      id: plan
-      run: |
-        terraform plan -no-color -input=false -out=tfplan > plan_output.txt
-        PLAN_OUTPUT=$(cat plan_output.txt)
-        echo "$PLAN_OUTPUT"
+      - name: Terraform Validate
+        run: terraform validate
+        working-directory: ${{ env.TERRAFORM_DIR }}
 
-        if grep -q "No changes. Your infrastructure matches the configuration." plan_output.txt; then
-          echo "::set-output name=has_changes::false"
-        else
-          echo "::set-output name=has_changes::true"
-        fi
-      working-directory: ${{ env.TERRAFORM_DIR }}
+      - name: Terraform Plan
+        id: plan
+        run: |
+          terraform plan -no-color -input=false -out=tfplan > plan_output.txt
+          PLAN_OUTPUT=$(cat plan_output.txt)
+          echo "$PLAN_OUTPUT"
 
-    - name: Terraform Apply
-      id: apply
-      if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.plan.outputs.has_changes == 'true' }}
-      run: terraform apply -input=false -auto-approve tfplan
-      working-directory: ${{ env.TERRAFORM_DIR }}
+          if grep -q "No changes. Your infrastructure matches the configuration." plan_output.txt; then
+            echo "::set-output name=has_changes::false"
+          else
+            echo "::set-output name=has_changes::true"
+          fi
+        working-directory: ${{ env.TERRAFORM_DIR }}
 
-    - name: Get Terraform Outputs
-      id: tf_outputs
-      run: |
-        FUNCTION_APP_NAME=$(terraform output -raw function_app_name)
-        RESOURCE_GROUP_NAME=$(terraform output -raw resource_group_name)
-        STORAGE_ACCOUNT_NAME=$(terraform output -raw storage_account_name)
-        STORAGE_CONTAINER_NAME=$(terraform output -raw configs_container_name )
-        DATA_LAKE_STORAGE_ACCOUNT_NAME=$(terraform output -raw data_lake_storage_account_name )
-        EVENTGRID_TOPIC_NAME=$(terraform output -raw eventgrid_topic_name)
+      - name: Terraform Apply (if changes)
+        id: apply
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.plan.outputs.has_changes == 'true' }}
+        run: terraform apply -input=false -auto-approve tfplan
+        working-directory: ${{ env.TERRAFORM_DIR }}
 
-        echo "FUNCTION_APP_NAME=$FUNCTION_APP_NAME" >> $GITHUB_ENV
-        echo "RESOURCE_GROUP_NAME=$RESOURCE_GROUP_NAME" >> $GITHUB_ENV
-        echo "STORAGE_ACCOUNT_NAME=$STORAGE_ACCOUNT_NAME" >> $GITHUB_ENV
-        echo "STORAGE_CONTAINER_NAME=$STORAGE_CONTAINER_NAME" >> $GITHUB_ENV
-        echo "DATA_LAKE_STORAGE_ACCOUNT_NAME=$DATA_LAKE_STORAGE_ACCOUNT_NAME" >> $GITHUB_ENV
-        echo "EVENTGRID_TOPIC_NAME=$EVENTGRID_TOPIC_NAME" >> $GITHUB_ENV
+      - name: Get Terraform Outputs
+        id: tf_outputs
+        run: |
+          echo "Collecting Terraform outputs..."
+          FUNCTION_APP_NAME=$(terraform output -raw function_app_name)
+          RESOURCE_GROUP_NAME=$(terraform output -raw resource_group_name)
+          STORAGE_ACCOUNT_NAME=$(terraform output -raw storage_account_name)
+          STORAGE_CONTAINER_NAME=$(terraform output -raw configs_container_name)
+          DATA_LAKE_STORAGE_ACCOUNT_NAME=$(terraform output -raw data_lake_storage_account_name)
+          EVENTGRID_TOPIC_NAME=$(terraform output -raw eventgrid_topic_name)
 
-        echo "function_app_name=$FUNCTION_APP_NAME" >> $GITHUB_OUTPUT
-        echo "resource_group_name=$RESOURCE_GROUP_NAME" >> $GITHUB_OUTPUT
-        echo "storage_account_name=$STORAGE_ACCOUNT_NAME" >> $GITHUB_OUTPUT
-        echo "storage_container_name=$STORAGE_CONTAINER_NAME" >> $GITHUB_OUTPUT
-        echo "data_lake_storage_account_name=$DATA_LAKE_STORAGE_ACCOUNT_NAME" >> $GITHUB_OUTPUT
-        echo "eventgrid_topic_name=$EVENTGRID_TOPIC_NAME" >> $GITHUB_OUTPUT
-      working-directory: ${{ env.TERRAFORM_DIR }}
+          echo "FUNCTION_APP_NAME=$FUNCTION_APP_NAME" >> $GITHUB_ENV
+          echo "RESOURCE_GROUP_NAME=$RESOURCE_GROUP_NAME" >> $GITHUB_ENV
+          echo "STORAGE_ACCOUNT_NAME=$STORAGE_ACCOUNT_NAME" >> $GITHUB_ENV
+          echo "STORAGE_CONTAINER_NAME=$STORAGE_CONTAINER_NAME" >> $GITHUB_ENV
+          echo "DATA_LAKE_STORAGE_ACCOUNT_NAME=$DATA_LAKE_STORAGE_ACCOUNT_NAME" >> $GITHUB_ENV
+          echo "EVENTGRID_TOPIC_NAME=$EVENTGRID_TOPIC_NAME" >> $GITHUB_ENV
 
-    - name: Logout from Azure (Terraform)
-      run: az logout
-      if: always()
+          echo "function_app_name=$FUNCTION_APP_NAME" >> $GITHUB_OUTPUT
+          echo "resource_group_name=$RESOURCE_GROUP_NAME" >> $GITHUB_OUTPUT
+          echo "storage_account_name=$STORAGE_ACCOUNT_NAME" >> $GITHUB_OUTPUT
+          echo "storage_container_name=$STORAGE_CONTAINER_NAME" >> $GITHUB_OUTPUT
+          echo "data_lake_storage_account_name=$DATA_LAKE_STORAGE_ACCOUNT_NAME" >> $GITHUB_OUTPUT
+          echo "eventgrid_topic_name=$EVENTGRID_TOPIC_NAME" >> $GITHUB_OUTPUT
+        working-directory: ${{ env.TERRAFORM_DIR }}
 
+      - name: Logout from Azure (Terraform)
+        run: az logout
+        if: always()
 
   upload-manifest:
+    name: "Upload Manifests to Data Lake (Bronze/Silver/Gold)"
     runs-on: ubuntu-latest
     needs: terraform
     strategy:
@@ -115,67 +119,68 @@ jobs:
       AZURE_STORAGE_ACCOUNT_NAME: ${{ needs.terraform.outputs.storage_account_name }}
       AZURE_DATA_LAKE_STORAGE_ACCOUNT_NAME: ${{ needs.terraform.outputs.data_lake_storage_account_name }}
     steps:
-      - name: Checkout repository
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Login to Azure
+      - name: Azure Login
         uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Upload manifest to Azure Storage
+      - name: Upload dev.manifest.json
         run: |
-          echo "Uploading manifest for layer: ${{ matrix.layer }}"
+          echo "Uploading dev.manifest.json to layer: ${{ matrix.layer }}"
           az storage blob upload \
             --account-name "$AZURE_DATA_LAKE_STORAGE_ACCOUNT_NAME" \
             --container-name "${{ matrix.layer }}" \
-            --file "src/${{ matrix.layer }}/manifest/${{ matrix.layer }}.manifest.json" \
-            --name "manifest/${{ matrix.layer }}.manifest.json" \
+            --file "src/${{ matrix.layer }}/manifest/dev.manifest.json" \
+            --name "manifest/dev.manifest.json" \
             --overwrite true \
             --auth-mode login
 
-
   deploy-function:
+    name: "Deploy Azure Function App"
     runs-on: ubuntu-latest
     needs: [terraform, upload-manifest]
     if: success()
     env:
       FUNCTION_APP_NAME: ${{ needs.terraform.outputs.function_app_name }}
       RESOURCE_GROUP_NAME: ${{ needs.terraform.outputs.resource_group_name }}
-
+      AZURE_FUNCTION_APP_PACKAGE_FULL_PATH: ${{ env.AZURE_FUNCTION_APP_PACKAGE_FULL_PATH }}
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-    - name: Set up Python version
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ env.PYTHON_VERSION }}
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
 
-    - name: Login to Azure
-      uses: azure/login@v2
-      with:
-        creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-    - name: Zip function app content 
-      run: |
-        sudo apt-get update && sudo apt-get install -y zip
-        zip -r ${{ env.AZURE_FUNCTION_APP_PACKAGE_FULL_PATH }} .
-      working-directory: ${{ env.FUNCTION_CODE_DIR }} 
+      - name: Zip Function App Code
+        run: |
+          sudo apt-get update && sudo apt-get install -y zip
+          zip -r ${{ env.AZURE_FUNCTION_APP_PACKAGE_FULL_PATH }} .
+        working-directory: ${{ env.FUNCTION_CODE_DIR }}
 
-    - name: List files in current directory (diagnostic)
-      run: ls -la . 
+      - name: List Files for Debugging
+        run: |
+          echo "Workspace root:"
+          ls -la ${{ github.workspace }}
+          echo "Current directory:"
+          ls -la .
 
-    - name: List files in workspace root (diagnostic)
-      run: ls -la ${{ github.workspace }}
+      - name: Deploy Function App
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: ${{ env.FUNCTION_APP_NAME }}
+          slot-name: 'production'
+          package: ${{ env.AZURE_FUNCTION_APP_PACKAGE_FULL_PATH }}
 
-    - name: Deploy Function App using Azure WebApps Deploy Action
-      uses: azure/webapps-deploy@v2
-      with:
-        app-name: ${{ env.FUNCTION_APP_NAME }}
-        slot-name: 'production'
-        package: ${{ env.AZURE_FUNCTION_APP_PACKAGE_FULL_PATH }} 
-
-    - name: Logout from Azure (Deployment)
-      run: az logout
-      if: always()
+      - name: Logout from Azure (Deployment)
+        run: az logout
+        if: always()
