@@ -1,4 +1,4 @@
-name: CV Demo1 CI/CD Pipeline
+name: cv demo1 CI/CD
 
 on:
   push:
@@ -21,7 +21,7 @@ env:
 jobs:
 
   terraform:
-    name: "Terraform: Provision Azure Infrastructure"
+    name: "terraform"
     runs-on: ubuntu-latest
     outputs:
       function_app_name: ${{ steps.tf_outputs.outputs.function_app_name }}
@@ -108,7 +108,7 @@ jobs:
         if: always()
 
   upload-manifest:
-    name: "Upload Manifests to Data Lake (Bronze/Silver/Gold)"
+    name: "upload manifests"
     runs-on: ubuntu-latest
     needs: terraform
     strategy:
@@ -138,7 +138,7 @@ jobs:
             --auth-mode login
 
   deploy-function:
-    name: "Deploy Azure Function App"
+    name: "deploy functions"
     runs-on: ubuntu-latest
     needs: [terraform, upload-manifest]
     if: success()
