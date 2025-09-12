@@ -106,7 +106,7 @@ async def run_ingestion_activity(input: Dict[str, Any]) -> Dict[str, Any]:
         # Ten blok wykona się zawsze, niezależnie od tego, czy wystąpił błąd
         # To kluczowe, aby wysłać powiadomienie o sukcesie LUB porażce
         try:
-            silver_manifest_path = "/silver/manifest/dev.manifest.json"
+            silver_manifest_path = f"/silver/manifest/{input_payload.get("env")}.manifest.json"
             
             event_grid_payload = {
                 "layer": ETLLayer.BRONZE.value,
