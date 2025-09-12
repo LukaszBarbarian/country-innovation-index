@@ -132,7 +132,7 @@ jobs:
           az storage blob upload \
             --account-name "$AZURE_DATA_LAKE_STORAGE_ACCOUNT_NAME" \
             --container-name "${{ matrix.layer }}" \
-            --file "src/${{ matrix.layer }}/manifest/${{ matrix.layer }}.manifest.json" \
+            --file "src/${{ matrix.layer }}/manifest/dev.manifest.json" \
             --name "manifest/dev.manifest.json" \
             --overwrite true \
             --auth-mode login
