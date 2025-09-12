@@ -109,6 +109,9 @@ jobs:
       AZURE_STORAGE_ACCOUNT_NAME: ${{ needs.terraform.outputs.storage_account_name }}
       AZURE_STORAGE_CONTAINER_NAME: ${{ needs.terraform.outputs.storage_container_name }}
     steps:
+      - name: Who am I?
+        run: az account show --query "{user:user, clientId:user.name, id:id}" -o json
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -129,7 +132,7 @@ jobs:
 
   deploy-function:
     runs-on: ubuntu-latest
-    needs: [terraform]
+    needs: [terraform, upload-manifest]
     if: success()
     env:
       FUNCTION_APP_NAME: ${{ needs.terraform.outputs.function_app_name }}
