@@ -64,11 +64,11 @@ jobs:
           terraform plan -no-color -input=false -out=tfplan > plan_output.txt
           PLAN_OUTPUT=$(cat plan_output.txt)
           echo "$PLAN_OUTPUT"
-
+      
           if grep -q "No changes. Your infrastructure matches the configuration." plan_output.txt; then
-            echo "::set-output name=has_changes::false"
+            echo "has_changes=false" >> $GITHUB_OUTPUT
           else
-            echo "::set-output name=has_changes::true"
+            echo "has_changes=true" >> $GITHUB_OUTPUT
           fi
         working-directory: ${{ env.TERRAFORM_DIR }}
 
