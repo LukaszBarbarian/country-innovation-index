@@ -12,40 +12,47 @@ from src.common.factories.orchestrator_factory import OrchestratorFactory
 from src.common.config.config_manager import ConfigManager
 from src.common.enums.etl_layers import ETLLayer
 
-from src.bronze.init import bronze_init
+import src.bronze.init.bronze_init 
 
 app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
-
 logger = logging.getLogger(__name__)
-
 
 
 @app.route(route="start_ingestion")
 @app.durable_client_input(client_name="starter")
 async def start_ingestion_http(req: func.HttpRequest, starter: df.DurableOrchestrationClient) -> func.HttpResponse:
-    logging.info('start_ingestion_http function triggered.')
+    """
+    HTTP trigger to start the data ingestion orchestration.
 
+    This function accepts an HTTP request with a JSON payload, which serves as the manifest for the
+    orchestration. It then starts a new durable orchestration instance and returns a status response.
+    """
     try:
         manifest_payload = req.get_json()
     except ValueError:
-        logging.error("Żądanie nie zawiera prawidłowego JSON.")
-        return func.HttpResponse("Błąd: Oczekiwano prawidłowego formatu JSON.", status_code=400)
+        logger.error("Request does not contain valid JSON.")
+        return func.HttpResponse("Error: Expected a valid JSON format.", status_code=400)
     except Exception as e:
-        logging.exception(f"Inny błąd podczas przetwarzania żądania: {e}")
-        return func.HttpResponse(f"Błąd: {str(e)}", status_code=500)
+        logger.exception(f"Failed to process request: {e}")
+        return func.HttpResponse(f"Error: {str(e)}", status_code=500)
     
     try:
         instance_id = await starter.start_new("ingest_orchestrator", None, manifest_payload)
-        logging.info(f"Rozpoczęto orkiestrację z ID = '{instance_id}'.")
+        logger.info(f"Started orchestration with ID = '{instance_id}'.")
         return starter.create_check_status_response(req, instance_id)
     except Exception as e:
-        logging.exception(f"Błąd podczas uruchamiania orkiestracji: {e}")
-        return func.HttpResponse(f"Błąd podczas uruchamiania orkiestracji: {e}", status_code=500)
+        logger.exception(f"Failed to start orchestration: {e}")
+        return func.HttpResponse(f"Error starting orchestration: {e}", status_code=500)
 
 
 @app.orchestration_trigger(context_name="context")
 def ingest_orchestrator(context: df.DurableOrchestrationContext):
-    logger.info("ingest_orchestrator started.")
+    """
+    Durable orchestration to manage the bronze layer data ingestion process.
+
+    It calls the 'run_ingestion_activity' to execute the main ingestion logic and then
+    the 'write_to_queue' activity to publish an event to Event Grid based on the result.
+    """
     input_payload = context.get_input()
 
     if not isinstance(input_payload, dict) or not input_payload:
@@ -57,7 +64,7 @@ def ingest_orchestrator(context: df.DurableOrchestrationContext):
         {"input_payload": input_payload}
     )
 
-    logger.info(f"Completed Bronze orchestration. Result: {orchestrator_result_dict}")
+    logger.info(f"Bronze orchestration completed. Result: {orchestrator_result_dict.get('status', 'N/A')}")
 
     silver_manifest_path = "/silver/manifest/dev.manifest.json"
     
@@ -79,9 +86,15 @@ def ingest_orchestrator(context: df.DurableOrchestrationContext):
 
 @app.activity_trigger(input_name="input")
 async def run_ingestion_activity(input: Dict[str, Any]) -> Dict[str, Any]:
-    logger.info("run_ingestion_activity started.")
-    
+    """
+    Activity function to execute the bronze layer data ingestion logic.
+
+    It initializes the BronzeParser and BronzeOrchestrator to perform the data ingestion.
+    Returns the result of the orchestration execution, including status and details.
+    """
     input_payload = input["input_payload"]
+    correlation_id = input_payload.get("correlation_id", str(uuid.uuid4()))
+    logger.info(f"Running ingestion for correlation ID: {correlation_id}")
     
     try:
         config = ConfigManager()
@@ -89,16 +102,13 @@ async def run_ingestion_activity(input: Dict[str, Any]) -> Dict[str, Any]:
         
         parser = BronzeParser()
         bronze_context = parser.parse(input_payload)
-        bronze_context.correlation_id = str(uuid.uuid4())
+        bronze_context.correlation_id = correlation_id
         
         result = await orchestrator.execute(bronze_context)
-
         return result.to_dict()
 
     except Exception as e:
-        logger.exception(f"Błąd podczas uruchamiania BronzeOrchestrator: {e}")
-        
-        correlation_id = input_payload.get("correlation_id", "NOT_PROVIDED")
+        logger.exception(f"BronzeOrchestrator failed for correlation ID {correlation_id}.")
         return {
             "status": "FAILED",
             "correlation_id": correlation_id,
@@ -109,27 +119,37 @@ async def run_ingestion_activity(input: Dict[str, Any]) -> Dict[str, Any]:
 
 @app.activity_trigger(input_name="input")
 async def write_to_queue(input: Dict[str, Any]):
-    logger.info("write_to_queue activity started.")
+    """
+    Activity function to publish an event to Event Grid.
+
+    It retrieves the Event Grid endpoint and key from environment variables and sends
+    a custom event with the provided payload.
+    """
     payload = input.get("payload")
     if not payload:
-        return {"status": "FAILED", "message": "Brak payloadu."}
+        logger.error("Payload is missing.")
+        return {"status": "FAILED", "message": "Missing payload."}
 
     endpoint = os.environ.get("EVENT_GRID_ENDPOINT")
     key = os.environ.get("EVENT_GRID_KEY")
     
     if not endpoint:
-        error_message = "Zmienna środowiskowa 'EVENT_GRID_ENDPOINT' nie jest ustawiona."
+        error_message = "'EVENT_GRID_ENDPOINT' environment variable not set."
         logger.error(error_message)
         return {"status": "FAILED", "message": error_message}
     
     try:
         manager = EventGridClientManager(endpoint=endpoint, key=key)
+        manager.send_event(
+            event_type="BronzeIngestionCompleted",
+            subject=f"/silver/processing/{payload.get('correlation_id')}",
+            data=payload
+        )
+        logger.info(f"Event for correlation ID {payload.get('correlation_id')} sent successfully.")
+        return {"status": "SUCCESS"}
     except ValueError as e:
-        logger.exception(f"Błąd inicjalizacji klienta Event Grid: {e}")
-        return {"status": "FAILED", "message": f"Błąd inicjalizacji: {e}"}
-
-    return manager.send_event(
-        event_type="BronzeIngestionCompleted",
-        subject=f"/silver/processing/{payload.get('correlation_id')}",
-        data=payload
-    )
+        logger.exception(f"Event Grid client initialization failed: {e}")
+        return {"status": "FAILED", "message": f"Initialization failed: {e}"}
+    except Exception as e:
+        logger.exception(f"Failed to send event to Event Grid: {e}")
+        return {"status": "FAILED", "message": f"Failed to send event: {e}"}

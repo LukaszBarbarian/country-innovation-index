@@ -246,11 +246,17 @@ resource "azurerm_key_vault_secret" "event_grid_key" {
 
 
 resource "azurerm_role_assignment" "app_config_owner_role" {
-  # Zakres (scope) to ID zasobu App Configuration
   scope                = azurerm_app_configuration.main_app_config.id
-  # Nazwa roli, którą nadajemy
   role_definition_name = "App Configuration Data Owner"
-  # ID tożsamości, której nadajemy uprawnienia (Service Principal lub użytkownik)
+  principal_id         = data.azurerm_client_config.current.object_id
+  
+  depends_on = [azurerm_app_configuration.main_app_config]
+}
+
+
+resource "azurerm_role_assignment" "app_config_reader_role" {
+  scope                = azurerm_app_configuration.main_app_config.id
+  role_definition_name = "App Configuration Data Reader"
   principal_id         = data.azurerm_client_config.current.object_id
   
   depends_on = [azurerm_app_configuration.main_app_config]
