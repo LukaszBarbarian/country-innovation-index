@@ -24,9 +24,9 @@ jobs:
     outputs:
       function_app_name: ${{ steps.tf_outputs.outputs.function_app_name }}
       resource_group_name: ${{ steps.tf_outputs.outputs.resource_group_name }}
-      # POPRAWKA TUTAJ: Musisz jawnie zadeklarować te outputy
       storage_account_name: ${{ steps.tf_outputs.outputs.storage_account_name }}
       storage_container_name: ${{ steps.tf_outputs.outputs.storage_container_name }}
+      data_lake_storage_account_name: ${{ steps.tf_outputs.outputs.data_lake_storage_account_name}}
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
@@ -82,18 +82,21 @@ jobs:
         RESOURCE_GROUP_NAME=$(terraform output -raw resource_group_name)
         STORAGE_ACCOUNT_NAME=$(terraform output -raw storage_account_name)
         STORAGE_CONTAINER_NAME=$(terraform output -raw configs_container_name )
+        DATA_LAKE_STORAGE_ACCOUNT_NAME=$(terraform output -raw data_lake_storage_account_name )
         EVENTGRID_TOPIC_NAME=$(terraform output -raw eventgrid_topic_name)
 
         echo "FUNCTION_APP_NAME=$FUNCTION_APP_NAME" >> $GITHUB_ENV
         echo "RESOURCE_GROUP_NAME=$RESOURCE_GROUP_NAME" >> $GITHUB_ENV
         echo "STORAGE_ACCOUNT_NAME=$STORAGE_ACCOUNT_NAME" >> $GITHUB_ENV
         echo "STORAGE_CONTAINER_NAME=$STORAGE_CONTAINER_NAME" >> $GITHUB_ENV
+        echo "DATA_LAKE_STORAGE_ACCOUNT_NAME=$DATA_LAKE_STORAGE_ACCOUNT_NAME" >> $GITHUB_ENV
         echo "EVENTGRID_TOPIC_NAME=$EVENTGRID_TOPIC_NAME" >> $GITHUB_ENV
 
         echo "function_app_name=$FUNCTION_APP_NAME" >> $GITHUB_OUTPUT
         echo "resource_group_name=$RESOURCE_GROUP_NAME" >> $GITHUB_OUTPUT
         echo "storage_account_name=$STORAGE_ACCOUNT_NAME" >> $GITHUB_OUTPUT
         echo "storage_container_name=$STORAGE_CONTAINER_NAME" >> $GITHUB_OUTPUT
+        echo "data_lake_storage_account_name=$DATA_LAKE_STORAGE_ACCOUNT_NAME" >> $GITHUB_OUTPUT
         echo "eventgrid_topic_name=$EVENTGRID_TOPIC_NAME" >> $GITHUB_OUTPUT
       working-directory: ${{ env.TERRAFORM_DIR }}
 
@@ -107,7 +110,7 @@ jobs:
     needs: terraform
     env:
       AZURE_STORAGE_ACCOUNT_NAME: ${{ needs.terraform.outputs.storage_account_name }}
-      AZURE_STORAGE_CONTAINER_NAME: ${{ needs.terraform.outputs.storage_container_name }}
+      AZURE_DATA_LAKE_STORAGE_ACCOUNT_NAME: ${{ needs.terraform.outputs.data_lake_storage_account_name }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -124,8 +127,8 @@ jobs:
       - name: Upload dev.manifest.json to Azure Storage
         run: |
           az storage blob upload \
-            --account-name "$AZURE_STORAGE_ACCOUNT_NAME" \
-            --container-name "$AZURE_STORAGE_CONTAINER_NAME" \
+            --account-name "$AZURE_DATA_LAKE_STORAGE_ACCOUNT_NAME" \
+            --container-name "bronze" \
             --file src/bronze/manifest/dev.manifest.json \
             --name "bronze/manifest/dev.manifest.json" \
             --overwrite true \
