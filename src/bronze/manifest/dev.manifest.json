@@ -25,6 +25,54 @@
 								"per_page": 1000
 							}
 						}
+					},
+					{
+						"source_config_payload": {
+							"domain_source_type": "api",
+							"domain_source": "WORLDBANK",
+							"dataset_name": "pkb",
+							"request_payload": {
+								"indicator": "NY.GDP.MKTP.CD",
+								"format": "json",
+								"per_page": 1000
+							}
+						}
+					},
+					{
+						"source_config_payload": {
+							"domain_source_type": "api",
+							"domain_source": "WORLDBANK",
+							"dataset_name": "rd",
+							"request_payload": {
+								"indicator": "GB.XPD.RSDV.GD.ZS",
+								"format": "json",
+								"per_page": 1000
+							}
+						}
+					},
+					{
+						"source_config_payload": {
+							"domain_source_type": "api",
+							"domain_source": "WORLDBANK",
+							"dataset_name": "researchers",
+							"request_payload": {
+								"indicator": "SP.POP.SCIE.RD.P6",
+								"format": "json",
+								"per_page": 1000
+							}
+						}
+					},
+					{
+						"source_config_payload": {
+							"domain_source_type": "api",
+							"domain_source": "WORLDBANK",
+							"dataset_name": "unemployment",
+							"request_payload": {
+								"indicator": "SL.UEM.TOTL.ZS",
+								"format": "json",
+								"per_page": 1000
+							}
+						}
 					}
 			]	
 }
