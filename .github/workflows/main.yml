@@ -1,4 +1,4 @@
-name: CV Demo1 CI/CD
+name: CV Demo1 CI/CD Pipeline
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
     paths:
       - 'infra/**'
       - './'
-      - '.github/workflows/main-ci-cd.yml'
+      - '.github/workflows/main.yml'
   workflow_dispatch:
 
 env:
@@ -81,7 +81,6 @@ jobs:
       - name: Get Terraform Outputs
         id: tf_outputs
         run: |
-          echo "Collecting Terraform outputs..."
           FUNCTION_APP_NAME=$(terraform output -raw function_app_name)
           RESOURCE_GROUP_NAME=$(terraform output -raw resource_group_name)
           STORAGE_ACCOUNT_NAME=$(terraform output -raw storage_account_name)
@@ -133,7 +132,7 @@ jobs:
           az storage blob upload \
             --account-name "$AZURE_DATA_LAKE_STORAGE_ACCOUNT_NAME" \
             --container-name "${{ matrix.layer }}" \
-            --file "src/${{ matrix.layer }}/manifest/dev.manifest.json" \
+            --file "src/${{ matrix.layer }}/manifest/${{ matrix.layer }}.manifest.json" \
             --name "manifest/dev.manifest.json" \
             --overwrite true \
             --auth-mode login
@@ -146,7 +145,7 @@ jobs:
     env:
       FUNCTION_APP_NAME: ${{ needs.terraform.outputs.function_app_name }}
       RESOURCE_GROUP_NAME: ${{ needs.terraform.outputs.resource_group_name }}
-      AZURE_FUNCTION_APP_PACKAGE_FULL_PATH: ${{ env.AZURE_FUNCTION_APP_PACKAGE_FULL_PATH }}
+      AZURE_FUNCTION_APP_PACKAGE_FULL_PATH: ${{ github.workspace }}/function_app_package.zip
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -164,7 +163,7 @@ jobs:
       - name: Zip Function App Code
         run: |
           sudo apt-get update && sudo apt-get install -y zip
-          zip -r ${{ env.AZURE_FUNCTION_APP_PACKAGE_FULL_PATH }} .
+          zip -r $AZURE_FUNCTION_APP_PACKAGE_FULL_PATH .
         working-directory: ${{ env.FUNCTION_CODE_DIR }}
 
       - name: List Files for Debugging
