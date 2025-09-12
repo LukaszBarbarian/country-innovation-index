@@ -7,6 +7,8 @@ from azure.identity import DefaultAzureCredential
 from azure.core.credentials import AzureKeyCredential
 from azure.eventgrid import EventGridPublisherClient, EventGridEvent
 
+from src.common.config.config_manager import ConfigManager
+
 logger = logging.getLogger(__name__)
 
 class EventGridClientManager:
@@ -43,3 +45,48 @@ class EventGridClientManager:
         except Exception as e:
             logger.exception(f"Błąd podczas wysyłania eventu: {e}")
             return {"status": "FAILED", "message": str(e)}
+        
+
+
+
+class EventGridNotifier:
+    """
+    A unified class to handle the logic of sending events to Event Grid.
+    It encapsulates the configuration and event formatting logic, allowing
+    it to be reused across different parts of the application.
+    """
+    def __init__(self, endpoint: str, key: Optional[str] = None):
+        if not endpoint:
+            raise ValueError("Event Grid endpoint is required.")
+        self.client = EventGridClientManager(endpoint=endpoint, key=key)
+
+    def send_notification(self, 
+                          layer: str,
+                          event_type: str,
+                          data: Dict[str, Any],
+                          correlation_id: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Sends a generic, layered notification to Event Grid.
+        
+        Args:
+            layer (str): The ETL layer (e.g., 'bronze', 'silver').
+            event_type (str): The specific type of event (e.g., 'IngestionCompleted').
+            data (Dict[str, Any]): The payload of the event.
+            correlation_id (str): An optional unique ID for tracing.
+            
+        Returns:
+            Dict[str, Any]: The result of the send operation.
+        """
+        if not correlation_id:
+            logger.warning("No correlation ID provided for event.")
+            subject = f"/{layer}/processing/no-correlation-id"
+        else:
+            subject = f"/{layer}/processing/{correlation_id}"
+
+        full_event_type = f"{layer.capitalize()}{event_type}"
+        
+        return self.client.send_event(
+            event_type=full_event_type,
+            subject=subject,
+            data=data
+        )

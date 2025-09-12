@@ -105,8 +105,6 @@ class ApiIngestionStrategy(BaseIngestionStrategy):
         """Metoda pomocnicza do tworzenia wyniku w przypadku sukcesu."""
         return IngestionResult(
             correlation_id=context.correlation_id,
-            env=context.env,
-            etl_layer=context.etl_layer,
             domain_source=source.source_config_payload.domain_source,
             domain_source_type=source.source_config_payload.domain_source_type,
             dataset_name=source.source_config_payload.dataset_name,
@@ -127,8 +125,6 @@ class ApiIngestionStrategy(BaseIngestionStrategy):
         """Metoda pomocnicza do tworzenia wyniku w przypadku błędu."""
         return IngestionResult(
             correlation_id=context.correlation_id,
-            env=context.env,
-            etl_layer=context.etl_layer,
             domain_source=source.source_config_payload.domain_source,
             domain_source_type=source.source_config_payload.domain_source_type,
             dataset_name=source.source_config_payload.dataset_name,
