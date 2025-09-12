@@ -33,6 +33,8 @@ class BronzeParser(BaseParser):
             env=manifest.env,
             etl_layer=ETLLayer.BRONZE,
             manifest=manifest
-        )        
+        )     
+
+        context.storage_account = self.config.get("DATA_LAKE_STORAGE_ACCOUNT_NAME")
 
         return context

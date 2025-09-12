@@ -28,6 +28,3 @@ class ContextBase:
     # Funkcja pomocnicza do generowania ścieżki
     def storage_path_abfss(self, relative_path: str) -> str:
         return f"abfss://{self.storage_account}@{self.storage_account}.dfs.core.windows.net/{relative_path}"
-
-    def __post_init__(self):
-        self.storage_account = ConfigManager().get("DATA_LAKE_STORAGE_ACCOUNT_NAME")

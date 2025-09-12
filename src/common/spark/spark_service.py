@@ -19,7 +19,7 @@ class SparkService:
 
     def start_local(self):
         AZURE_STORAGE_ACCOUNT_NAME = "demosurdevdatalake4418sa"
-        AZURE_STORAGE_ACCOUNT_KEY = self.config.get_setting("AZURE_STORAGE_ACCOUNT_KEY")
+        AZURE_STORAGE_ACCOUNT_KEY = self.config.get("AZURE_STORAGE_ACCOUNT_KEY")
 
         JAR_PATH = "C:/spark/jars"
         all_jars = ",".join([os.path.join(JAR_PATH, jar) for jar in os.listdir(JAR_PATH) if jar.endswith(".jar")])

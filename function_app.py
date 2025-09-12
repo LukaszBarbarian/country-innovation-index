@@ -100,7 +100,7 @@ async def run_ingestion_activity(input: Dict[str, Any]) -> Dict[str, Any]:
         config = ConfigManager()
         orchestrator = OrchestratorFactory.get_instance(ETLLayer.BRONZE, config=config)
         
-        parser = BronzeParser()
+        parser = BronzeParser(config)
         bronze_context = parser.parse(input_payload)
         bronze_context.correlation_id = correlation_id
         

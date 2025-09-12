@@ -82,7 +82,7 @@ class OrchestratorResultBuilder:
     async def save_summary_file(self, duration_ms: int) -> str:
         """Zapisuje plik podsumowania do Data Lake."""
         file_builder = StorageFileBuilderFactory.get_instance(self._context.etl_layer, config=self._config)
-        storage_account_name = self._config.get_setting("DATA_LAKE_STORAGE_ACCOUNT_NAME")
+        storage_account_name = self._config.get("DATA_LAKE_STORAGE_ACCOUNT_NAME")
         
         summary_output = file_builder.build_summary_file_output(
             context=self._context,

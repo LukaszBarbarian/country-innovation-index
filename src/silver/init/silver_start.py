@@ -273,8 +273,8 @@ def send_event_grid_notification(config: ConfigManager, orchestrator_result: Orc
         
 
         event_grid_client = EventGridClientManager(
-            endpoint=config.get_setting("EVENT_GRID_ENDPOINT"),
-            key=config.get_setting("EVENT_GRID_KEY")
+            endpoint=config.get("EVENT_GRID_ENDPOINT"),
+            key=config.get("EVENT_GRID_KEY")
         )
         if not event_grid_client:
             logger.error("Event Grid client not initialized. Cannot send event.")

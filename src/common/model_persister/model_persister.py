@@ -25,7 +25,7 @@ class ModelPersister:
         self.context = context
         self.spark = spark
         self.layer = layer
-        self.storage_account_name = self.config.get_setting("DATA_LAKE_STORAGE_ACCOUNT_NAME")
+        self.storage_account_name = self.config.get("DATA_LAKE_STORAGE_ACCOUNT_NAME")
 
 
     def persist_model(self, model: BaseProcessModel) -> Optional[ProcessModelResult]:

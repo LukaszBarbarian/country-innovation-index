@@ -58,7 +58,7 @@ class AzureClientManagerBase(ABC, Generic[TServiceClient, TClient]):
         Preferuje uwierzytelnianie za pomocą connection string,
         a w razie braku lub błędu - próbuje Azure Identity (Managed Identity/Service Principal).
         """
-        storage_account_name = self._config.get_setting(self._storage_account_name_setting_name)
+        storage_account_name = self._config.get(self._storage_account_name_setting_name)
         
         
         if not self._service_client and storage_account_name: # Jeśli connection string zawiódł lub go nie było

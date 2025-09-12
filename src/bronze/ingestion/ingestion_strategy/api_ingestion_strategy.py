@@ -34,7 +34,7 @@ class ApiIngestionStrategy(BaseIngestionStrategy):
         context: BronzeContext = cast(BronzeContext, self.context)
         
         try:
-            self.storage_account_name = self.config.get_setting("DATA_LAKE_STORAGE_ACCOUNT_NAME")
+            self.storage_account_name = self.config.get("DATA_LAKE_STORAGE_ACCOUNT_NAME")
             api_client = ApiClientFactory.get_instance(manifest_source.source_config_payload.domain_source, config=self.config)
             data_processor = DataProcessorFactory.get_instance(manifest_source.source_config_payload.domain_source)
             file_builder = StorageFileBuilderFactory.get_instance(ETLLayer.BRONZE, config=self.config)

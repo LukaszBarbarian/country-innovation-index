@@ -20,7 +20,7 @@ class ApiClient(ABC):
     def __init__(self, config: Any, base_url_setting_name: str): 
         self.config = config
         self.base_url_setting_name = base_url_setting_name
-        self.base_url = self.config.get_setting(self.base_url_setting_name)
+        self.base_url = self.config.get(self.base_url_setting_name)
 
         if not self.base_url:
             logger.error(f"Ustawienie URL bazowego '{self.base_url_setting_name}' nie zostało znalezione w konfiguracji.")

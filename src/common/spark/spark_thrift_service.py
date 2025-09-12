@@ -6,7 +6,7 @@ from src.common.config.config_manager import ConfigManager
 
 # Ważne: Zastąp to bezpiecznym sposobem na pobranie klucza
 AZURE_STORAGE_ACCOUNT_NAME = "demosurdevdatalake4418sa"
-AZURE_STORAGE_ACCOUNT_KEY = ConfigManager().get_setting("AZURE_STORAGE_ACCOUNT_KEY")
+AZURE_STORAGE_ACCOUNT_KEY = ConfigManager().get("AZURE_STORAGE_ACCOUNT_KEY")
 
 
 class DbtSparkRunnerSimplified:
