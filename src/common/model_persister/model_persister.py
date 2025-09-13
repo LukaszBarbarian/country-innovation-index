@@ -16,11 +16,24 @@ from typing import Optional
 logger = logging.getLogger(__name__)
 
 class ModelPersister:
+    """
+    Handles the persistence of a Spark DataFrame to Azure Data Lake Storage as a Delta table.
+    It uses a factory to determine the correct file path based on the ETL layer.
+    """
     def __init__(self, 
                  layer: ETLLayer,
                  config: ConfigManager, 
                  context: ContextBase, 
                  spark: SparkService):
+        """
+        Initializes the ModelPersister.
+
+        Args:
+            layer (ETLLayer): The ETL layer (e.g., Bronze, Silver, Gold) to which the data belongs.
+            config (ConfigManager): The configuration manager instance.
+            context (ContextBase): The context object for the current process.
+            spark (SparkService): The Spark service instance for interacting with Spark.
+        """
         self.config = config
         self.context = context
         self.spark = spark
@@ -30,7 +43,18 @@ class ModelPersister:
 
     def persist_model(self, model: BaseProcessModel) -> Optional[ProcessModelResult]:
         """
-        Persists a Spark DataFrame as a Delta table for the Silver layer.
+        Persists a Spark DataFrame as a Delta table.
+
+        The method first checks if the DataFrame is empty. If it is, persistence is skipped.
+        It then uses the `StorageFileBuilderFactory` to dynamically determine the output path
+        and finally writes the DataFrame to that path using Delta format.
+
+        Args:
+            model (BaseProcessModel): The model object containing the DataFrame and metadata to be persisted.
+
+        Returns:
+            Optional[ProcessModelResult]: A result object containing information about the persistence operation,
+                                          or None if the operation is skipped.
         """
         if model.data.isEmpty():
             logger.warning(f"Model '{model.name}' is empty, skipping persistence.")
@@ -54,7 +78,7 @@ class ModelPersister:
 
         file_info: FileInfo = output_info.get("file_info")
         
-        # Używamy Sparka do zapisu
+        # We use Spark to write the data
         self.spark.write_delta(
             df=model.data,
             abfss_url=file_info.full_path_in_container,
@@ -64,7 +88,7 @@ class ModelPersister:
         
         logger.info(f"Successfully persisted '{model.name}' model to {file_info.full_path_in_container}")
         
-        # Zwracamy pełny rezultat
+        # Return the full result
         return ProcessModelResult(
             model=model.name,
             status="COMPLETED",

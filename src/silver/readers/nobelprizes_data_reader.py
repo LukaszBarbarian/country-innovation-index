@@ -11,16 +11,27 @@ from typing import Dict, Optional, cast, List
 from pyspark.sql.types import StructType, StructField, StringType, ArrayType, LongType, IntegerType, DoubleType, MapType
 import pyspark.sql.functions as F
 
+
 @DataReaderRegistry.register(DomainSource.NOBELPRIZE)
 class NobelPrizeDataReader(BaseDataReader):
     """
-    Czytnik danych dla nagród Nobla, pobierający dane z warstwy Bronze.
-    Wczytuje plik JSON z lokalizacji podanej w kontekście.
+    A data reader for Nobel Prize data, which retrieves data from the Bronze layer.
+    It reads a JSON file from the location specified in the context.
     """
 
     def _load_from_source(self, all_readers: Optional[List[SummaryResultBase]]) -> Dict[str, DataFrame]:
+        """
+        Loads data from the source paths provided in the summary results.
+        
+        Args:
+            all_readers (Optional[List[SummaryResultBase]]): A list of summary results
+                                                            from the Bronze layer run.
+        
+        Returns:
+            Dict[str, DataFrame]: A dictionary of loaded DataFrames, keyed by dataset name.
+        """
         if not all_readers:
-            print("Brak wyników dla DomainSource.NOBELPRIZE w kontekście.")
+            print("No results for DomainSource.NOBELPRIZE in the context.")
             return {}
         
         dataframes_dict: Dict[str, DataFrame] = {}
@@ -30,20 +41,26 @@ class NobelPrizeDataReader(BaseDataReader):
             for path in result.output_paths:
                 try:
                     if dataset_name == "laureates":
-                        # Używamy zaktualizowanego schematu
+                        # Use the updated schema
                         schema = self._get_schema_laureates()
                         
                         df = self._spark.read_json_https(path, schema=schema)
                         
                         dataframes_dict[dataset_name] = df
-                        print(f"Załadowano dane dla datasetu '{dataset_name}' z pliku: {path}")
+                        print(f"Loaded data for dataset '{dataset_name}' from file: {path}")
                 
                 except Exception as e:
-                    print(f"Błąd podczas ładowania pliku {path}: {e}")
+                    print(f"Error loading file {path}: {e}")
     
         return dataframes_dict
 
     def _get_schema_laureates(self) -> StructType:
+        """
+        Defines the schema for the Nobel laureates JSON data.
+        
+        Returns:
+            StructType: The Spark StructType schema for laureates.
+        """
         multi_lang_string_schema = StructType([
             StructField("en", StringType(), True),
             StructField("se", StringType(), True),
@@ -93,7 +110,7 @@ class NobelPrizeDataReader(BaseDataReader):
             StructField("links", ArrayType(MapType(StringType(), StringType())), True)
         ])
 
-        # Schemat **pojedynczego laureata**, bez zewnętrznej tablicy
+        # Schema for a single laureate, without the outer array
         laureate_schema = StructType([
             StructField("id", StringType(), True),
             StructField("knownName", multi_lang_string_schema, True),

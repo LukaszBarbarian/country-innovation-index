@@ -14,39 +14,62 @@ from src.silver.models.process_model import SilverProcessModel
 
 @singleton
 class ModelDirector:
+    """
+    The ModelDirector is a core component of the Silver ETL layer, responsible for
+    orchestrating the end-to-end process of building a single analytical model.
+
+    This class handles:
+    - Dependency management: It recursively calls itself to build any prerequisite models.
+    - Caching: It stores and retrieves built models to prevent redundant computation.
+    - Data loading and transformation: It fetches raw data and applies the correct
+      domain-specific transformations (transform, normalize, enrich) using a factory.
+    - Model building: It uses the appropriate ModelBuilder to construct the final DataFrame.
+    """
     @inject
     def __init__(self, injector: Injector, context: SilverContext):
+        """
+        Initializes the ModelDirector with a dependency injector and the Silver context.
+        """
         self._context = context
         self._injector = injector
 
     async def get_built_model(self, model: SilverManifestModel) -> SilverProcessModel:
         """
-        Buduje model silver na podstawie manifestu. 
-        Obsługuje zależności (rekurencyjnie) i cache.
+        Builds a Silver model based on its manifest configuration.
+        This method handles dependencies recursively and uses a cache.
+
+        Args:
+            model (SilverManifestModel): The configuration object for the model to build.
+
+        Returns:
+            SilverProcessModel: A dataclass containing the built DataFrame and metadata.
+        
+        Raises:
+            RuntimeError: If model configuration or raw data is missing.
         """
         cache_key = f"silver_model:{model.model_name.value}"
 
-        # 🔹 Sprawdzenie cache
+        # 🔹 Cache check
         if self._context._cache.exists(cache_key):
-            print(f"[CACHE HIT] Pobrano model '{model.model_name.value}' z cache.")
+            print(f"[CACHE HIT] Retrieved model '{model.model_name.value}' from cache.")
             return self._context._cache.get(cache_key)
 
-        # 🔹 Pobranie buildera
+        # 🔹 Get the builder
         builder_class = ModelBuilderFactory.get_class(model.model_name)
         builder = self._injector.get(builder_class)
         builder.set_identity(model.model_name)
 
-        # 🔹 Pobranie konfiguracji modelu z manifestu
+        # 🔹 Get model configuration from manifest
         model_config = next(
             (m for m in self._context.manifest.models if m.model_name == model.model_name),
             None,
         )
         if model_config is None:
             raise RuntimeError(
-                f"Brak konfiguracji dla modelu '{model.model_name.value}' w SilverManifest."
+                f"Missing configuration for model '{model.model_name.value}' in SilverManifest."
             )
 
-        # 🔹 Obsługa zależności
+        # 🔹 Handle dependencies
         dependencies: Dict[ModelType, DataFrame] = {}
         depends_on: List[ModelType] = getattr(model_config, "depends_on", []) or []
 
@@ -61,31 +84,31 @@ class ModelDirector:
                     raise RuntimeError(
                         f"Dependency '{dep_type}' not found in manifest for model '{model.model_name.value}'"
                     )
-                dep_tasks.append(self.get_built_model(dep_manifest))  # rekurencja
+                dep_tasks.append(self.get_built_model(dep_manifest))  # recursion
 
             dep_results: List[SilverProcessModel] = await asyncio.gather(*dep_tasks)
             for dep_res in dep_results:
                 dependencies[dep_res.model_type] = dep_res.data
 
-        # 🔹 Pobranie surowych danych
+        # 🔹 Get raw data
         raw_dataframes: Dict[DomainSource, Dict[str, DataFrame]] = builder.load_data()
         if not raw_dataframes:
             if builder.synthetic:
                 raw_dataframes = {}
             else:
-                raise RuntimeError(f"Brak surowych danych do budowy modelu '{model.model_name.value}'.")
+                raise RuntimeError(f"No raw data to build model '{model.model_name.value}'.")
 
-        # 🔹 Przetworzenie danych przez transformatory
+        # 🔹 Process data with transformers
         processed_dfs: Dict[Tuple[DomainSource, str], DataFrame] = await self._process_dataframes(raw_dataframes)
 
-        # 🔹 Budowa modelu końcowego
+        # 🔹 Build the final model
         final_df = await builder.build(processed_dfs, dependencies)
         built_model = builder.create_model(final_df)
 
-        # 🔹 Cache'owanie modelu
+        # 🔹 Cache the model
         built_model.data.cache()
         self._context._cache.set(cache_key, built_model)
-        print(f"[BUILD] Model '{model.model_name.value}' został zbudowany i zapisany w cache.")
+        print(f"[BUILD] Model '{model.model_name.value}' has been built and saved to cache.")
 
         return built_model
 
@@ -94,10 +117,16 @@ class ModelDirector:
         raw_dataframes: Dict[DomainSource, Dict[str, DataFrame]]
     ) -> Dict[Tuple[DomainSource, str], DataFrame]:
         """
-        Przetwarza wszystkie surowe DataFrame'y przez odpowiednie transformatory:
+        Processes all raw DataFrames through the appropriate transformers:
         - transform
         - normalize
         - enrich
+        
+        Args:
+            raw_dataframes (Dict): A dictionary of raw DataFrames grouped by domain source.
+
+        Returns:
+            Dict: A dictionary of processed DataFrames, with a composite key of (domain_source, dataset_name).
         """
         processed_dfs: Dict[Tuple[DomainSource, str], DataFrame] = {}
 

@@ -10,15 +10,23 @@ from src.gold.models.models import GoldManifestModel
 @dataclass
 class BuildRequest:
     """
-    Żądanie budowy dla Buildera: spec + konkretne ModelRunResulty (wejścia Silver).
-    loaded_dfs: po załadowaniu przez Director - mapping ModelType -> DataFrame.
+    A request object for a Builder, containing the model specification and
+    the results from upstream processes (e.g., from the Silver layer).
     """
     model: GoldManifestModel
-    source_results: List[ProcessModelResult]  # lista ModelRunResult (typ z Twojego projektu)
+    source_results: List[ProcessModelResult]  # A list of ProcessModelResult objects.
     loaded_dfs: Optional[Dict[ModelType, DataFrame]] = None
 
-    def get_df(self, model_type: ModelType):
-        """Zwraca DataFrame dla model_type (jeśli załadowany)."""
+    def get_df(self, model_type: ModelType) -> Optional[DataFrame]:
+        """
+        Retrieves the DataFrame for a specific model type if it has been loaded.
+
+        Args:
+            model_type (ModelType): The type of the model to retrieve.
+
+        Returns:
+            Optional[DataFrame]: The Spark DataFrame if it exists, otherwise None.
+        """
         if not self.loaded_dfs:
             return None
-        return self.loaded_dfs.get(model_type)    
+        return self.loaded_dfs.get(model_type)

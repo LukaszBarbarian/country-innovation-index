@@ -11,13 +11,27 @@ from pyspark.sql.types import StructType, StructField, StringType, IntegerType, 
 
 @DataReaderRegistry.register(DomainSource.WORLDBANK)
 class WorldbankDataReader(BaseDataReader):
+    """
+    A data reader for World Bank data, loading JSON files from the Bronze layer.
+    
+    This reader retrieves data for various indicators like population, R&D expenditure,
+    and GDP, applying a specific schema for each dataset to ensure correct data
+    types and structure.
+    """
     def _load_from_source(self, all_readers: Optional[List[SummaryResultBase]]) -> Dict[str, DataFrame]:
         """
-        Ładuje dane z plików JSON dla danego DomainSource,
-        używając odpowiedniego schematu dla każdego datasetu.
+        Loads data from JSON files for a given DomainSource,
+        using the appropriate schema for each dataset.
+        
+        Args:
+            all_readers (Optional[List[SummaryResultBase]]): A list of summary results
+                                                            from the Bronze layer run.
+        
+        Returns:
+            Dict[str, DataFrame]: A dictionary of loaded DataFrames, keyed by dataset name.
         """
         if not all_readers:
-            print(f"Brak wyników dla DomainSource.{DomainSource.WORLDBANK.value} w kontekście.")
+            print(f"No results for DomainSource.{DomainSource.WORLDBANK.value} in the context.")
             return {}
 
         dataframes_dict: Dict[str, Any] = {}
@@ -28,7 +42,7 @@ class WorldbankDataReader(BaseDataReader):
             schema = self._get_schema(dataset_name)
             
             if schema is None:
-                print(f"Brak zdefiniowanego schematu dla datasetu: '{dataset_name}'. Pomijam.")
+                print(f"No schema defined for dataset: '{dataset_name}'. Skipping.")
                 continue
 
             for path in result.output_paths:
@@ -36,15 +50,17 @@ class WorldbankDataReader(BaseDataReader):
                     df = self._spark.read_json_https(path, schema=schema)
                     
                     dataframes_dict[dataset_name] = df
-                    print(f"Załadowano dane dla datasetu '{dataset_name}' z pliku: {path}")
+                    print(f"Loaded data for dataset '{dataset_name}' from file: {path}")
 
                 except Exception as e:
-                    print(f"Błąd podczas ładowania pliku {path}: {e}")
+                    print(f"Error loading file {path}: {e}")
         
         return dataframes_dict
 
     def _get_schema(self, dataset_name: str) -> StructType:
-        """Zwraca odpowiedni schemat Spark dla danego datasetu."""
+        """
+        Returns the appropriate Spark schema for a given dataset.
+        """
         if dataset_name == "population":
             return self._get_population_schema()
         elif dataset_name == "researchers":
@@ -59,7 +75,9 @@ class WorldbankDataReader(BaseDataReader):
             return None
 
     def _get_population_schema(self) -> StructType:
-        """Schemat dla danych o populacji."""
+        """
+        Schema for population data.
+        """
         indicator_schema = StructType([
             StructField("id", StringType(), True),
             StructField("value", StringType(), True)
@@ -82,7 +100,9 @@ class WorldbankDataReader(BaseDataReader):
         ])
     
     def _get_researches_schema(self) -> StructType:
-        """Schemat dla danych o badaczach."""
+        """
+        Schema for researchers data.
+        """
         indicator_schema = StructType([
             StructField("id", StringType(), True),
             StructField("value", StringType(), True)
@@ -105,7 +125,9 @@ class WorldbankDataReader(BaseDataReader):
         ])
     
     def _get_unemployment_schema(self) -> StructType:
-        """Schemat dla danych o bezrobociu."""
+        """
+        Schema for unemployment data.
+        """
         indicator_schema = StructType([
             StructField("id", StringType(), True),
             StructField("value", StringType(), True)
@@ -128,7 +150,9 @@ class WorldbankDataReader(BaseDataReader):
         ])
     
     def _get_rd_schema(self) -> StructType:
-        """Schemat dla danych o wydatkach na badania i rozwój (% PKB)."""
+        """
+        Schema for R&D expenditure data (% of GDP).
+        """
         indicator_schema = StructType([
             StructField("id", StringType(), True),
             StructField("value", StringType(), True)
@@ -151,7 +175,9 @@ class WorldbankDataReader(BaseDataReader):
         ])
 
     def _get_pkb_schema(self) -> StructType:
-        """Schemat dla danych o PKB (w bieżących USD)."""
+        """
+        Schema for GDP data (current USD).
+        """
         indicator_schema = StructType([
             StructField("id", StringType(), True),
             StructField("value", StringType(), True)

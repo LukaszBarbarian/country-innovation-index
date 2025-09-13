@@ -15,11 +15,29 @@ from src.silver.models.models import SilverManifest, SilverSummary
 
 
 class SilverParser(BaseParser):
+    """
+    Parses manifest and summary JSON strings into structured SilverContext objects.
+
+    This class handles the conversion of raw JSON data, typically retrieved from
+    Azure Blob Storage, into Python dataclasses. It performs type mapping for
+    various enums and handles nested data structures to correctly
+    instantiate the `SilverContext` with its manifest and summary.
+    """
     def parse(self, manifest_json: str, summary_json: Optional[str] = None) -> SilverContext:
+        """
+        Parses JSON strings for a manifest and an optional summary into a SilverContext.
+
+        Args:
+            manifest_json (str): The JSON string for the manifest.
+            summary_json (Optional[str]): The JSON string for the summary.
+
+        Returns:
+            SilverContext: The fully populated context object for the Silver layer.
+        """
         manifest_raw = json.loads(manifest_json)
         summary_raw = json.loads(summary_json)
 
-        # Map env na enum
+        # Map env to enum
         manifest_raw['env'] = Env(manifest_raw.get('env', 'unknown'))
 
         if "references_tables" in manifest_raw:
@@ -39,12 +57,11 @@ class SilverParser(BaseParser):
                 for item in manifest_raw["manual_data_paths"]
             ]
 
-        # source datasets enum mapping
+        # Source datasets enum mapping
         for model in manifest_raw.get("models", []):
             model["model_name"] = ModelType(model["model_name"])
             for ds in model.get("source_datasets", []):
-                ds["domain_source"] = DomainSource(ds.get("domain_source", "UNKNOWN"))        
-
+                ds["domain_source"] = DomainSource(ds.get("domain_source", "UNKNOWN"))
 
         manifest: SilverManifest = from_dict(
             SilverManifest,
@@ -52,7 +69,7 @@ class SilverParser(BaseParser):
             config=Config(cast=[str, Env, ModelType, DomainSource, ETLLayer, ReferenceSource])
         )
 
-        # summary mapping
+        # Summary mapping
         summary_raw['env'] = Env(summary_raw.get('env', 'unknown'))
         summary_raw['etl_layer'] = ETLLayer.SILVER
         for r in summary_raw.get("results", []):
@@ -60,13 +77,13 @@ class SilverParser(BaseParser):
             r['domain_source_type'] = DomainSourceType(r.get("domain_source_type", "unknown"))
 
         summary: SilverSummary = from_dict(
-                SilverSummary,
-                summary_raw,
-                config=Config(
-                    cast=[Env, ETLLayer, DomainSource, DomainSourceType],
-                    type_hooks={datetime.datetime: datetime.datetime.fromisoformat}
-                )
+            SilverSummary,
+            summary_raw,
+            config=Config(
+                cast=[Env, ETLLayer, DomainSource, DomainSourceType],
+                type_hooks={datetime.datetime: datetime.datetime.fromisoformat}
             )
+        )
         
         summary.correlation_id = summary_raw.get("correlation_id", "UNKNOWN")
 
@@ -77,7 +94,5 @@ class SilverParser(BaseParser):
             summary=summary,
             correlation_id=summary.correlation_id
         )
-
-        
 
         return context

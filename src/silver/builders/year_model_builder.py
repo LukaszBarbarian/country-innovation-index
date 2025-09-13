@@ -18,6 +18,13 @@ from src.silver.readers.reference_data_reader import ReferenceDataReader
 
 @ModelBuilderRegistry.register(ModelType.YEAR)
 class YearsModelBuilder(SilverModelBuilder):
+    """
+    A model builder for the 'years' model in the Silver layer.
+    
+    This builder is responsible for generating a synthetic dimension table
+    of years. This model does not rely on external data sources and is built
+    from scratch.
+    """
     @inject
     def __init__(
         self,
@@ -28,6 +35,10 @@ class YearsModelBuilder(SilverModelBuilder):
         manual_data_reader: ManualDataReader,
         reference_data_reader: ReferenceDataReader
     ):
+        """
+        Initializes the YearsModelBuilder. It sets the `synthetic` flag to True
+        as this model is not based on external raw data.
+        """
         super().__init__(spark_service, injector, context, config, manual_data_reader, reference_data_reader)
         self.synthetic = True
 
@@ -36,6 +47,20 @@ class YearsModelBuilder(SilverModelBuilder):
         datasets: Dict[Tuple, DataFrame],
         dependencies: Dict[ModelType, DataFrame]
     ) -> DataFrame:
+        """
+        Builds the 'years' DataFrame.
+
+        This method generates a sequence of years from 1901 to the current year
+        and creates a Spark DataFrame from it.
+
+        Args:
+            datasets (Dict[Tuple, DataFrame]): Not used as this is a synthetic model.
+            dependencies (Dict[ModelType, DataFrame]): Not used as this model has no dependencies.
+
+        Returns:
+            DataFrame: A Spark DataFrame containing a column of years and a
+                       monotonically increasing ID.
+        """
         start_year = 1901
         end_year = datetime.datetime.now().year
 
@@ -43,7 +68,7 @@ class YearsModelBuilder(SilverModelBuilder):
             F.explode(F.sequence(F.lit(start_year), F.lit(end_year))).alias("year")
         )
 
-        # Dodajemy opcjonalny sztuczny klucz
+        # Add an optional synthetic key
         df_years = df_years.withColumn("year_id", F.monotonically_increasing_id())
 
         return df_years

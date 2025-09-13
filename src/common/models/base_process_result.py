@@ -10,13 +10,17 @@ from src.common.enums.domain_source_type import DomainSourceType
 
 @dataclass
 class BaseProcessResult:
-    """Bazowa klasa dla wyników przetwarzania."""
+    """
+    A base class for storing the results of a data processing operation.
+    It's a dataclass that provides a structured way to report on the outcome
+    of a process, including status, duration, and any associated metadata.
+    """
     status: str
     correlation_id: str
-    duration_in_ms: int = 0  # Ustawienie wartości domyślnej
+    duration_in_ms: int = 0  # Setting a default value
     record_count: int = 0
 
-    # Przeniesione pola z IngestionResult
+    # Fields moved from IngestionResult
     domain_source: Optional[DomainSource] = None
     domain_source_type: Optional[DomainSourceType] = None
     dataset_name: Optional[str] = None

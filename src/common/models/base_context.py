@@ -14,6 +14,12 @@ from src.common.utils.cache import Cache
 
 @dataclass
 class ContextBase:
+    """
+    A dataclass representing the base context for an ETL process.
+    It encapsulates key environmental and process-specific information,
+    such as the environment, ETL layer, and process IDs. It also includes
+    a utility method for generating storage paths.
+    """
     env: Env
     etl_layer: ETLLayer
     storage_account: str = ""
@@ -23,8 +29,17 @@ class ContextBase:
 
     _cache: Cache = field(default_factory=Cache, repr=False, init=False)
 
-
-
-    # Funkcja pomocnicza do generowania ścieżki
     def storage_path_abfss(self, relative_path: str) -> str:
+        """
+        Generates a full ABFSS (Azure Blob File System) path.
+
+        This utility method constructs a complete URL for a given relative path
+        within the Azure Data Lake Storage account.
+
+        Args:
+            relative_path (str): The relative path within the storage account.
+
+        Returns:
+            str: The full ABFSS URL.
+        """
         return f"abfss://{self.storage_account}@{self.storage_account}.dfs.core.windows.net/{relative_path}"

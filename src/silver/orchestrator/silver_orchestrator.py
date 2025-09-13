@@ -1,4 +1,3 @@
-# src/silver/orchestrator/silver_orchestrator.py
 import asyncio
 import datetime
 from typing import List, Any
@@ -17,7 +16,25 @@ from src.silver.models.models import SilverManifestModel
 
 @OrchestratorRegistry.register(ETLLayer.SILVER)
 class SilverOrchestrator(BaseOrchestrator):
+    """
+    The main orchestrator for the Silver ETL layer.
+
+    This class coordinates the end-to-end process of building and persisting
+    all analytical models defined in the Silver manifest. It leverages
+    asynchronous processing to handle models in parallel and uses a
+    dependency injection container to manage components.
+    """
     async def run(self, context: SilverContext) -> List[BaseProcessResult]:
+        """
+        Executes the Silver ETL process.
+
+        Args:
+            context (SilverContext): The context object containing manifest and configuration.
+
+        Returns:
+            List[BaseProcessResult]: A list of results, one for each model processed,
+            including success/failure status and metadata.
+        """
         di_injector = self.init_di(context, self.spark, self.config)
         model_director = di_injector.get(ModelDirector)
         persister = ModelPersister(layer=ETLLayer.SILVER, config=self.config, context=context, spark=self.spark)
@@ -33,7 +50,13 @@ class SilverOrchestrator(BaseOrchestrator):
                                     model: SilverManifestModel, 
                                     model_director: ModelDirector, 
                                     persister: ModelPersister, 
-                                    context: SilverContext) -> BaseProcessResult:        
+                                    context: SilverContext) -> BaseProcessResult:
+        """
+        Processes a single model from the manifest.
+
+        This method encapsulates the entire process for one model: building,
+        persisting, and error handling.
+        """
         model_start_time = datetime.datetime.utcnow()
         try:
             built_model = await model_director.get_built_model(model)
@@ -43,7 +66,7 @@ class SilverOrchestrator(BaseOrchestrator):
             return persisted_result
         except Exception as e:
             model_duration_ms = int((datetime.datetime.utcnow() - model_start_time).total_seconds() * 1000)
-            # Zwracanie obiektu z błędem, aby OrchestratorResultBuilder mógł go obsłużyć
+            # Return an error object so the OrchestratorResultBuilder can handle it.
             return BaseProcessResult(
                 status="FAILED",
                 correlation_id=context.correlation_id,
@@ -52,4 +75,7 @@ class SilverOrchestrator(BaseOrchestrator):
             )
 
     def init_di(self, context, spark, config) -> injector.Injector:
+        """
+        Initializes the dependency injection container for the Silver layer.
+        """
         return injector.Injector([SilverModule(context, spark, config)])

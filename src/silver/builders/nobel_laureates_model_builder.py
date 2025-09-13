@@ -12,22 +12,43 @@ from src.silver.builders.silver_model_builder import SilverModelBuilder
 
 @ModelBuilderRegistry.register(ModelType.NOBEL_LAUREATES)
 class NobelLaureatesModelBuilder(SilverModelBuilder):
+    """
+    A model builder for the 'nobel_laureates' model in the Silver layer.
+
+    This builder enriches raw Nobel laureates data by joining it with the
+    master country dimension. It uses an inner join on a normalized country name
+    to ensure that only valid countries are included in the final dataset.
+    """
     async def build(
         self,
         datasets: Dict[Tuple, DataFrame],
         dependencies: Dict[ModelType, DataFrame]
     ) -> DataFrame:
-        # 1. Pobierz model krajów
+        """
+        Builds the 'nobel_laureates' model by combining raw Nobel Prize data
+        with the country dimension table.
+
+        Args:
+            datasets (Dict[Tuple, DataFrame]): A dictionary of loaded DataFrames from various sources.
+            dependencies (Dict[ModelType, DataFrame]): A dictionary of DataFrames from other Silver layer models.
+
+        Returns:
+            DataFrame: An enriched Spark DataFrame for Nobel laureates.
+
+        Raises:
+            ValueError: If the 'COUNTRY' model or 'laureates' dataset is missing.
+        """
+        # 1. Get the country model from dependencies
         country_df = dependencies.get(ModelType.COUNTRY)
         if country_df is None or country_df.count() == 0:
-            raise ValueError("Brak modelu krajów (COUNTRY) w zależnościach.")
+            raise ValueError("The country model (COUNTRY) is missing from dependencies.")
 
-        # 2. Pobierz dane o laureatach Nobla
+        # 2. Get the Nobel laureates data
         laureates_df = datasets.get((DomainSource.NOBELPRIZE, "laureates"))
         if not laureates_df or laureates_df.count() == 0:
-            raise ValueError("Brak danych dla 'laureates'.")
+            raise ValueError("No data found for 'laureates'.")
 
-        # 3. Join po znormalizowanej nazwie kraju
+        # 3. Join on normalized country name
         final_df = laureates_df.join(
             country_df,
             laureates_df["country_normalized"] == country_df["country_code"],

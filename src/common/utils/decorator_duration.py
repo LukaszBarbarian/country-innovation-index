@@ -7,8 +7,13 @@ from dataclasses import replace
 
 def track_duration(func: Callable) -> Callable:
     """
-    Dekorator asynchroniczny, który mierzy czas wykonania udekorowanej funkcji.
-    Tworzy nową kopię obiektu z zaktualizowanym czasem trwania.
+    An asynchronous decorator that measures the execution time of the decorated function.
+    It creates a new copy of the object returned by the function, updating it with the
+    calculated duration.
+    
+    This decorator is designed to work with dataclasses that have a `duration_in_ms` attribute.
+    It uses `dataclasses.replace` to create a new instance with the updated value,
+    ensuring immutability if the original object was a frozen dataclass.
     """
     @wraps(func)
     async def wrapper(*args, **kwargs) -> Awaitable[Any]:
@@ -18,7 +23,7 @@ def track_duration(func: Callable) -> Callable:
             end_time = datetime.datetime.utcnow()
             duration_ms = int((end_time - start_time).total_seconds() * 1000)
             
-            # Tworzymy nową instancję z nowym czasem trwania
+            # Create a new instance with the new duration
             if hasattr(result, 'duration_in_ms'):
                 result = replace(result, duration_in_ms=duration_ms)
             
@@ -27,8 +32,8 @@ def track_duration(func: Callable) -> Callable:
             end_time = datetime.datetime.utcnow()
             duration_ms = int((end_time - start_time).total_seconds() * 1000)
             
-            # W przypadku błędu, Twój `ingest` musi zwrócić
-            # IngestionResult z odpowiednimi danymi.
+            # In case of an error, your `ingest` method must return
+            # an IngestionResult with the appropriate data.
             raise e
             
     return wrapper

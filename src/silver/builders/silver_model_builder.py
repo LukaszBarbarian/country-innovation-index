@@ -19,6 +19,13 @@ from src.silver.readers.reference_data_reader import ReferenceDataReader
 
 
 class SilverModelBuilder(BaseModelBuilder):
+    """
+    The base class for all Silver layer model builders.
+
+    It provides core functionality for loading data from various sources (Bronze,
+    manual, and reference data), handling a cache, and creating the final
+    `SilverProcessModel` object.
+    """
     @inject
     def __init__(
         self,
@@ -29,16 +36,29 @@ class SilverModelBuilder(BaseModelBuilder):
         manual_data_reader: ManualDataReader,
         reference_data_reader: ReferenceDataReader
     ):
+        """
+        Initializes the builder with dependency-injected services.
+        """
         super().__init__(spark_service, injector, context, config)
         self._manual_data_reader = manual_data_reader
         self._reference_data_reader = reference_data_reader
 
-
     def load_data(self) -> Dict[DomainSource, Dict[str, DataFrame]]:
+        """
+        Loads the raw data required for building the model.
+
+        It determines whether to load data from the Bronze layer or from
+        manual data sources based on the manifest configuration and uses
+        caching to avoid redundant reads.
+
+        Returns:
+            Dict[DomainSource, Dict[str, DataFrame]]: A dictionary of loaded DataFrames,
+            keyed by domain source and dataset name.
+        """
         context = cast(SilverContext, self._context)
         model_config = self._get_model_config()
         if not model_config:
-            print(f"Brak konfiguracji dla modelu '{self._model_type}'.")
+            print(f"No configuration found for model '{self._model_type}'.")
             return {}
 
         raw_data: Dict[DomainSource, Dict[str, DataFrame]] = {}
@@ -60,11 +80,14 @@ class SilverModelBuilder(BaseModelBuilder):
             if df is not None:
                 raw_data.setdefault(domain_source, {})[dataset_name] = df
             else:
-                print(f"Brak danych dla źródła {domain_source.value}, dataset {dataset_name}. Pomijam.")
+                print(f"No data found for source {domain_source.value}, dataset {dataset_name}. Skipping.")
 
         return raw_data
 
     def _get_manual_data(self, domain_source: DomainSource, dataset_name: str) -> Optional[DataFrame]:
+        """
+        Loads and caches manual data.
+        """
         context = cast(SilverContext, self._context)
         cache_key = f"manual:{domain_source.value}.{dataset_name}"
         if context._cache.exists(cache_key):
@@ -76,6 +99,9 @@ class SilverModelBuilder(BaseModelBuilder):
         return df
 
     def get_references(self, dataset_name: ReferenceSource) -> Optional[DataFrame]:
+        """
+        Loads and caches reference data.
+        """
         context = cast(SilverContext, self._context)
         cache_key = f"references:{dataset_name}"
         if context._cache.exists(cache_key):
@@ -87,12 +113,18 @@ class SilverModelBuilder(BaseModelBuilder):
         return df
 
     def _get_bronze_reader(self, domain_source: DomainSource) -> BaseDataReader:
+        """
+        Gets the appropriate data reader for a given Bronze domain source.
+        """
         reader_class = DataReaderFactory.get_class(domain_source)
         reader = self._injector.get(reader_class)
         reader.set_domain_source(domain_source)
         return reader
 
     def _get_model_config(self) -> Optional[SilverManifestModel]:
+        """
+        Retrieves the model's configuration from the manifest.
+        """
         if not self._model_type:
             raise ValueError("Model type not set. Call set_identity() first.")
         context = cast(SilverContext, self._context)
@@ -102,7 +134,9 @@ class SilverModelBuilder(BaseModelBuilder):
         return None
 
     def create_model(self, df: DataFrame) -> SilverProcessModel:
-        """Tworzy SilverProcessModel zgodnie ze strukturą Silver"""
+        """
+        Creates a `SilverProcessModel` object with the processed DataFrame.
+        """
         return SilverProcessModel(
             data=df,
             model_type=self._model_type

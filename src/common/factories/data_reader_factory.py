@@ -8,14 +8,16 @@ from src.common.registers.data_reader_registry import DataReaderRegistry
 from typing import Type
 
 
-
 class DataReaderFactory(BaseFactoryFromRegistry[DomainSource, BaseDataReader]):
     """
-    Fabryka do tworzenia instancji DataReaderów na podstawie ModelType.
+    A factory for creating instances of DataReaders based on a DomainSource.
     """
     @classmethod
     def get_registry(cls) -> BaseRegistry[DomainSource, Type[BaseDataReader]]:
         """
-        Zwraca instancję DataReaderRegistry.
+        Returns the DataReaderRegistry instance.
+        
+        This method provides the specific registry required by the BaseFactoryFromRegistry
+        to look up and instantiate the correct data reader class.
         """
         return DataReaderRegistry()

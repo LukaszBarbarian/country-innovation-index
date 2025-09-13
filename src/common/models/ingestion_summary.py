@@ -7,7 +7,9 @@ from src.common.models.ingestion_result import IngestionResult
 
 @dataclass(frozen=True)
 class IngestionSummary:
-    """Klasa dla całego pliku podsumowania po warstwie Bronze."""
+    """
+    A dataclass representing the summary file for an entire Bronze layer run.
+    """
     status: str
     env: Env
     etl_layer: ETLLayer
@@ -18,7 +20,13 @@ class IngestionSummary:
 
     @property
     def overall_status(self) -> str:
-        """Oblicza ogólny status na podstawie wszystkich wyników."""
+        """
+        Calculates the overall status based on the individual results.
+
+        If there are no results, it returns "NO_RESULTS". If all individual results are valid,
+        it returns "COMPLETED". If at least one result is not valid, it returns
+        "PARTIAL_SUCCESS". If all results are invalid, it returns "FAILED".
+        """
         if not self.results:
             return "NO_RESULTS"
 
@@ -27,4 +35,4 @@ class IngestionSummary:
         elif any(not result.is_valid for result in self.results):
             return "PARTIAL_SUCCESS"
         else:
-            return "FAILED"    
+            return "FAILED"

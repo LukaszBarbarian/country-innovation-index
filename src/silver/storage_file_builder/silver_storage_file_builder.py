@@ -13,40 +13,55 @@ from src.common.storage_file_builder.base_storage_file_builder import BaseStorag
 from src.silver.context.silver_context import SilverContext
 from src.silver.models.process_model import SilverProcessModel
 
+
 @StorageFileBuilderRegistry.register(ETLLayer.SILVER)
 class SilverStorageFileBuilder(BaseStorageFileBuilder):
+    """
+    A builder for creating file metadata and content for the Silver ETL layer.
+    
+    This class is responsible for generating the correct file paths and
+    metadata for both the output Delta tables and the final summary file.
+    It registers itself for the 'silver' ETL layer.
+    """
     
     def _generate_delta_table_path(self, container_name: str, model_name: str, storage_account_name: str) -> str:
         """
-        Generuje standardową ścieżkę do tabeli Delta, np. /silver/countries.
-        Ścieżki są zdefiniowane w konfiguracji, co pozwala na łatwą zmianę bez
-        modyfikacji kodu.
+        Generates a standard path to a Delta table, e.g., /silver/countries.
+        Paths are defined in the configuration, allowing for easy changes without
+        code modification.
         """
-        
         return f"abfss://{container_name}@{storage_account_name.lower()}.dfs.core.windows.net/{model_name}"
 
     def build_file(self,
-                          context: SilverContext,
-                          container_name: str,
-                          storage_account_name: str,
-                          **kwargs: Any) -> Dict[str, Any]:
+                   context: SilverContext,
+                   container_name: str,
+                   storage_account_name: str,
+                   **kwargs: Any) -> Dict[str, Any]:
         """
-        Buduje metadane wyjściowe dla tabeli Delta.
-        Zwraca pełną ścieżkę i metadane pliku Delta.
+        Builds the output metadata for a Delta table.
+        
+        Args:
+            context (SilverContext): The Silver ETL context.
+            container_name (str): The name of the storage container.
+            storage_account_name (str): The name of the storage account.
+            **kwargs (Any): Additional keyword arguments, including the 'model'.
+
+        Returns:
+            Dict[str, Any]: A dictionary containing a `FileInfo` object.
         """
         model: SilverProcessModel = kwargs.get("model")
         if not model:
             raise ValueError("Model name must be provided for Silver builder.")
 
-        # Generowanie ścieżki do tabeli
+        # Generate the path to the table
         full_path_abfss = self._generate_delta_table_path(container_name=container_name, model_name=model.name, storage_account_name=storage_account_name)
         
-        # Metadane pliku Delta (wersjonowanie i partycjonowanie są zarządzane przez Spark)
+        # Delta file metadata (versioning and partitioning are managed by Spark)
         file_info = FileInfo(
             container_name=container_name,
             full_path_in_container=full_path_abfss,
             file_name=f"{model.name}.delta",
-            file_size_bytes=0,  # Spark zarządza rozmiarem
+            file_size_bytes=0,  # Spark manages the size
             domain_source=None,
             dataset_name=None,
             ingestion_date=None,
@@ -71,12 +86,26 @@ class SilverStorageFileBuilder(BaseStorageFileBuilder):
                                   storage_account_name: str,
                                   **kwargs: Any) -> Dict[str, Any]:
         """
-        Tworzy zawartość i metadane dla pliku podsumowującego procesy w warstwie Silver.
+        Creates the content and metadata for the Silver layer's summary file.
+        
+        This method compiles a list of all processed model results and
+        generates a JSON file with a comprehensive summary of the ETL run.
+
+        Args:
+            context (SilverContext): The Silver ETL context.
+            results (List[ProcessModelResult]): The list of results for each processed model.
+            container_name (str): The name of the storage container.
+            storage_account_name (str): The name of the storage account.
+            **kwargs (Any): Additional keyword arguments, including the total orchestration duration.
+            
+        Returns:
+            Dict[str, Any]: A dictionary containing the summary file's content
+                            (as bytes) and its `FileInfo` object.
         """
-        # Generowanie zawartości podsumowania
+        # Generate summary content
         processed_results = []
         for r in results:
-            # Ręcznie tworzymy słownik z pożądaną strukturą
+            # Manually create a dictionary with the desired structure
             result_dict = {
                 "model": r.model,
                 "status": r.status,
@@ -89,7 +118,7 @@ class SilverStorageFileBuilder(BaseStorageFileBuilder):
             }
             processed_results.append(result_dict)
 
-        # Generowanie zawartości podsumowania
+        # Generate the summary content
         summary_data = {
             "status": "COMPLETED" if all(r.status == "COMPLETED" for r in results) else "FAILED",
             "env": context.env.value,
@@ -97,8 +126,8 @@ class SilverStorageFileBuilder(BaseStorageFileBuilder):
             "correlation_id": context.correlation_id,
             "timestamp": datetime.datetime.utcnow().isoformat(),
             "processed_models": len(results),
-            "duration_in_ms" : kwargs.get("duration_orchestrator"),
-            "results": processed_results # Używamy ręcznie przetworzonej listy
+            "duration_in_ms": kwargs.get("duration_orchestrator"),
+            "results": processed_results # Use the manually processed list
         }
         
         file_content_str = json.dumps(summary_data, indent=4, default=str)

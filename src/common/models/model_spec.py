@@ -7,11 +7,12 @@ from src.common.enums.model_type_table import ModelTypeTable
 @dataclass
 class ModelSpec:
     """
-    Specyfikacja modelu Gold (pochodzi z manifestu).
-    source_models: lista ModelType (np. [ModelType.COUNTRY, ModelType.POPULATION])
+    A dataclass representing the specification of a Gold layer model, typically
+    defined in a manifest file. It contains all the necessary information to
+    build a model, including its name, type, source dependencies, and table details.
     """
     name: str
-    type: ModelTypeTable                       # "DIM" lub "FACT" (string dla prostoty)
+    type: ModelTypeTable  # "DIM" or "FACT"
     source_models: List[ModelType]
     table_name: str
     primary_keys: Optional[List[str]] = None

@@ -18,7 +18,26 @@ from src.common.model_persister.model_persister import ModelPersister
 
 @OrchestratorRegistry.register(ETLLayer.GOLD)
 class GoldOrchestrator(BaseOrchestrator):
+    """
+    An orchestrator for the Gold ETL layer.
+
+    This class is responsible for managing the end-to-end process of building and
+    persisting analytical models. It uses dependency injection to get necessary
+    components and leverages asyncio to run model-building tasks concurrently.
+    """
     async def run(self, context: GoldContext) -> List[BaseProcessResult]:
+        """
+        Executes the Gold layer ETL process.
+
+        It initializes the dependency injector, creates tasks for each model
+        defined in the manifest, and runs them concurrently.
+
+        Args:
+            context (GoldContext): The context object containing manifest and other run details.
+
+        Returns:
+            List[BaseProcessResult]: A list of results for each processed model.
+        """
         di_injector = self.init_di(context, self.spark, self.config)
         model_director = di_injector.get(ModelDirector)
         persister = ModelPersister(layer=ETLLayer.GOLD, config=self.config, context=context, spark=self.spark)
@@ -35,7 +54,23 @@ class GoldOrchestrator(BaseOrchestrator):
                                     model_director: ModelDirector, 
                                     persister: ModelPersister, 
                                     context: SilverContext) -> BaseProcessResult:
-        # Pamiętaj o obsłudze błędów w tej metodzie, bo asyncio.gather zbierze je jako wyniki
+        """
+        Processes a single analytical model.
+
+        This private method handles the building and persistence of an individual
+        model, including time tracking and error handling. It returns a result object
+        that summarizes the outcome of the process.
+
+        Args:
+            model (GoldManifest): The manifest data for the model to be processed.
+            model_director (ModelDirector): The director responsible for building the model.
+            persister (ModelPersister): The persister responsible for saving the model.
+            context (SilverContext): The current ETL context.
+
+        Returns:
+            BaseProcessResult: An object representing the result of the process,
+                               including success status, duration, and any errors.
+        """
         model_start_time = datetime.datetime.utcnow()
         try:
             built_model = await model_director.get_built_model(model)
@@ -45,7 +80,7 @@ class GoldOrchestrator(BaseOrchestrator):
             return persisted_result
         except Exception as e:
             model_duration_ms = int((datetime.datetime.utcnow() - model_start_time).total_seconds() * 1000)
-            # Zwracanie obiektu z błędem, aby OrchestratorResultBuilder mógł go obsłużyć
+            # Return a result object with an error so that the OrchestratorResultBuilder can handle it.
             return BaseProcessResult(
                 status="FAILED",
                 correlation_id=context.correlation_id,
@@ -56,4 +91,15 @@ class GoldOrchestrator(BaseOrchestrator):
             )
 
     def init_di(self, context, spark, config) -> injector.Injector:
+        """
+        Initializes the dependency injector for the Gold layer.
+
+        Args:
+            context: The ETL context.
+            spark: The Spark service instance.
+            config: The configuration manager instance.
+
+        Returns:
+            injector.Injector: The configured injector instance.
+        """
         return injector.Injector([GoldModule(context, spark, config)])

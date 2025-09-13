@@ -5,7 +5,11 @@ from datetime import datetime
 
 @dataclass
 class RawData:
-    data: Any  # np. dict z wartościami ze źródła
-    dataset_name: Optional[str] = None  # z jakiego datasetu pochodzi (np. "nobelPrizes")
-    source_timestamp_utc: Optional[datetime] = None  # jeśli źródło miało znacznik czasu
-    metadata: Optional[dict] = None  # dowolne inne info np. numer wiersza, uuid, etc.
+    """
+    A dataclass that serves as a universal container for raw data ingested from a source.
+    It encapsulates the data itself along with essential metadata for tracking its origin.
+    """
+    data: Any
+    dataset_name: Optional[str] = None
+    source_timestamp_utc: Optional[datetime] = None
+    metadata: Optional[dict] = None

@@ -13,7 +13,24 @@ from src.gold.models.models import GoldManifest, GoldSummary
 
 
 class GoldParser(BaseParser):
+    """
+    A parser class responsible for converting JSON manifest and summary data
+    into structured Python objects for the Gold ETL layer.
+
+    This parser uses the `dacite` library to map raw dictionary data into
+    dataclass instances, ensuring type safety and data integrity.
+    """
     def parse(self, manifest_json: str, summary_json: Optional[str] = None) -> GoldContext:
+        """
+        Parses JSON strings for a manifest and an optional summary into a GoldContext object.
+
+        Args:
+            manifest_json (str): A JSON string representing the Gold layer manifest.
+            summary_json (Optional[str]): An optional JSON string for the ETL run summary.
+
+        Returns:
+            GoldContext: A structured context object containing the parsed manifest and summary.
+        """
         manifest_raw = json.loads(manifest_json)
         summary_raw = json.loads(summary_json) if summary_json else {}
 
@@ -21,6 +38,7 @@ class GoldParser(BaseParser):
         manifest_env = Env(manifest_raw.get("env", "unknown"))
 
         def _map_models(items: list, model_type: ModelTypeTable):
+            """Helper function to map a list of models from the manifest."""
             return [
                 {
                     "name": item["name"],

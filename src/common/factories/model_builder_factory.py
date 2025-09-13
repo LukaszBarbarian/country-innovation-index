@@ -8,13 +8,16 @@ from src.common.factories.base_factory import BaseFactoryFromRegistry
 
 class ModelBuilderFactory(BaseFactoryFromRegistry[ModelType, BaseModelBuilder]):
     """
-    Fabryka odpowiedzialna za tworzenie instancji BaseModelBuilderów.
-    Wykorzystuje ModelBuilderRegistry do pobierania odpowiednich klas.
+    A factory responsible for creating instances of BaseModelBuilders.
+    It uses the ModelBuilderRegistry to retrieve the correct classes for instantiation.
     """
     @classmethod
     def get_registry(cls) -> BaseRegistry[ModelType, BaseModelBuilder]:
         """
-        Zwraca instancję (lub klasę) ModelBuilderRegistry,
-        która przechowuje zarejestrowane klasy ModelBuilderów.
+        Returns the instance of the ModelBuilderRegistry, which stores the
+        registered ModelBuilder classes.
+        
+        This method is a required part of the factory pattern, connecting
+        the factory to its specific registry.
         """
         return ModelBuilderRegistry()
