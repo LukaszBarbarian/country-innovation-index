@@ -19,7 +19,6 @@ env:
   AZURE_FUNCTION_APP_PACKAGE_FULL_PATH: '${{ github.workspace }}/function_app_package.zip'
 
 jobs:
-
   terraform:
     name: "terraform"
     runs-on: ubuntu-latest
@@ -59,22 +58,12 @@ jobs:
         working-directory: ${{ env.TERRAFORM_DIR }}
 
       - name: Terraform Plan
-        id: plan
         run: |
-          terraform plan -no-color -input=false -out=tfplan > plan_output.txt
-          PLAN_OUTPUT=$(cat plan_output.txt)
-          echo "$PLAN_OUTPUT"
-      
-          if grep -q "No changes. Your infrastructure matches the configuration." plan_output.txt; then
-            echo "has_changes=false" >> $GITHUB_OUTPUT
-          else
-            echo "has_changes=true" >> $GITHUB_OUTPUT
-          fi
+          terraform plan -input=false -out=tfplan
         working-directory: ${{ env.TERRAFORM_DIR }}
 
-      - name: Terraform Apply (if changes)
-        id: apply
-        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.plan.outputs.has_changes == 'true' }}
+      - name: Terraform Apply
+        # Usunięto warunek 'if: steps.plan.outputs.has_changes == 'true''
         run: terraform apply -input=false -auto-approve tfplan
         working-directory: ${{ env.TERRAFORM_DIR }}
 
