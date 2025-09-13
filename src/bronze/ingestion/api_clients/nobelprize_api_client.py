@@ -14,15 +14,35 @@ logger = logging.getLogger(__name__)
 
 @ApiClientRegistry.register(DomainSource.NOBELPRIZE)
 class NobelPrizeApiClient(ApiClient):
+    """
+    A concrete implementation of `ApiClient` designed to interact with the Nobel Prize API.
+    This client is registered with the `ApiClientRegistry` for the `DomainSource.NOBELPRIZE`.
+    """
     def __init__(self, config: ConfigManager):
+        """
+        Initializes the NobelPrizeApiClient.
+
+        Args:
+            config (ConfigManager): The configuration manager for retrieving application settings.
+        """
         super().__init__(config=config, base_url_setting_name="NOBELPRIZE_API_BASE_URL")
 
     async def fetch_all(self, manifest_source: BronzeManifestSource) -> List[RawData]:
         """
-        Pobiera wszystkie dane z NobelPrize API na podstawie BronzeContext.
-        Wyszukuje konfigurację źródła w manifestcie po domain_source i dataset_name.
+        Fetches all data from the Nobel Prize API based on the provided manifest source.
+
+        This method retrieves the specific configuration for the Nobel Prize data from
+        the manifest, then uses a `PaginationApiLoader` to handle the fetching process,
+        including pagination logic.
+
+        Args:
+            manifest_source (BronzeManifestSource): A manifest object containing the
+                                                    configuration details for the data source.
+
+        Returns:
+            List[RawData]: A list of `RawData` objects containing the fetched API data.
+                           Returns an empty list if no source configuration is found.
         """
-        # Znajdź konfigurację dla tego źródła w manifestcie
         source_config = manifest_source.source_config_payload
 
         if not source_config:
@@ -40,7 +60,7 @@ class NobelPrizeApiClient(ApiClient):
             limit_param="limit",
             page_param="offset",
             endpoint=dataset_name,
-            initial_payload=request_payload,  # przekazujemy słownik bez .params
+            initial_payload=request_payload,
             extractor=lambda r: r.get(f"{dataset_name}", [])
         )
 

@@ -12,7 +12,31 @@ from src.common.models.base_process_result import BaseProcessResult
 
 @OrchestratorRegistry.register(ETLLayer.BRONZE)
 class BronzeOrchestrator(BaseOrchestrator):
+    """
+    An orchestrator specifically designed for the Bronze layer of an ETL pipeline.
+
+    This class orchestrates data ingestion for all sources defined in the manifest.
+    It identifies the appropriate ingestion strategy for each source and executes
+    the ingestion tasks concurrently. It is registered to handle processes
+    within the `ETLLayer.BRONZE`.
+    """
     async def run(self, context: BronzeContext) -> List[BaseProcessResult]:
+        """
+        Executes the data ingestion process for all sources defined in the context's manifest.
+
+        This method iterates through each source in the manifest, finds the correct
+        ingestion strategy using `IngestionStrategyFactory`, and creates a list
+        of asynchronous tasks. It then runs these tasks concurrently to
+        ingest data from all sources in parallel.
+
+        Args:
+            context (BronzeContext): The context object containing the manifest
+                                     with the list of sources to be processed.
+
+        Returns:
+            List[BaseProcessResult]: A list of results from each ingestion task,
+                                     which can be either successful or contain exceptions.
+        """
         tasks = []
         for source in context.manifest.sources:
             strategy = IngestionStrategyFactory.get_instance(

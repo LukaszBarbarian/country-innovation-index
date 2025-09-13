@@ -16,12 +16,34 @@ from src.common.models.processed_result import ProcessedResult
 
 @StorageFileBuilderRegistry.register(ETLLayer.BRONZE)
 class BronzeStorageFileBuilder(BaseStorageFileBuilder):
+    """
+    A file builder class for the Bronze layer.
+
+    This class is responsible for building file content and metadata for data ingested
+    into the Bronze layer. It serializes data into a JSON format and constructs
+    the file path and name based on the data source and ingestion details.
+    """
     def build_file(self,
-                        correlation_id: str, 
-                        container_name: str,
-                        storage_account_name: str,
-                        **kwargs: Any) -> Dict[str, Any]:
-        
+                   correlation_id: str, 
+                   container_name: str,
+                   storage_account_name: str,
+                   **kwargs: Any) -> Dict[str, Any]:
+        """
+        Builds the file content and metadata for a single ingestion task.
+
+        Args:
+            correlation_id (str): A unique identifier for the entire pipeline run.
+            container_name (str): The name of the storage container where the file will be saved.
+            storage_account_name (str): The name of the storage account.
+            **kwargs (Any): Additional keyword arguments, expected to contain `processed_records_results`,
+                            `config_payload`, and `ingestion_date`.
+
+        Returns:
+            Dict[str, Any]: A dictionary containing the file content in bytes and a `FileInfo` object.
+
+        Raises:
+            ValueError: If `processed_records_results` is not provided.
+        """
         processed_records_results: ProcessedResult = kwargs.get("processed_records_results")
         if not processed_records_results:
             raise ValueError("ProcessedResult must be provided for Bronze builder.")
@@ -66,27 +88,52 @@ class BronzeStorageFileBuilder(BaseStorageFileBuilder):
 
     def _compute_hash_name(self, config_payload: BronzeManifestSourceConfigPayload) -> str:
         """
-        Oblicza skrót SHA256 z znormalizowanego payloadu.
+        Computes a truncated SHA256 hash of the normalized configuration payload.
+
+        The hash is used to create a unique and reproducible file name based on
+        the source configuration. This helps with idempotency and data lineage.
+
+        Args:
+            config_payload (BronzeManifestSourceConfigPayload): The configuration
+                                                                object for the source.
+
+        Returns:
+            str: A truncated SHA256 hash string (first 8 characters).
         """
         payload_dict = asdict(config_payload)
 
         for key, value in payload_dict.items():
             if isinstance(value, Enum):
-                payload_dict[key] = value.value  # albo str(value)
+                payload_dict[key] = value.value
 
         normalized_str = json.dumps(payload_dict, indent=2, sort_keys=True)
         return hashlib.sha256(normalized_str.encode("utf-8")).hexdigest()[:8]
 
     def build_summary_file_output(self, 
-                                context: BronzeContext,
-                                results: List[IngestionResult],
-                                container_name: str,
-                                storage_account_name: str,
-                                **kwargs: Any) -> Dict[str, Any]:
+                                 context: BronzeContext,
+                                 results: List[IngestionResult],
+                                 container_name: str,
+                                 storage_account_name: str,
+                                 **kwargs: Any) -> Dict[str, Any]:
         """
-        Tworzy zawartość i metadane dla pliku podsumowującego orkiestrację.
+        Creates the content and metadata for an orchestration summary file.
+
+        This method compiles a summary of the entire orchestration run, including
+        the overall status, duration, and detailed results for each ingested source.
+        The summary is formatted as a JSON string.
+
+        Args:
+            context (BronzeContext): The context object for the pipeline run.
+            results (List[IngestionResult]): A list of results from each ingestion task.
+            container_name (str): The name of the storage container for the summary file.
+            storage_account_name (str): The name of the storage account.
+            **kwargs (Any): Additional keyword arguments, expected to contain `duration_orchestrator`.
+
+        Returns:
+            Dict[str, Any]: A dictionary containing the summary file content in bytes
+                            and a `FileInfo` object.
         """
-        # Generowanie zawartości podsumowania
+        # Generate summary content
         summary_data = {
             "status": "COMPLETED" if all(r.status in ["COMPLETED", "SKIPPED"] for r in results) else "FAILED",
             "env": context.env.value,
@@ -104,7 +151,7 @@ class BronzeStorageFileBuilder(BaseStorageFileBuilder):
 
         file_name = f"ingestion_summary__{context.correlation_id}.json"
         
-        # Tworzenie ścieżki pliku: output/ingestion_summaries/nazwa_pliku
+        # Create file path: outputs/ingestion_summaries/file_name
         blob_path = f"outputs/ingestion_summaries/{file_name}"
         full_blob_url = self.build_blob_url(container_name, blob_path, storage_account_name)
 

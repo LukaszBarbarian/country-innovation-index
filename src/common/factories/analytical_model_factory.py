@@ -10,14 +10,16 @@ from src.common.registers.analytical_model_registry import AnalyticalModelRegist
 from src.common.transformators.base_transformer import BaseTransformer
 
 
-
 class AnalyticalModelFactory(BaseFactoryFromRegistry[str, AnalyticalBaseBuilder]):
     """
-    Fabryka do tworzenia instancji DataReaderów na podstawie ModelType.
+    A factory for creating instances of AnalyticalBaseBuilder based on a model type.
     """
     @classmethod
     def get_registry(cls) -> BaseRegistry[str, Type[AnalyticalBaseBuilder]]:
         """
-        Zwraca instancję DataReaderRegistry.
+        Returns the registry instance responsible for mapping model names to their builder classes.
+        
+        Returns:
+            BaseRegistry[str, Type[AnalyticalBaseBuilder]]: An instance of the analytical model registry.
         """
         return AnalyticalModelRegistry()

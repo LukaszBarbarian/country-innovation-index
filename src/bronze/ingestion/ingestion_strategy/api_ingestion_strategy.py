@@ -24,12 +24,35 @@ logger = logging.getLogger(__name__)
 
 @IngestionStrategyRegistry.register(DomainSourceType.API)
 class ApiIngestionStrategy(BaseIngestionStrategy):
+    """
+    An ingestion strategy specifically designed for fetching data from an API.
 
+    This class orchestrates the end-to-end process of data ingestion from an API source,
+    including fetching, processing, and storing the data in a data lake. It is registered
+    to handle sources with a `DomainSourceType` of `API`.
+    """
     @track_duration
     async def ingest(self, manifest_source: BronzeManifestSource) -> IngestionResult:
         """
-        Główna metoda orkiestracji pobierania danych z API, przetwarzania i zapisywania ich.
-        Zwraca obiekt IngestionResult z informacją o statusie operacji.
+        The main method for orchestrating the API data ingestion workflow.
+
+        It performs the following steps:
+        1. Retrieves the appropriate `ApiClient`, `DataProcessor`, and `StorageFileBuilder`
+           instances from their respective factories based on the manifest source.
+        2. Fetches the raw data from the API using the `ApiClient`.
+        3. If data is fetched, it processes the raw data using the `DataProcessor`.
+        4. Builds a file from the processed data using the `StorageFileBuilder`.
+        5. Uploads the file to the Azure Blob Storage using the `BlobClientManager`.
+        6. Returns an `IngestionResult` object indicating the status, records processed,
+           and file paths. It handles exceptions and returns a `FAILED` status
+           if any step fails.
+
+        Args:
+            manifest_source (BronzeManifestSource): The specific manifest source
+                                                    configuration for the API to be ingested.
+
+        Returns:
+            IngestionResult: An object summarizing the outcome of the ingestion process.
         """
         context: BronzeContext = cast(BronzeContext, self.context)
         
@@ -40,7 +63,7 @@ class ApiIngestionStrategy(BaseIngestionStrategy):
             file_builder = StorageFileBuilderFactory.get_instance(ETLLayer.BRONZE, config=self.config)
             storage_manager = BlobClientManager(self.context.etl_layer.value)
 
-            # 1. Pobranie danych z API
+            # 1. Fetch data from API
             fetched_data: List[RawData] = await api_client.fetch_all(manifest_source)
 
             if not fetched_data:
@@ -48,12 +71,12 @@ class ApiIngestionStrategy(BaseIngestionStrategy):
                     context, manifest_source, "No records fetched, skipping file save."
                 )
 
-            # 2. Przetworzenie danych
+            # 2. Process data
             all_processed_results: List[ProcessedResult] = [
                 data_processor.process(raw_data.data, self.context) for raw_data in fetched_data
             ]
 
-            # 3. Zapis do pliku
+            # 3. Write to file
             file_output = file_builder.build_file(
                 correlation_id=context.correlation_id,
                 container_name=context.etl_layer.value,
@@ -77,10 +100,10 @@ class ApiIngestionStrategy(BaseIngestionStrategy):
                 )
 
             return self._create_success_result(
-                context=context, 
+                context=context,
                 source=manifest_source,
                 message=f"API data successfully processed. Uploaded 1 file with {len(all_processed_results)} records.",
-                output_paths=[file_info.full_blob_url], 
+                output_paths=[file_info.full_blob_url],
                 records=len(all_processed_results)
             )
 
@@ -102,7 +125,7 @@ class ApiIngestionStrategy(BaseIngestionStrategy):
         status: str = "COMPLETED",
         records: int = 0
     ) -> IngestionResult:
-        """Metoda pomocnicza do tworzenia wyniku w przypadku sukcesu."""
+        """A helper method for creating a successful ingestion result object."""
         return IngestionResult(
             correlation_id=context.correlation_id,
             domain_source=source.source_config_payload.domain_source,
@@ -122,7 +145,7 @@ class ApiIngestionStrategy(BaseIngestionStrategy):
         error: Exception,
         error_details: Optional[Dict[str, Any]] = None
     ) -> IngestionResult:
-        """Metoda pomocnicza do tworzenia wyniku w przypadku błędu."""
+        """A helper method for creating a failed ingestion result object."""
         return IngestionResult(
             correlation_id=context.correlation_id,
             domain_source=source.source_config_payload.domain_source,

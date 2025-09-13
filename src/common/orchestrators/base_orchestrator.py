@@ -14,12 +14,42 @@ from src.common.models.base_process_result import BaseProcessResult
 logger = logging.getLogger(__name__)
 
 class BaseOrchestrator(ABC):
+    """
+    An abstract base class for all data pipeline orchestrators.
+    This class defines the fundamental structure for running a pipeline process,
+    handling common tasks such as error management, timing, and result aggregation.
+    """
     def __init__(self, config: ConfigManager, spark=None):
+        """
+        Initializes the orchestrator with configuration and an optional Spark session.
+
+        Args:
+            config (ConfigManager): An instance of the configuration manager.
+            spark (Any, optional): An optional Spark session object. Defaults to None.
+        """
         self.config = config
         self.spark = spark
 
     async def execute(self, context: ContextBase) -> OrchestratorResult:
-        """Główna metoda do uruchamiania orkiestratora z obsługą błędów."""
+        """
+        The main method to run the orchestrator with robust error handling.
+
+        This method orchestrates the execution of the pipeline, delegating the
+        layer-specific logic to the `run` method. It captures the start time,
+        runs the `run` method, and then processes the results. It is responsible
+        for:
+        1.  Catching any exceptions raised during the execution.
+        2.  Aggregating results from all parallel tasks.
+        3.  Building a comprehensive `OrchestratorResult` object to summarize
+            the entire process, including successes, failures, and duration.
+        4.  Saving the final result object.
+
+        Args:
+            context (ContextBase): The context object for the current pipeline run.
+
+        Returns:
+            OrchestratorResult: A summary object detailing the outcome of the execution.
+        """
         start_time = datetime.datetime.utcnow()
         result_builder = OrchestratorResultBuilder(context, self.config)
 
@@ -27,10 +57,10 @@ class BaseOrchestrator(ABC):
             raw_results = await self.run(context)
             processed_results = []
             
-            # Sprawdza każdy wynik w poszukiwaniu wyjątków
+            # Check each result for exceptions
             for result in raw_results:
                 if isinstance(result, Exception):
-                    # Jeśli jest wyjątek, rzuca go, aby obsłużył go blok except
+                    # If an exception is found, re-raise it for the outer `except` block to handle
                     raise result
                 processed_results.append(result)
             
@@ -47,8 +77,17 @@ class BaseOrchestrator(ABC):
     @abstractmethod
     async def run(self, context: ContextBase) -> List[BaseProcessResult]:
         """
-        Metoda abstrakcyjna, która musi być zaimplementowana przez każdą podklasę.
-        Zawiera specyficzną logikę warstwy.
-        Zwraca listę obiektów dziedziczących z BaseProcessResult.
+        An abstract method that must be implemented by each subclass.
+
+        This method contains the specific, layer-dependent orchestration logic.
+        It is responsible for initiating and awaiting the main tasks for that
+        particular pipeline layer (e.g., Bronze, Silver, Gold).
+
+        Args:
+            context (ContextBase): The context object for the current pipeline run.
+
+        Returns:
+            List[BaseProcessResult]: A list of results from the individual tasks
+                                     executed by the orchestrator.
         """
         pass

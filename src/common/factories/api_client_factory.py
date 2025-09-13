@@ -8,7 +8,18 @@ from src.common.registers.api_client_registry import ApiClientRegistry
 from src.common.registers.base_registry import BaseRegistry
 
 class ApiClientFactory(BaseFactoryFromRegistry[DomainSource, ApiClient]):
-
+    """
+    A factory for creating instances of ApiClient based on a DomainSource.
+    """
     @classmethod
     def get_registry(cls) -> BaseRegistry:
+        """
+        Retrieves the registry for API clients.
+
+        This method overrides the abstract method in the base class to return
+        the specific registry for API clients.
+
+        Returns:
+            BaseRegistry: The ApiClientRegistry instance.
+        """
         return ApiClientRegistry()
