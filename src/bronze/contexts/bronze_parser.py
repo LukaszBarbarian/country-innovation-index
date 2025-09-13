@@ -12,8 +12,22 @@ from src.common.enums.etl_layers import ETLLayer
 
 class BronzeParser(BaseParser):
     def parse(self, manifest_json: str, summary_json: Optional[str] = None) -> BronzeContext:
+        """
+        Parses a raw JSON manifest and creates a structured BronzeContext object.
 
-        # --- manifest mapping ---
+        This method handles the transformation of a JSON dictionary into a strongly-typed
+        `BronzeManifest` and subsequently a `BronzeContext`. It performs necessary
+        type casting for various enums and populates the context with configuration
+        and manifest data.
+
+        Args:
+            manifest_json (str): A JSON string containing the raw manifest data.
+            summary_json (Optional[str]): An optional JSON string for a summary;
+                                          not currently used in this implementation.
+
+        Returns:
+            BronzeContext: A fully populated context object for the Bronze layer.
+        """
         manifest_json['env'] = Env(manifest_json.get('env', 'unknown'))
 
         for src in manifest_json.get("sources", []):

@@ -9,7 +9,7 @@ sys.path.insert(0, "d:/projects/cv-demo1")
 print("sys.path:", sys.path)
 
 
-from src.common.azure_clients.event_grid_client_manager import EventGridClientManager
+from src.common.azure_clients.event_grid_client_manager import EventGridClientManager, EventGridNotifier
 from src.common.models.orchestrator_result import OrchestratorResult
 from src.silver.context.silver_parser import SilverParser
 from src.common.spark.spark_service import SparkService
@@ -272,14 +272,6 @@ def send_event_grid_notification(config: ConfigManager, orchestrator_result: Orc
         logger.info(f"Sending Event Grid notification for correlation ID: {orchestrator_result.correlation_id}")
         
 
-        event_grid_client = EventGridClientManager(
-            endpoint=config.get("EVENT_GRID_ENDPOINT"),
-            key=config.get("EVENT_GRID_KEY")
-        )
-        if not event_grid_client:
-            logger.error("Event Grid client not initialized. Cannot send event.")
-            return
-
         payload = {
             "layer": orchestrator_result.etl_layer.value,
             "env": orchestrator_result.env.value,
@@ -292,11 +284,12 @@ def send_event_grid_notification(config: ConfigManager, orchestrator_result: Orc
         }
 
         try:
-            event_grid_client.send_event(
-                event_type=f"{orchestrator_result.etl_layer.value.capitalize()}ProcessCompleted",
-                subject=f"/{orchestrator_result.etl_layer.value}/processing/{orchestrator_result.correlation_id}",
-                data=payload
-            )
+            notifier = EventGridNotifier(config.get("EVENT_GRID_ENDPOINT"), config.get("EVENT_GRID_KEY"))
+            notifier.send_notification(orchestrator_result.etl_layer.value, 
+                                       f"{orchestrator_result.etl_layer.value.capitalize()}ProcessCompleted",
+                                       payload,
+                                       orchestrator_result.correlation_id)
+            
             logger.info("Event Grid notification sent successfully.")
         except Exception as e:
             logger.error(f"Failed to send Event Grid notification: {e}", exc_info=True)

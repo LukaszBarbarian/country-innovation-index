@@ -8,12 +8,12 @@ import uuid
 import azure.functions as func
 import azure.durable_functions as df
 from src.bronze.contexts.bronze_parser import BronzeParser
-from src.common.azure_clients.event_grid_client_manager import EventGridClientManager
+from src.common.azure_clients.event_grid_client_manager import EventGridNotifier
 from src.common.factories.orchestrator_factory import OrchestratorFactory
 from src.common.config.config_manager import ConfigManager
 from src.common.enums.etl_layers import ETLLayer
 
-import src.bronze.init.bronze_init 
+from src.bronze.init import bronze_init
 
 app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 logger = logging.getLogger(__name__)
@@ -103,11 +103,9 @@ async def run_ingestion_activity(input: Dict[str, Any]) -> Dict[str, Any]:
         return result_dict
     
     finally:
-        # Ten blok wykona się zawsze, niezależnie od tego, czy wystąpił błąd
-        # To kluczowe, aby wysłać powiadomienie o sukcesie LUB porażce
         try:
+            notifier = EventGridNotifier(config.get("EVENT_GRID_ENDPOINT"), config.get("EVENT_GRID_KEY"))
             silver_manifest_path = f"/silver/manifest/{input_payload.get("env")}.manifest.json"
-            
             event_grid_payload = {
                 "layer": ETLLayer.BRONZE.value,
                 "env": input_payload.get("env"),
@@ -118,20 +116,7 @@ async def run_ingestion_activity(input: Dict[str, Any]) -> Dict[str, Any]:
                 "summary_ingestion_uri": result.summary_url,
                 "duration_in_ms": result.duration_in_ms
             }
-
-            endpoint = config.get("EVENT_GRID_ENDPOINT")
-            key = config.get("EVENT_GRID_KEY")
+            notifier.send_notification(ETLLayer.BRONZE.value, "BronzeIngestionCompleted", event_grid_payload, result.correlation_id)
             
-            if endpoint:
-                manager = EventGridClientManager(endpoint=endpoint, key=key)
-                manager.send_event(
-                    event_type="BronzeIngestionCompleted",
-                    subject=f"/silver/processing/{result.correlation_id}",
-                    data=event_grid_payload
-                )
-                logger.info(f"Event for correlation ID {result.correlation_id} sent successfully.")
-            else:
-                logger.warning("Event Grid endpoint not configured. Skipping notification.")
-
         except Exception as e:
             logger.exception(f"Failed to send Event Grid notification: {e}")
