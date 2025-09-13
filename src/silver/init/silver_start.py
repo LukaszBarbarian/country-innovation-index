@@ -42,105 +42,105 @@ summary_json = """
     "status": "COMPLETED",
     "env": "dev",
     "etl_layer": "bronze",
-    "correlation_id": "56f0510e-47c5-4f42-9fa8-7d3d65254e2b",
-    "timestamp": "2025-09-03T16:29:05.373451",
+    "correlation_id": "aadca7ad-c456-463a-92a8-280ed21a685d",
+    "timestamp": "2025-09-12T11:03:24.704523",
     "processed_items": 6,
-    "duration_in_ms": 111100,
+    "duration_in_ms": 90310,
     "results": [
         {
             "status": "COMPLETED",
-            "correlation_id": "56f0510e-47c5-4f42-9fa8-7d3d65254e2b",
-            "etl_layer": "bronze",
-            "env": "dev",
-            "duration_in_ms": 6901,
+            "correlation_id": "aadca7ad-c456-463a-92a8-280ed21a685d",
+            "duration_in_ms": 8043,
             "record_count": 1004,
             "domain_source": "NOBELPRIZE",
             "domain_source_type": "api",
             "dataset_name": "laureates",
             "message": "API data successfully processed. Uploaded 1 file with 1004 records.",
             "output_paths": [
-                "https://demosurdevdatalake4418sa.blob.core.windows.net/bronze/nobelprize/2025/09/03/laureates_56f0510e-47c5-4f42-9fa8-7d3d65254e2b_d2b028b2.json"
+                "https://demosurdevdatalake4418sa.blob.core.windows.net/bronze/nobelprize/2025/09/12/laureates_aadca7ad-c456-463a-92a8-280ed21a685d_d2b028b2.json"
             ],
+            "start_time": "2025-09-12T11:02:41.440369",
+            "end_time": null,
             "error_details": {}
         },
         {
             "status": "COMPLETED",
-            "correlation_id": "56f0510e-47c5-4f42-9fa8-7d3d65254e2b",
-            "etl_layer": "bronze",
-            "env": "dev",
-            "duration_in_ms": 19600,
+            "correlation_id": "aadca7ad-c456-463a-92a8-280ed21a685d",
+            "duration_in_ms": 14931,
             "record_count": 17290,
             "domain_source": "WORLDBANK",
             "domain_source_type": "api",
             "dataset_name": "population",
             "message": "API data successfully processed. Uploaded 1 file with 17290 records.",
             "output_paths": [
-                "https://demosurdevdatalake4418sa.blob.core.windows.net/bronze/worldbank/2025/09/03/population_56f0510e-47c5-4f42-9fa8-7d3d65254e2b_e643b2b9.json"
+                "https://demosurdevdatalake4418sa.blob.core.windows.net/bronze/worldbank/2025/09/12/population_aadca7ad-c456-463a-92a8-280ed21a685d_e643b2b9.json"
             ],
+            "start_time": "2025-09-12T11:02:41.440369",
+            "end_time": null,
             "error_details": {}
         },
         {
             "status": "COMPLETED",
-            "correlation_id": "56f0510e-47c5-4f42-9fa8-7d3d65254e2b",
-            "etl_layer": "bronze",
-            "env": "dev",
-            "duration_in_ms": 26026,
-            "record_count": 17290,
+            "correlation_id": "aadca7ad-c456-463a-92a8-280ed21a685d",
+            "duration_in_ms": 19770,
+            "record_count": 15000,
             "domain_source": "WORLDBANK",
             "domain_source_type": "api",
             "dataset_name": "pkb",
-            "message": "API data successfully processed. Uploaded 1 file with 17290 records.",
+            "message": "API data successfully processed. Uploaded 1 file with 15000 records.",
             "output_paths": [
-                "https://demosurdevdatalake4418sa.blob.core.windows.net/bronze/worldbank/2025/09/03/pkb_56f0510e-47c5-4f42-9fa8-7d3d65254e2b_0cf75120.json"
+                "https://demosurdevdatalake4418sa.blob.core.windows.net/bronze/worldbank/2025/09/12/pkb_aadca7ad-c456-463a-92a8-280ed21a685d_0cf75120.json"
             ],
+            "start_time": "2025-09-12T11:02:41.440369",
+            "end_time": null,
             "error_details": {}
         },
         {
             "status": "COMPLETED",
-            "correlation_id": "56f0510e-47c5-4f42-9fa8-7d3d65254e2b",
-            "etl_layer": "bronze",
-            "env": "dev",
-            "duration_in_ms": 19272,
+            "correlation_id": "aadca7ad-c456-463a-92a8-280ed21a685d",
+            "duration_in_ms": 17280,
             "record_count": 17290,
             "domain_source": "WORLDBANK",
             "domain_source_type": "api",
-            "dataset_name": "rd",
+            "dataset_name": "r&d",
             "message": "API data successfully processed. Uploaded 1 file with 17290 records.",
             "output_paths": [
-                "https://demosurdevdatalake4418sa.blob.core.windows.net/bronze/worldbank/2025/09/03/rd_56f0510e-47c5-4f42-9fa8-7d3d65254e2b_fb7ec9e1.json"
+                "https://demosurdevdatalake4418sa.blob.core.windows.net/bronze/worldbank/2025/09/12/r&d_aadca7ad-c456-463a-92a8-280ed21a685d_fb7ec9e1.json"
             ],
+            "start_time": "2025-09-12T11:02:41.440369",
+            "end_time": null,
             "error_details": {}
         },
         {
             "status": "COMPLETED",
-            "correlation_id": "56f0510e-47c5-4f42-9fa8-7d3d65254e2b",
-            "etl_layer": "bronze",
-            "env": "dev",
-            "duration_in_ms": 18925,
+            "correlation_id": "aadca7ad-c456-463a-92a8-280ed21a685d",
+            "duration_in_ms": 14130,
             "record_count": 17290,
             "domain_source": "WORLDBANK",
             "domain_source_type": "api",
             "dataset_name": "researchers",
             "message": "API data successfully processed. Uploaded 1 file with 17290 records.",
             "output_paths": [
-                "https://demosurdevdatalake4418sa.blob.core.windows.net/bronze/worldbank/2025/09/03/researchers_56f0510e-47c5-4f42-9fa8-7d3d65254e2b_65d57308.json"
+                "https://demosurdevdatalake4418sa.blob.core.windows.net/bronze/worldbank/2025/09/12/researchers_aadca7ad-c456-463a-92a8-280ed21a685d_65d57308.json"
             ],
+            "start_time": "2025-09-12T11:02:41.440369",
+            "end_time": null,
             "error_details": {}
         },
         {
             "status": "COMPLETED",
-            "correlation_id": "56f0510e-47c5-4f42-9fa8-7d3d65254e2b",
-            "etl_layer": "bronze",
-            "env": "dev",
-            "duration_in_ms": 20376,
-            "record_count": 17290,
+            "correlation_id": "aadca7ad-c456-463a-92a8-280ed21a685d",
+            "duration_in_ms": 16156,
+            "record_count": 11000,
             "domain_source": "WORLDBANK",
             "domain_source_type": "api",
             "dataset_name": "unemployment",
-            "message": "API data successfully processed. Uploaded 1 file with 17290 records.",
+            "message": "API data successfully processed. Uploaded 1 file with 11000 records.",
             "output_paths": [
-                "https://demosurdevdatalake4418sa.blob.core.windows.net/bronze/worldbank/2025/09/03/unemployment_56f0510e-47c5-4f42-9fa8-7d3d65254e2b_86116269.json"
+                "https://demosurdevdatalake4418sa.blob.core.windows.net/bronze/worldbank/2025/09/12/unemployment_aadca7ad-c456-463a-92a8-280ed21a685d_86116269.json"
             ],
+            "start_time": "2025-09-12T11:02:41.440369",
+            "end_time": null,
             "error_details": {}
         }
     ]
@@ -308,14 +308,14 @@ def send_event_grid_notification(config: ConfigManager, orchestrator_result: Orc
 
 config = ConfigManager()
 config.get("AZURE_WEB_JOBS_STORAGE")
-# spark = SparkService(config)
-# spark.start_local()
+spark = SparkService(config)
+spark.start_local()
 
 
-# context = SilverParser().parse(manifest_json, summary_json)
+context = SilverParser().parse(manifest_json, summary_json)
 
-# orchestrator = OrchestratorFactory.get_instance(ETLLayer.SILVER, spark=spark, config=config)
-# result = asyncio.run(orchestrator.execute(context))
-# send_event_grid_notification(config=config, orchestrator_result=result)
+orchestrator = OrchestratorFactory.get_instance(ETLLayer.SILVER, spark=spark, config=config)
+result = asyncio.run(orchestrator.execute(context))
+send_event_grid_notification(config=config, orchestrator_result=result)
 
 

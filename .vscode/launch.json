@@ -25,10 +25,17 @@
             }
         },
         {
-            "name": "Debug Silver.start",
+            "name": "Debug silver.start",
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/src/silver/init/silver_start.py",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Debug gold.start",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/gold/init/gold_start.py",
             "console": "integratedTerminal"
         }
     ]
