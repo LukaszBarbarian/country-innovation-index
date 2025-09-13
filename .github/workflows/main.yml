@@ -152,12 +152,7 @@ jobs:
       - name: Zip Function App Code
         run: |
           sudo apt-get update && sudo apt-get install -y zip
-          zip -r $AZURE_FUNCTION_APP_PACKAGE_FULL_PATH \
-            function_app.py \
-            requirements.txt \
-            host.json \
-            src \
-            tools
+          zip -r $AZURE_FUNCTION_APP_PACKAGE_FULL_PATH .
         working-directory: ${{ env.FUNCTION_CODE_DIR }}
 
       - name: List Files for Debugging
