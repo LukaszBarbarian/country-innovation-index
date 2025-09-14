@@ -102,21 +102,4 @@ async def run_ingestion_activity(input: Dict[str, Any]) -> Dict[str, Any]:
         }
         return result_dict
     
-    finally:
-        try:
-            notifier = EventGridNotifier(config.get("EVENT_GRID_ENDPOINT"), config.get("EVENT_GRID_KEY"))
-            silver_manifest_path = f"/silver/manifest/{input_payload.get("env")}.manifest.json"
-            event_grid_payload = {
-                "layer": ETLLayer.BRONZE.value,
-                "env": input_payload.get("env"),
-                "status": result.status,
-                "message_date": datetime.datetime.utcnow,
-                "correlation_id": result.correlation_id,
-                "manifest": silver_manifest_path,
-                "summary_ingestion_uri": result.summary_url,
-                "duration_in_ms": result.duration_in_ms
-            }
-            return notifier.send_notification(ETLLayer.BRONZE.value, "BronzeIngestionCompleted", event_grid_payload, result.correlation_id)
-            
-        except Exception as e:
-            logger.exception(f"Failed to send Event Grid notification: {e}")
+   
