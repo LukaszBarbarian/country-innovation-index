@@ -7,11 +7,6 @@ from typing import Any, Dict
 import uuid
 import azure.functions as func
 import azure.durable_functions as df
-#from src.bronze.contexts.bronze_parser import BronzeParser
-#from src.common.azure_clients.event_grid_client_manager import EventGridNotifier
-#from src.common.factories.orchestrator_factory import OrchestratorFactory
-from src.common.config.config_manager import ConfigManager
-#from src.common.enums.etl_layers import ETLLayer
 
 from src.bronze.init import bronze_init
 
@@ -67,26 +62,3 @@ def ingest_orchestrator(context: df.DurableOrchestrationContext):
    
     return orchestrator_result_dict
 
-
-@app.activity_trigger(input_name="input")
-async def run_ingestion_activity(input: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Activity function to execute the bronze layer data ingestion logic AND
-    publish an event to Event Grid.
-    """
-    config = ConfigManager()
-    
-    input_payload = input["input_payload"]
-
-    correlation_id = input_payload.get("correlation_id", str(uuid.uuid4()))
-    logger.info(f"Running ingestion for correlation ID: {correlation_id}")
-    
-    result_dict = {
-            "status": "FAILED",
-            "correlation_id": correlation_id,
-            "message": str(e),
-            "error_details": traceback.format_exc(),
-        }
-    return result_dict
-    
-    
