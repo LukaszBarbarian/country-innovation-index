@@ -13,7 +13,7 @@ from src.common.factories.orchestrator_factory import OrchestratorFactory
 from src.common.config.config_manager import ConfigManager
 from src.common.enums.etl_layers import ETLLayer
 
-from src.bronze.init import bronze_init
+#from src.bronze.init import bronze_init
 
 app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 logger = logging.getLogger(__name__)
