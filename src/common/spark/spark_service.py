@@ -32,7 +32,7 @@ class SparkService:
         Starts a local SparkSession configured to connect to Azure Data Lake Storage
         using Shared Key authentication and Delta Lake support.
         """
-        AZURE_STORAGE_ACCOUNT_NAME = "demosurdevdatalake4418sa"
+        AZURE_STORAGE_ACCOUNT_NAME = self.config.get("DATA_LAKE_STORAGE_ACCOUNT_NAME")
         AZURE_STORAGE_ACCOUNT_KEY = self.config.get("AZURE_STORAGE_ACCOUNT_KEY")
 
         JAR_PATH = "C:/spark/jars"

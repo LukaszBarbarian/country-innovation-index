@@ -5,7 +5,6 @@ import logging
 from typing import Optional, TypeVar, Generic
 
 from azure.identity import DefaultAzureCredential
-from azure.core.exceptions import ResourceNotFoundError, ClientAuthenticationError
 from src.common.config.config_manager import ConfigManager
 
 logger = logging.getLogger(__name__)
