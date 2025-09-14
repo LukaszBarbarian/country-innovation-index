@@ -131,7 +131,7 @@ jobs:
 
       run: |
           cd ${{ env.FUNCTION_CODE_DIR }}
-          zip -r ${{ env.AZURE_FUNCTION_APP_PACKAGE_FULL_PATH }} function_app.py requirements.txt host.json src
+          zip -r ${{ env.AZURE_FUNCTION_APP_PACKAGE_FULL_PATH }} function_app.py requirements.txt host.json src/common src/bronze
       
       working-directory: ${{ env.FUNCTION_CODE_DIR }} # Upewnij się, że pakujesz z ./ (katalogu z kodem)
 
