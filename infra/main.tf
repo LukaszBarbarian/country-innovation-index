@@ -137,7 +137,7 @@ resource "azurerm_function_app" "main_function_app" {
   # Ustawienia aplikacji dla Function App
   app_settings = {
     FUNCTIONS_WORKER_RUNTIME          = "python"                                          # Określa runtime funkcji (python, dotnet, node, java, powershell)
-    #FUNCTIONS_WORKER_RUNTIME_VERSION  = "~3.12"                                           # Wersja języka Python
+    FUNCTIONS_WORKER_RUNTIME_VERSION  = "~3.12"                                           # Wersja języka Python
     APPLICATIONINSIGHTS_CONNECTION_STRING = azurerm_application_insights.app_insights.connection_string
     AzureWebJobsStorage               = azurerm_storage_account.sa_functions.primary_connection_string
     FUNCTIONS_EXTENSION_VERSION       = "~4"                                              # Wersja rozszerzenia funkcji (dla blueprintów)
@@ -150,12 +150,8 @@ resource "azurerm_function_app" "main_function_app" {
     EVENT_GRID_KEY                  = azurerm_eventgrid_topic.etl_events_topic.primary_access_key
     WORLDBANK_API_BASE_URL = "https://api.worldbank.org/v2/"
     APP_CONFIG_ENDPOINT = azurerm_app_configuration.main_app_config.endpoint
-  }
 
-  site_config {
-    application_stack {
-      python_version = "3.12"   
-    }
+
   }
 
   tags = {
