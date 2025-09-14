@@ -7,8 +7,6 @@ from azure.identity import DefaultAzureCredential
 from azure.core.credentials import AzureKeyCredential
 from azure.eventgrid import EventGridPublisherClient, EventGridEvent
 
-from src.common.config.config_manager import ConfigManager
-
 logger = logging.getLogger(__name__)
 
 class EventGridClientManager:

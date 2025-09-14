@@ -116,7 +116,7 @@ async def run_ingestion_activity(input: Dict[str, Any]) -> Dict[str, Any]:
                 "summary_ingestion_uri": result.summary_url,
                 "duration_in_ms": result.duration_in_ms
             }
-            notifier.send_notification(ETLLayer.BRONZE.value, "BronzeIngestionCompleted", event_grid_payload, result.correlation_id)
+            return notifier.send_notification(ETLLayer.BRONZE.value, "BronzeIngestionCompleted", event_grid_payload, result.correlation_id)
             
         except Exception as e:
             logger.exception(f"Failed to send Event Grid notification: {e}")
