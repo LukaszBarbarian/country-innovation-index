@@ -1,7 +1,3 @@
-#common
-from src.common.init import common_init
-
-
 #storage_file_builder
 from src.bronze.storage_file_builder.bronze_storage_file_builder import BronzeStorageFileBuilder
 
