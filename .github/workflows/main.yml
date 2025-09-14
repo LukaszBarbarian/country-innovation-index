@@ -126,17 +126,18 @@ jobs:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
 
     - name: Zip function app content # <-- Zmieniamy sposób pakowania
+      # run: |
+      #   sudo apt-get update && sudo apt-get install -y zip
+
       run: |
-        sudo apt-get update && sudo apt-get install -y zip
-        # Pakujemy zawartość katalogu z kodem do pliku ZIP w głównym katalogu repozytorium
-          zip -r ${{ env.AZURE_FUNCTION_APP_PACKAGE_FULL_PATH }} .
+          cd ${{ env.FUNCTION_CODE_DIR }}
+          zip -r ${{ env.AZURE_FUNCTION_APP_PACKAGE_FULL_PATH }} function_app.py requirements.txt host.json src
+      
       working-directory: ${{ env.FUNCTION_CODE_DIR }} # Upewnij się, że pakujesz z ./ (katalogu z kodem)
 
-    - name: List files in current directory # <-- KROK DIAGNOSTYCZNY
-      run: ls -la . 
-
-    - name: List files in workspace root # <-- KROK DIAGNOSTYCZNY
-      run: ls -la ${{ github.workspace }}
+    - name: Check ZIP content
+      run: |
+        unzip -l ${{ env.AZURE_FUNCTION_APP_PACKAGE_FULL_PATH }}
 
     - name: Deploy Function App using Azure WebApps Deploy Action
       uses: azure/webapps-deploy@v2
