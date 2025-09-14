@@ -1,14 +1,11 @@
-import datetime
+
 import logging
-import json
-import os
-import traceback
+
 from typing import Any, Dict
-import uuid
 import azure.functions as func
 import azure.durable_functions as df
 
-from src.bronze.init import bronze_init
+#from src.bronze.init import bronze_init
 
 app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 logger = logging.getLogger(__name__)
