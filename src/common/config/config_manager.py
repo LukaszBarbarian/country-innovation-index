@@ -3,7 +3,7 @@ import json
 from azure.identity import DefaultAzureCredential
 from azure.appconfiguration import AzureAppConfigurationClient
 from azure.keyvault.secrets import SecretClient
-from urllib.parse import urlparse
+#from urllib.parse import urlparse
 
 class ConfigManager:
     """
@@ -58,7 +58,7 @@ class ConfigManager:
         Returns:
             str: The value of the secret.
         """
-        parsed = urlparse(secret_uri)
+        #parsed = urlparse(secret_uri)
         vault_url = f"{parsed.scheme}://{parsed.netloc}"
 
         if vault_url not in self.keyvault_clients:
