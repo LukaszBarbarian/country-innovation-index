@@ -24,8 +24,9 @@ jobs:
     strategy:
       matrix:
         environment: [dev, prod]
-    environment:
-      name: ${{ matrix.environment }}
+    environment: ${{ matrix.environment }}
+
+
       # Jeśli chcesz wymusić manual approval dla prod, w GitHub -> Settings -> Environments -> prod -> Required reviewers
     steps:
       - name: Checkout repository
