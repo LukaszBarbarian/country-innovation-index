@@ -2,6 +2,9 @@ import logging
 from typing import Any, Dict
 import azure.functions as func
 import azure.durable_functions as df
+from src.common.enums.etl_layers import ETLLayer
+
+from src.bronze.init import bronze_init
 
 app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 logger = logging.getLogger(__name__)
