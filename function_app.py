@@ -3,7 +3,7 @@ from typing import Any, Dict
 import azure.functions as func
 import azure.durable_functions as df
 #from src.bronze.contexts.bronze_parser import BronzeParser
-# from src.common.azure_clients.event_grid_client_manager import EventGridNotifier
+from src.common.azure_clients.event_grid_client_manager import EventGridNotifier
 # from src.common.factories.orchestrator_factory import OrchestratorFactory
 # from src.common.config.config_manager import ConfigManager
 # from src.common.enums.etl_layers import ETLLayer
