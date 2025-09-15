@@ -1,0 +1,191 @@
+name: CV Demo1 CI/CD
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'infra/**'
+      - './'
+      - '.github/workflows/main.yml'
+  workflow_dispatch: {}
+
+env:
+  PYTHON_VERSION: '3.12'
+  TERRAFORM_DIR: ./infra
+  FUNCTION_CODE_DIR: ./
+  AZURE_FUNCTION_APP_PACKAGE_NAME: 'function_app_package.zip'
+  AZURE_FUNCTION_APP_PACKAGE_FULL_PATH: '${{ github.workspace }}/function_app_package.zip'
+
+jobs:
+
+  terraform-dev:
+    name: Terraform Dev
+    runs-on: ubuntu-latest
+    outputs:
+      function_app_name: ${{ steps.tf_outputs.outputs.function_app_name }}
+      resource_group_name: ${{ steps.tf_outputs.outputs.resource_group_name }}
+      storage_account_name: ${{ steps.tf_outputs.outputs.storage_account_name }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.5.0
+
+      - name: Terraform Init
+        run: terraform init
+        working-directory: ${{ env.TERRAFORM_DIR }}
+
+      - name: Terraform Plan
+        run: terraform plan -input=false -out=tfplan -var="environment=dev"
+        working-directory: ${{ env.TERRAFORM_DIR }}
+
+      - name: Terraform Apply
+        run: terraform apply -input=false -auto-approve tfplan
+        working-directory: ${{ env.TERRAFORM_DIR }}
+
+      - name: Get Terraform Outputs
+        id: tf_outputs
+        run: |
+          FUNCTION_APP_NAME=$(terraform output -raw function_app_name)
+          RESOURCE_GROUP_NAME=$(terraform output -raw resource_group_name)
+          STORAGE_ACCOUNT_NAME=$(terraform output -raw storage_account_name)
+          echo "FUNCTION_APP_NAME=$FUNCTION_APP_NAME" >> $GITHUB_ENV
+          echo "RESOURCE_GROUP_NAME=$RESOURCE_GROUP_NAME" >> $GITHUB_ENV
+          echo "STORAGE_ACCOUNT_NAME=$STORAGE_ACCOUNT_NAME" >> $GITHUB_ENV
+          echo "function_app_name=$FUNCTION_APP_NAME" >> $GITHUB_OUTPUT
+          echo "resource_group_name=$RESOURCE_GROUP_NAME" >> $GITHUB_OUTPUT
+          echo "storage_account_name=$STORAGE_ACCOUNT_NAME" >> $GITHUB_OUTPUT
+        working-directory: ${{ env.TERRAFORM_DIR }}
+
+  upload-manifest-dev:
+    name: Upload Dev Manifest
+    runs-on: ubuntu-latest
+    needs: terraform-dev
+    steps:
+      - uses: actions/checkout@v4
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: Upload dev.manifest.json
+        run: |
+          az storage blob upload \
+            --account-name "${{ needs.terraform-dev.outputs.storage_account_name }}" \
+            --container-name bronze \
+            --file src/bronze/manifest/dev.manifest.json \
+            --name manifest/dev.manifest.json \
+            --overwrite true \
+            --auth-mode login
+
+  deploy-function-dev:
+    name: Deploy Function Dev
+    runs-on: ubuntu-latest
+    needs: [terraform-dev, upload-manifest-dev]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: Zip Function App
+        run: |
+          sudo apt-get update && sudo apt-get install -y zip
+          zip -r ${{ env.AZURE_FUNCTION_APP_PACKAGE_FULL_PATH }} function_app.py requirements.txt host.json src/common src/bronze
+      - name: Deploy Function App
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: ${{ needs.terraform-dev.outputs.function_app_name }}
+          slot-name: production
+          package: ${{ env.AZURE_FUNCTION_APP_PACKAGE_FULL_PATH }}
+
+  approve-prod:
+    name: Manual Approval Prod
+    runs-on: ubuntu-latest
+    needs: deploy-function-dev
+    steps:
+      - name: Wait for approval
+        uses: hmarr/auto-approve-action@v2
+        with:
+          message: "Approve production deployment"
+        # Możesz też użyć environment protection rules w GitHub dla prod
+
+  terraform-prod:
+    name: Terraform Prod
+    runs-on: ubuntu-latest
+    needs: approve-prod
+    steps:
+      - uses: actions/checkout@v4
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.5.0
+      - name: Terraform Init
+        run: terraform init
+        working-directory: ${{ env.TERRAFORM_DIR }}
+      - name: Terraform Plan
+        run: terraform plan -input=false -out=tfplan -var="environment=prod"
+        working-directory: ${{ env.TERRAFORM_DIR }}
+      - name: Terraform Apply
+        run: terraform apply -input=false -auto-approve tfplan
+        working-directory: ${{ env.TERRAFORM_DIR }}
+
+  upload-manifest-prod:
+    name: Upload Prod Manifest
+    runs-on: ubuntu-latest
+    needs: terraform-prod
+    steps:
+      - uses: actions/checkout@v4
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: Upload prod.manifest.json
+        run: |
+          az storage blob upload \
+            --account-name "PROD_STORAGE_ACCOUNT_NAME" \
+            --container-name bronze \
+            --file src/bronze/manifest/prod.manifest.json \
+            --name manifest/prod.manifest.json \
+            --overwrite true \
+            --auth-mode login
+
+  deploy-function-prod:
+    name: Deploy Function Prod
+    runs-on: ubuntu-latest
+    needs: [terraform-prod, upload-manifest-prod]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: Zip Function App
+        run: |
+          sudo apt-get update && sudo apt-get install -y zip
+          zip -r ${{ env.AZURE_FUNCTION_APP_PACKAGE_FULL_PATH }} function_app.py requirements.txt host.json src/common src/bronze
+      - name: Deploy Function App
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: "PROD_FUNCTION_APP_NAME"
+          slot-name: production
+          package: ${{ env.AZURE_FUNCTION_APP_PACKAGE_FULL_PATH }}
