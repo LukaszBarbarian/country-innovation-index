@@ -45,7 +45,7 @@ jobs:
         working-directory: ${{ env.TERRAFORM_DIR }}
 
       - name: Terraform Apply
-        run: terraform apply -input=false -auto-approve tfplan
+        run: terraform plan -lock=false -input=false -out=tfplan -var="environment=dev"
         working-directory: ${{ env.TERRAFORM_DIR }}
 
       - name: Get Terraform Outputs
