@@ -18,26 +18,22 @@ env:
   AZURE_FUNCTION_APP_PACKAGE_FULL_PATH: '${{ github.workspace }}/function_app_package.zip'
 
 jobs:
-
   terraform-dev:
-    name: Terraform Dev
     runs-on: ubuntu-latest
-    outputs:
-      function_app_name: ${{ steps.tf_outputs.outputs.function_app_name }}
-      resource_group_name: ${{ steps.tf_outputs.outputs.resource_group_name }}
-      storage_account_name: ${{ steps.tf_outputs.outputs.storage_account_name }}
     steps:
       - uses: actions/checkout@v4
-
-      - name: Azure Login
-        uses: azure/login@v2
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.5.0
+
+      - name: Export Azure SP credentials for Terraform
+        run: |
+          echo "ARM_CLIENT_ID=${{ fromJson(secrets.AZURE_CREDENTIALS).clientId }}" >> $GITHUB_ENV
+          echo "ARM_CLIENT_SECRET=${{ fromJson(secrets.AZURE_CREDENTIALS).clientSecret }}" >> $GITHUB_ENV
+          echo "ARM_SUBSCRIPTION_ID=${{ fromJson(secrets.AZURE_CREDENTIALS).subscriptionId }}" >> $GITHUB_ENV
+          echo "ARM_TENANT_ID=${{ fromJson(secrets.AZURE_CREDENTIALS).tenantId }}" >> $GITHUB_ENV
 
       - name: Terraform Init
         run: terraform init
