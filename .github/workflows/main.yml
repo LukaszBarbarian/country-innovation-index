@@ -21,7 +21,7 @@ env:
 
 jobs:
   terraform:
-    name: "terraform"
+    name: "terraform dev"
     runs-on: ubuntu-latest
     outputs:
       function_app_name: ${{ steps.tf_outputs.outputs.function_app_name }}
@@ -96,7 +96,7 @@ jobs:
         if: always()
 
   upload-manifest:
-    name: "upload manifest"
+    name: "upload manifest dev"
     runs-on: ubuntu-latest
     needs: terraform
     strategy:
@@ -126,7 +126,7 @@ jobs:
             --auth-mode login
 
   deploy-function:
-    name: "deploy functions"
+    name: "deploy functions dev"
     runs-on: ubuntu-latest
     needs: [terraform, upload-manifest]
     if: success()
