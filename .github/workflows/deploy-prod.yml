@@ -1,0 +1,113 @@
+name: Deploy PROD
+
+on:
+  workflow_call:
+
+env:
+  DEPLOY_ENV: prod
+  PYTHON_VERSION: '3.12'
+  FUNCTION_APP_OS: linux
+  TERRAFORM_DIR: ./infra
+  FUNCTION_CODE_DIR: ./
+  AZURE_FUNCTION_APP_PACKAGE_NAME: 'function_app_package.zip'
+  AZURE_FUNCTION_APP_PACKAGE_FULL_PATH: '${{ github.workspace }}/function_app_package.zip'
+
+jobs:
+  terraform:
+    name: "[PROD] Terraform"
+    runs-on: ubuntu-latest
+    environment: prod   # <- approval wymagany
+    outputs:
+      function_app_name: ${{ steps.tf_outputs.outputs.function_app_name }}
+      resource_group_name: ${{ steps.tf_outputs.outputs.resource_group_name }}
+      storage_account_name: ${{ steps.tf_outputs.outputs.storage_account_name }}
+      storage_container_name: ${{ steps.tf_outputs.outputs.storage_container_name }}
+      data_lake_storage_account_name: ${{ steps.tf_outputs.outputs.data_lake_storage_account_name }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - run: |
+          echo "ARM_CLIENT_ID=${{ fromJson(secrets.AZURE_CREDENTIALS).clientId }}" >> $GITHUB_ENV
+          echo "ARM_CLIENT_SECRET=${{ fromJson(secrets.AZURE_CREDENTIALS).clientSecret }}" >> $GITHUB_ENV
+          echo "ARM_SUBSCRIPTION_ID=${{ fromJson(secrets.AZURE_CREDENTIALS).subscriptionId }}" >> $GITHUB_ENV
+          echo "ARM_TENANT_ID=${{ fromJson(secrets.AZURE_CREDENTIALS).tenantId }}" >> $GITHUB_ENV
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.5.0
+      - run: terraform init
+        working-directory: ${{ env.TERRAFORM_DIR }}
+      - run: terraform validate
+        working-directory: ${{ env.TERRAFORM_DIR }}
+      - run: terraform plan -input=false -out=tfplan -var="env=${{ env.DEPLOY_ENV }}"
+        working-directory: ${{ env.TERRAFORM_DIR }}
+      - run: terraform apply -input=false -auto-approve tfplan
+        working-directory: ${{ env.TERRAFORM_DIR }}
+      - id: tf_outputs
+        run: |
+          FUNCTION_APP_NAME=$(terraform output -raw function_app_name)
+          RESOURCE_GROUP_NAME=$(terraform output -raw resource_group_name)
+          STORAGE_ACCOUNT_NAME=$(terraform output -raw storage_account_name)
+          STORAGE_CONTAINER_NAME=$(terraform output -raw configs_container_name)
+          DATA_LAKE_STORAGE_ACCOUNT_NAME=$(terraform output -raw data_lake_storage_account_name)
+
+          echo "function_app_name=$FUNCTION_APP_NAME" >> $GITHUB_OUTPUT
+          echo "resource_group_name=$RESOURCE_GROUP_NAME" >> $GITHUB_OUTPUT
+          echo "storage_account_name=$STORAGE_ACCOUNT_NAME" >> $GITHUB_OUTPUT
+          echo "storage_container_name=$STORAGE_CONTAINER_NAME" >> $GITHUB_OUTPUT
+          echo "data_lake_storage_account_name=$DATA_LAKE_STORAGE_ACCOUNT_NAME" >> $GITHUB_OUTPUT
+        working-directory: ${{ env.TERRAFORM_DIR }}
+
+  upload-manifest:
+    name: "[PROD] Upload manifest"
+    runs-on: ubuntu-latest
+    needs: terraform
+    strategy:
+      matrix:
+        layer: [bronze, silver, gold]
+    env:
+      AZURE_STORAGE_ACCOUNT_NAME: ${{ needs.terraform.outputs.storage_account_name }}
+      AZURE_DATA_LAKE_STORAGE_ACCOUNT_NAME: ${{ needs.terraform.outputs.data_lake_storage_account_name }}
+      DEPLOY_ENV: prod
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - run: |
+          echo "Uploading $DEPLOY_ENV.manifest.json to layer: ${{ matrix.layer }}"
+          az storage blob upload \
+            --account-name "$AZURE_DATA_LAKE_STORAGE_ACCOUNT_NAME" \
+            --container-name "${{ matrix.layer }}" \
+            --file "src/${{ matrix.layer }}/manifest/${DEPLOY_ENV}.manifest.json" \
+            --name "manifest/${DEPLOY_ENV}.manifest.json" \
+            --overwrite true \
+            --auth-mode login
+
+  deploy-function:
+    name: "[PROD] Deploy functions"
+    runs-on: ubuntu-latest
+    needs: [terraform, upload-manifest]
+    env:
+      FUNCTION_APP_NAME: ${{ needs.terraform.outputs.function_app_name }}
+      RESOURCE_GROUP_NAME: ${{ needs.terraform.outputs.resource_group_name }}
+      DEPLOY_ENV: prod
+      AZURE_FUNCTION_APP_PACKAGE_FULL_PATH: ${{ github.workspace }}/function_app_package.zip
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - run: |
+          sudo apt-get update && sudo apt-get install -y zip
+          zip -r ${{ env.AZURE_FUNCTION_APP_PACKAGE_FULL_PATH }} function_app.py requirements.txt host.json src/common src/bronze
+        working-directory: ${{ env.FUNCTION_CODE_DIR }}
+      - uses: azure/webapps-deploy@v2
+        with:
+          app-name: ${{ env.FUNCTION_APP_NAME }}
+          slot-name: 'production'
+          package: ${{ env.AZURE_FUNCTION_APP_PACKAGE_FULL_PATH }}
