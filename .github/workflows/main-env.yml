@@ -54,12 +54,14 @@ jobs:
           FUNCTION_APP_NAME=$(terraform output -raw function_app_name)
           RESOURCE_GROUP_NAME=$(terraform output -raw resource_group_name)
           STORAGE_ACCOUNT_NAME=$(terraform output -raw storage_account_name)
+          DATA_LAKE_STORAGE_ACCOUNT_NAME=$(terraform output -raw data_lake_storage_account_name)
           echo "FUNCTION_APP_NAME=$FUNCTION_APP_NAME" >> $GITHUB_ENV
           echo "RESOURCE_GROUP_NAME=$RESOURCE_GROUP_NAME" >> $GITHUB_ENV
           echo "STORAGE_ACCOUNT_NAME=$STORAGE_ACCOUNT_NAME" >> $GITHUB_ENV
           echo "function_app_name=$FUNCTION_APP_NAME" >> $GITHUB_OUTPUT
           echo "resource_group_name=$RESOURCE_GROUP_NAME" >> $GITHUB_OUTPUT
           echo "storage_account_name=$STORAGE_ACCOUNT_NAME" >> $GITHUB_OUTPUT
+          echo "DATA_LAKE_STORAGE_ACCOUNT_NAME=$DATA_LAKE_STORAGE_ACCOUNT_NAME" >> $GITHUB_ENV
         working-directory: ${{ env.TERRAFORM_DIR }}
 
       - name: Azure Login for Deployment
@@ -67,17 +69,20 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Upload manifest
+      - name: Upload manifests
         run: |
-          CONTAINER=bronze
-          FILE_PATH=src/${CONTAINER}/manifest/dev.manifest.json
-          az storage blob upload \
-            --account-name "$STORAGE_ACCOUNT_NAME" \
-            --container-name "$CONTAINER" \
-            --file "$FILE_PATH" \
-            --name "manifest/dev.manifest.json" \
-            --overwrite true \
-            --auth-mode login
+            LAYERS="bronze silver gold"
+            for CONTAINER in $LAYERS; do
+              FILE_PATH="src/${CONTAINER}/manifest/dev.manifest.json"
+              echo "Uploading $FILE_PATH to container $CONTAINER"
+              az storage blob upload \
+                --account-name "$AZURE_DATA_LAKE_STORAGE_ACCOUNT_NAME" \
+                --container-name "$CONTAINER" \
+                --file "$FILE_PATH" \
+                --name "manifest/dev.manifest.json" \
+                --overwrite true \
+                --auth-mode login
+            done
 
       - name: Zip Function App
         run: |
