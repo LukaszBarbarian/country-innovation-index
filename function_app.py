@@ -54,8 +54,8 @@ def ingest_orchestrator(context: df.DurableOrchestrationContext):
 
     logger.error(f"################################################################################## {input_payload}")
 
-    if isinstance(input_payload, list):
-        input_payload = {"items": input_payload}
+    if isinstance(input_payload, list) and len(input_payload) == 1:
+        input_payload = input_payload[0]
 
     if not isinstance(input_payload, dict) or not input_payload:
         logger.error("Orchestrator received an empty or invalid payload.")
