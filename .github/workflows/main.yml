@@ -1,4 +1,4 @@
-name: cv demo1 CI/CD
+name: country-innovation-index CI/CD
 
 on:
   push:
