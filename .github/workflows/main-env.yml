@@ -13,9 +13,9 @@ on:
 jobs:
   deploy-dev:
     name: "Deploy DEV"
-    uses: ${{ github.repository }}/.github/workflows/deploy-dev.yml@main
+    uses: lukaszBarbarian/country-innovation-index/.github/workflows/deploy-dev.yml@main
 
   deploy-prod:
     name: "Deploy PROD"
     needs: deploy-dev
-    uses: ${{ github.repository }}/.github/workflows/deploy-prod.yml@main
+    uses: lukaszBarbarian/country-innovation-index/.github/workflows/deploy-prod.yml@main
