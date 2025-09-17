@@ -48,8 +48,6 @@ def ingest_orchestrator(context: df.DurableOrchestrationContext):
     """
     input_payload = context.get_input()
 
-    logger.error(f"################################################################################## {input_payload}")
-
     if isinstance(input_payload, list) and len(input_payload) == 1:
         input_payload = input_payload[0]
 
