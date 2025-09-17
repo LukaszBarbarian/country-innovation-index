@@ -117,10 +117,9 @@ class EventGridNotifier:
         else:
             subject = f"/{layer}/processing/{correlation_id}"
 
-        full_event_type = f"{layer.capitalize()}{event_type}"
-        
+       
         return self.client.send_event(
-            event_type=full_event_type,
+            event_type=event_type,
             subject=subject,
             data=data
         )
