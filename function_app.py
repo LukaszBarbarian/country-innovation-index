@@ -113,7 +113,7 @@ async def run_ingestion_activity(input: Dict[str, Any]) -> Dict[str, Any]:
                 "layer": ETLLayer.BRONZE.value,
                 "env": input_payload.get("env"),
                 "status": result.status,
-                "message_date": datetime.datetime.utcnow,
+                "message_date": datetime.datetime.utcnow(),
                 "correlation_id": result.correlation_id,
                 "manifest": silver_manifest_path,
                 "summary_ingestion_uri": result.summary_url,

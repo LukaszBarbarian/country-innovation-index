@@ -319,5 +319,15 @@ resource "azurerm_app_configuration_key" "event_grid_key_ref" {
 }
 
 
+resource "azurerm_key_vault_access_policy" "function_app_secrets" {
+  key_vault_id = azurerm_key_vault.main_keyvault.id
 
+  tenant_id = data.azurerm_client_config.current.tenant_id
+  object_id = azurerm_function_app.main_function_app.identity[0].principal_id
+
+  secret_permissions = [
+    "Get",
+    "List"
+  ]
+}
 
