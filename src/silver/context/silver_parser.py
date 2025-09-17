@@ -92,7 +92,10 @@ class SilverParser(BaseParser):
             etl_layer=ETLLayer.SILVER,
             manifest=manifest,
             summary=summary,
-            correlation_id=summary.correlation_id
+            correlation_id=summary.correlation_id,
+            storage_account=self.config.get("DATA_LAKE_STORAGE_ACCOUNT_NAME")
         )
+
+
 
         return context

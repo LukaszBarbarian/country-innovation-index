@@ -33,7 +33,7 @@ class SparkService:
         using Shared Key authentication and Delta Lake support.
         """
         AZURE_STORAGE_ACCOUNT_NAME = self.config.get("DATA_LAKE_STORAGE_ACCOUNT_NAME")
-        AZURE_STORAGE_ACCOUNT_KEY = self.config.get("AZURE_STORAGE_ACCOUNT_KEY")
+        AZURE_STORAGE_ACCOUNT_KEY = self.config.get("STORAGE_ACCOUNT_KEY")
 
         JAR_PATH = "C:/spark/jars"
         all_jars = ",".join([os.path.join(JAR_PATH, jar) for jar in os.listdir(JAR_PATH) if jar.endswith(".jar")])

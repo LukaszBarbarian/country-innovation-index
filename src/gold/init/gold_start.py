@@ -91,100 +91,100 @@ summary_json = """
     "status": "COMPLETED",
     "env": "dev",
     "etl_layer": "silver",
-    "correlation_id": "56f0510e-47c5-4f42-9fa8-7d3d65254e2b",
-    "timestamp": "2025-09-07T09:53:05.397247",
+    "correlation_id": "37037a0e-72d8-49d8-93bb-ca9a84b69f5b",
+    "timestamp": "2025-09-17T09:29:18.173977",
     "processed_models": 9,
-    "duration_in_ms": 334268,
+    "duration_in_ms": 651754,
     "results": [
         {
             "model": "COUNTRY",
             "status": "COMPLETED",
             "output_path": "abfss://silver@demosurdevdatalake4418sa.dfs.core.windows.net/COUNTRY",
-            "correlation_id": "56f0510e-47c5-4f42-9fa8-7d3d65254e2b",
+            "correlation_id": "37037a0e-72d8-49d8-93bb-ca9a84b69f5b",
             "operation_type": "UPSERT",
             "record_count": 249,
             "error_details": {},
-            "duration_in_ms": 28290
+            "duration_in_ms": 39817
         },
         {
             "model": "YEAR",
             "status": "COMPLETED",
             "output_path": "abfss://silver@demosurdevdatalake4418sa.dfs.core.windows.net/YEAR",
-            "correlation_id": "56f0510e-47c5-4f42-9fa8-7d3d65254e2b",
+            "correlation_id": "37037a0e-72d8-49d8-93bb-ca9a84b69f5b",
             "operation_type": "UPSERT",
             "record_count": 125,
             "error_details": {},
-            "duration_in_ms": 4501
+            "duration_in_ms": 10295
         },
         {
             "model": "NOBEL_LAUREATES",
             "status": "COMPLETED",
             "output_path": "abfss://silver@demosurdevdatalake4418sa.dfs.core.windows.net/NOBEL_LAUREATES",
-            "correlation_id": "56f0510e-47c5-4f42-9fa8-7d3d65254e2b",
+            "correlation_id": "37037a0e-72d8-49d8-93bb-ca9a84b69f5b",
             "operation_type": "UPSERT",
             "record_count": 428,
             "error_details": {},
-            "duration_in_ms": 10716
+            "duration_in_ms": 13443
         },
         {
             "model": "GRADUATE_UNEMPLOYMENT",
             "status": "COMPLETED",
             "output_path": "abfss://silver@demosurdevdatalake4418sa.dfs.core.windows.net/GRADUATE_UNEMPLOYMENT",
-            "correlation_id": "56f0510e-47c5-4f42-9fa8-7d3d65254e2b",
+            "correlation_id": "37037a0e-72d8-49d8-93bb-ca9a84b69f5b",
             "operation_type": "UPSERT",
             "record_count": 13975,
             "error_details": {},
-            "duration_in_ms": 22872
+            "duration_in_ms": 31691
         },
         {
             "model": "PKB",
             "status": "COMPLETED",
             "output_path": "abfss://silver@demosurdevdatalake4418sa.dfs.core.windows.net/PKB",
-            "correlation_id": "56f0510e-47c5-4f42-9fa8-7d3d65254e2b",
+            "correlation_id": "37037a0e-72d8-49d8-93bb-ca9a84b69f5b",
             "operation_type": "UPSERT",
             "record_count": 13975,
             "error_details": {},
-            "duration_in_ms": 32717
+            "duration_in_ms": 61107
         },
         {
             "model": "RD_EXPENDITURE",
             "status": "COMPLETED",
             "output_path": "abfss://silver@demosurdevdatalake4418sa.dfs.core.windows.net/RD_EXPENDITURE",
-            "correlation_id": "56f0510e-47c5-4f42-9fa8-7d3d65254e2b",
+            "correlation_id": "37037a0e-72d8-49d8-93bb-ca9a84b69f5b",
             "operation_type": "UPSERT",
             "record_count": 13975,
             "error_details": {},
-            "duration_in_ms": 47632
+            "duration_in_ms": 86466
         },
         {
             "model": "RESEARCHERS",
             "status": "COMPLETED",
             "output_path": "abfss://silver@demosurdevdatalake4418sa.dfs.core.windows.net/RESEARCHERS",
-            "correlation_id": "56f0510e-47c5-4f42-9fa8-7d3d65254e2b",
+            "correlation_id": "37037a0e-72d8-49d8-93bb-ca9a84b69f5b",
             "operation_type": "UPSERT",
             "record_count": 13975,
             "error_details": {},
-            "duration_in_ms": 56320
+            "duration_in_ms": 106308
         },
         {
             "model": "PATENTS",
             "status": "COMPLETED",
             "output_path": "abfss://silver@demosurdevdatalake4418sa.dfs.core.windows.net/PATENTS",
-            "correlation_id": "56f0510e-47c5-4f42-9fa8-7d3d65254e2b",
+            "correlation_id": "37037a0e-72d8-49d8-93bb-ca9a84b69f5b",
             "operation_type": "UPSERT",
-            "record_count": 75982,
+            "record_count": 5132,
             "error_details": {},
-            "duration_in_ms": 61291
+            "duration_in_ms": 144432
         },
         {
             "model": "POPULATION",
             "status": "COMPLETED",
             "output_path": "abfss://silver@demosurdevdatalake4418sa.dfs.core.windows.net/POPULATION",
-            "correlation_id": "56f0510e-47c5-4f42-9fa8-7d3d65254e2b",
+            "correlation_id": "37037a0e-72d8-49d8-93bb-ca9a84b69f5b",
             "operation_type": "UPSERT",
             "record_count": 13975,
             "error_details": {},
-            "duration_in_ms": 69929
+            "duration_in_ms": 158195
         }
     ]
 }
