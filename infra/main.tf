@@ -335,3 +335,10 @@ resource "azurerm_key_vault_access_policy" "function_app_secrets" {
   ]
 }
 
+
+
+resource "azurerm_role_assignment" "function_app_appconfig_reader" {
+  scope                = azurerm_app_configuration.main_app_config.id
+  role_definition_name = "App Configuration Data Reader"
+  principal_id         = azurerm_function_app.main_function_app.identity[0].principal_id
+}
