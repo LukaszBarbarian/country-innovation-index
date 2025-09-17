@@ -130,7 +130,11 @@ resource "azurerm_function_app" "main_function_app" {
 
 
 
-
+ lifecycle {
+    ignore_changes = [
+      app_settings,  # nie niszcz aplikacji, jeśli zmieniają się app_settings
+    ]
+  }
 
 
 
