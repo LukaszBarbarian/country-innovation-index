@@ -1,0 +1,21 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"workspaceName": {
+			"value": "demosur-dev-synapse"
+		},
+		"AzureDataLakeStorage_accountKey": {
+			"value": ""
+		},
+		"demosur-dev-synapse-WorkspaceDefaultSqlServer_connectionString": {
+			"value": "Integrated Security=False;Encrypt=True;Connection Timeout=30;Data Source=tcp:demosur-dev-synapse.sql.azuresynapse.net,1433;Initial Catalog=@{linkedService().DBName}"
+		},
+		"AzureDataLakeStorage_properties_typeProperties_url": {
+			"value": "https://demosurdevdatalake4418sa.dfs.core.windows.net/"
+		},
+		"demosur-dev-synapse-WorkspaceDefaultStorage_properties_typeProperties_url": {
+			"value": "https://demosurdevdatalake4418sa.dfs.core.windows.net"
+		}
+	}
+}
