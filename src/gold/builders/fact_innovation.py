@@ -1,10 +1,12 @@
 from typing import Dict
 import pyspark.sql.functions as F
 from pyspark.sql import DataFrame
-from pyspark.ml.feature import MinMaxScaler, VectorAssembler
 from pyspark.sql.types import DoubleType as DblType
+from pyspark.ml.feature import MinMaxScaler, VectorAssembler
 from pyspark.ml.functions import vector_to_array
+from pyspark.sql.window import Window 
 
+# Importy klas z Twojego projektu
 from src.common.enums.model_type import ModelType
 from src.common.models.build_request import BuildRequest
 from src.common.builders.analytical_builder import AnalyticalBaseBuilder
@@ -13,35 +15,36 @@ from src.common.registers.analytical_model_registry import AnalyticalModelRegist
 
 @AnalyticalModelRegistry.register("fact_innovation")
 class FactInnovationBuilder(AnalyticalBaseBuilder):
-    """
-    A builder class for creating the 'fact_innovation' analytical model.
-    This class orchestrates a multi-step process to generate an "Innovation Score"
-    for countries across different years by joining various data sources, calculating
-    derived metrics, and normalizing the data.
-    """
     async def run(self, request: BuildRequest) -> DataFrame:
-        """
-        Executes the build logic to create the 'fact_innovation' model.
-
-        The process involves:
-        1. Joining all necessary DataFrames (countries, population, GDP, etc.) on `ISO3166-1-Alpha-3` and `year`.
-        2. Aggregating patent and Nobel laureate data.
-        3. Calculating derived metrics like patents per million, Nobelists per million, and R&D as a percentage of GDP.
-        4. Normalizing the metrics using Spark's `MinMaxScaler` to a range of [0, 1].
-        5. Calculating the final `innovation_score` as a weighted sum of the normalized metrics.
-        6. Returning a clean DataFrame with the final score and original columns.
-
-        Args:
-            request (BuildRequest): The request object containing all loaded DataFrames.
-
-        Returns:
-            DataFrame: A Spark DataFrame representing the 'fact_innovation' model.
-        """
         loaded = request.loaded_dfs or {}
 
-        # 🔹 Weights (intended to be from a config file)
-        w1, w2, w3, w4, w5, w6, w7 = 0.25, 0.25, 0.15, 0.15, 0.1, 0.1, 0.1
+        # 🔹 Wagi podindeksów i ich składowych
+        weights = {
+            "patents_index": 0.35,
+            "research_index": 0.35,
+            "rd_index": 0.2,
+            "unemployment_index": 0.1,
+        }
 
+        subindex_weights = {
+            "patents_index": {
+                "patents_per_million_norm": 0.4,
+                "resident_patents_per_million_norm": 0.3,
+                "patent_expansion_ratio_norm": 0.3,
+            },
+            "research_index": {
+                "researchers_per_million_norm": 0.6,
+                "nobelists_per_million_norm": 0.4,
+            },
+            "rd_index": {
+                "rd_gdp_pct_norm": 1.0,
+            },
+            "unemployment_index": {
+                "graduate_unemployment_rate_norm": 1.0,
+            },
+        }
+
+        # 🔹 Ładowanie i łączenie danych
         df_country = loaded.get(ModelType.COUNTRY)
         df_population = loaded.get(ModelType.POPULATION)
         df_pkb = loaded.get(ModelType.PKB)
@@ -52,110 +55,146 @@ class FactInnovationBuilder(AnalyticalBaseBuilder):
         df_nobels = loaded.get(ModelType.NOBEL_LAUREATES)
         df_year = loaded.get(ModelType.YEAR)
 
-        # 🔹 Cross join country × year
-        df_country_year = df_country.crossJoin(df_year)
+        df_country_iso = df_country.select("ISO3166-1-Alpha-3")
+        df_year_col = df_year.select("year")
+        df_country_year = df_country_iso.crossJoin(df_year_col)
 
-        # 🔹 Aggregate patents (by country and year)
         df_patents_agg = (
             df_patents.groupBy("ISO3166-1-Alpha-3", "year")
             .agg(
                 F.sum("patents_total").alias("patents_total"),
                 F.sum("resident_patents").alias("resident_patents"),
-                F.sum("abroad_patents").alias("abroad_patents")
+                F.sum("abroad_patents").alias("abroad_patents"),
             )
         )
 
-        # 🔹 Join all sources
         df = (
             df_country_year
-            .join(df_population.select("ISO3166-1-Alpha-3", "year",
-                                       F.col("value").alias("population")),
-                  ["ISO3166-1-Alpha-3", "year"], "left")
-            .join(df_pkb.select("ISO3166-1-Alpha-3", "year",
-                                F.col("value").alias("gdp")),
-                  ["ISO3166-1-Alpha-3", "year"], "left")
-            .join(df_rd.select("ISO3166-1-Alpha-3", "year",
-                               F.col("value").alias("rd_expenditure")),
-                  ["ISO3166-1-Alpha-3", "year"], "left")
-            .join(df_researchers.select("ISO3166-1-Alpha-3", "year",
-                                        F.col("value").alias("researchers_count")),
-                  ["ISO3166-1-Alpha-3", "year"], "left")
-            .join(df_unemp.select("ISO3166-1-Alpha-3", "year",
-                                  F.col("unemployment_rate").alias("graduate_unemployment_rate")),
-                  ["ISO3166-1-Alpha-3", "year"], "left")
-            .join(df_patents_agg,
-                  ["ISO3166-1-Alpha-3", "year"], "left")
-            .join(df_nobels.groupBy("ISO3166-1-Alpha-3", "year")
-                           .agg(F.countDistinct("laureate_id").alias("nobel_laureates_count")),
-                  ["ISO3166-1-Alpha-3", "year"], "left")
+            .join(df_population.select("ISO3166-1-Alpha-3", "year", F.col("value").alias("population")), ["ISO3166-1-Alpha-3", "year"], "left")
+            .join(df_pkb.select("ISO3166-1-Alpha-3", "year", F.col("value").alias("gdp")), ["ISO3166-1-Alpha-3", "year"], "left")
+            .join(df_rd.select("ISO3166-1-Alpha-3", "year", F.col("value").alias("rd_expenditure")), ["ISO3166-1-Alpha-3", "year"], "left")
+            .join(df_researchers.select("ISO3166-1-Alpha-3", "year", F.col("value").alias("researchers_count")), ["ISO3166-1-Alpha-3", "year"], "left")
+            .join(df_unemp.select("ISO3166-1-Alpha-3", "year", F.col("unemployment_rate").alias("graduate_unemployment_rate")), ["ISO3166-1-Alpha-3", "year"], "left")
+            .join(df_patents_agg, ["ISO3166-1-Alpha-3", "year"], "left")
+            .join(df_nobels.groupBy("ISO3166-1-Alpha-3", "year").agg(F.countDistinct("laureate_id").alias("nobel_laureates_count")), ["ISO3166-1-Alpha-3", "year"], "left")
         )
 
-        # 🔹 Derived metrics (protected against division by zero)
+        # 🔹 Obliczenia metryk pochodnych
         df = df.withColumn(
             "patents_per_million",
-            F.when(F.col("population").isNotNull() & (F.col("population") > 0),
-                   F.col("patents_total").cast(DblType()) / (F.col("population").cast(DblType()) / 1_000_000)).otherwise(F.lit(0))
+            F.when(F.col("population") > 0, F.col("patents_total").cast(DblType()) / (F.col("population") / 1_000_000)).otherwise(F.lit(None))
         ).withColumn(
             "resident_patents_per_million",
-            F.when(F.col("population").isNotNull() & (F.col("population") > 0),
-                   F.col("resident_patents").cast(DblType()) / (F.col("population").cast(DblType()) / 1_000_000)).otherwise(F.lit(0))
+            F.when(F.col("population") > 0, F.col("resident_patents").cast(DblType()) / (F.col("population") / 1_000_000)).otherwise(F.lit(None))
         ).withColumn(
             "nobelists_per_million",
-            F.when(F.col("population").isNotNull() & (F.col("population") > 0),
-                   F.col("nobel_laureates_count").cast(DblType()) / (F.col("population").cast(DblType()) / 1_000_000)).otherwise(F.lit(0))
+            F.when(F.col("population") > 0, F.col("nobel_laureates_count").cast(DblType()) / (F.col("population") / 1_000_000)).otherwise(F.lit(None))
         ).withColumn(
             "patent_expansion_ratio",
-            F.when((F.col("resident_patents") + F.lit(1)).isNotNull() & ((F.col("resident_patents") + F.lit(1)) > 0),
-                   F.col("abroad_patents").cast(DblType()) / (F.col("resident_patents").cast(DblType()) + F.lit(1))).otherwise(F.lit(0))
+            F.when(F.col("resident_patents") > 0, F.col("abroad_patents").cast(DblType()) / F.col("resident_patents")).otherwise(F.lit(None))
         ).withColumn(
             "researchers_per_million",
-            F.when(F.col("population").isNotNull() & (F.col("population") > 0),
-                   F.col("researchers_count").cast(DblType()) / (F.col("population").cast(DblType()) / 1_000_000)).otherwise(F.lit(0))
+            F.when(F.col("population") > 0, F.col("researchers_count").cast(DblType()) / (F.col("population") / 1_000_000)).otherwise(F.lit(None))
         ).withColumn(
             "rd_gdp_pct",
-            F.when(F.col("gdp").isNotNull() & (F.col("gdp") > 0),
-                   (F.col("rd_expenditure").cast(DblType()) / F.col("gdp").cast(DblType())) * 100).otherwise(F.lit(0))
+            F.when(F.col("gdp") > 0, (F.col("rd_expenditure").cast(DblType()) / F.col("gdp")) * 100).otherwise(F.lit(None))
         )
         
-        # 🔹 Data Normalization
-        cols_to_normalize = [
+        # 🔹 Lista kolumn do normalizacji
+        norm_cols = [
             "patents_per_million",
             "resident_patents_per_million",
             "nobelists_per_million",
             "patent_expansion_ratio",
             "researchers_per_million",
             "rd_gdp_pct",
-            "graduate_unemployment_rate"
+            "graduate_unemployment_rate",
         ]
         
-        # Replace nulls with 0, then assemble vectors.
-        df_clean = df.fillna(0, subset=cols_to_normalize)
-        assembler = VectorAssembler(inputCols=cols_to_normalize, outputCol="features")
-        df_assembled = assembler.transform(df_clean)
+        # 🔹 Log transform
+        temp_df = df.fillna(0, subset=norm_cols)
+        log_cols = [f"{c}_log" for c in norm_cols]
+        for c in norm_cols:
+            temp_df = temp_df.withColumn(f"{c}_log", F.log1p(F.col(c)))
 
-        # Use MinMaxScaler to scale all columns to the [0, 1] range.
+        # 🔹 Normalizacja
+        assembler = VectorAssembler(inputCols=log_cols, outputCol="features")
+        temp_df_assembled = assembler.transform(temp_df)
         scaler = MinMaxScaler(inputCol="features", outputCol="scaled_features")
-        scaler_model = scaler.fit(df_assembled)
-        df_scaled = scaler_model.transform(df_assembled)
+        scaler_model = scaler.fit(temp_df_assembled)
+        df_scaled = scaler_model.transform(temp_df_assembled)
         
-        # 🔹 Convert vector to array using Spark's built-in function
-        df_scaled_array = df_scaled.withColumn(
-            "scaled_array", vector_to_array(F.col("scaled_features"))
-        )
+        # 🔹 Kluczowa zmiana: Łączenie znormalizowanych danych z główną ramką
+        df_scaled_with_array = df_scaled.withColumn("scaled_array", vector_to_array(F.col("scaled_features")))
+        df = df.join(df_scaled_with_array.select(
+            "ISO3166-1-Alpha-3",
+            "year",
+            "scaled_array"
+        ), on=["ISO3166-1-Alpha-3", "year"], how="left")
         
-        # 🔹 Calculate Innovation Score based on the normalized array
-        df_final = df_scaled_array.withColumn(
-            "innovation_score",
-            F.col("scaled_array").getItem(0) * w1 +
-            F.col("scaled_array").getItem(1) * w2 +
-            F.col("scaled_array").getItem(2) * w6 +
-            F.col("scaled_array").getItem(3) * w3 +
-            F.col("scaled_array").getItem(4) * w4 +
-            F.col("scaled_array").getItem(5) * w5 -
-            F.col("scaled_array").getItem(6) * w7
+        # 🔹 Obliczanie znormalizowanych kolumn
+        for i, c in enumerate(norm_cols):
+            df = df.withColumn(
+                f"{c}_norm",
+                F.when(
+                    F.col(c).isNull(), F.lit(None)
+                ).otherwise(
+                    F.col("scaled_array").getItem(i)
+                )
+            )
+
+        # 🔹 Usuwamy tymczasowe kolumny
+        df = df.drop("scaled_array")
+        
+        # 🔹 Obliczanie podindeksów
+        df = df.withColumn(
+            "patents_index",
+            F.when(
+                (F.col("patents_per_million_norm").isNotNull() |
+                 F.col("resident_patents_per_million_norm").isNotNull() |
+                 F.col("patent_expansion_ratio_norm").isNotNull()),
+                (F.coalesce(F.col("patents_per_million_norm"), F.lit(0)) * subindex_weights["patents_index"]["patents_per_million_norm"] +
+                 F.coalesce(F.col("resident_patents_per_million_norm"), F.lit(0)) * subindex_weights["patents_index"]["resident_patents_per_million_norm"] +
+                 F.coalesce(F.col("patent_expansion_ratio_norm"), F.lit(0)) * subindex_weights["patents_index"]["patent_expansion_ratio_norm"])
+            ).otherwise(F.lit(None))
+        ).withColumn(
+            "research_index",
+            F.when(
+                (F.col("researchers_per_million_norm").isNotNull() |
+                 F.col("nobelists_per_million_norm").isNotNull()),
+                (F.coalesce(F.col("researchers_per_million_norm"), F.lit(0)) * subindex_weights["research_index"]["researchers_per_million_norm"] +
+                 F.coalesce(F.col("nobelists_per_million_norm"), F.lit(0)) * subindex_weights["research_index"]["nobelists_per_million_norm"])
+            ).otherwise(F.lit(None))
+        ).withColumn(
+            "rd_index",
+            F.when(F.col("rd_gdp_pct_norm").isNotNull(), F.col("rd_gdp_pct_norm")).otherwise(F.lit(None))
+        ).withColumn(
+            "unemployment_index",
+            F.when(F.col("graduate_unemployment_rate_norm").isNotNull(), 1 - F.col("graduate_unemployment_rate_norm")).otherwise(F.lit(None))
         )
 
-        # Remove temporary columns and return the final DataFrame.
-        final_cols = [c for c in df.columns] + ["innovation_score"]
-        
-        return df_final.select(*final_cols)
+        # 🔹 Obliczanie dynamicznej sumy wag i wartości
+        sum_of_values_expr = (
+            F.coalesce(F.col("patents_index"), F.lit(0)) * weights["patents_index"] +
+            F.coalesce(F.col("research_index"), F.lit(0)) * weights["research_index"] +
+            F.coalesce(F.col("rd_index"), F.lit(0)) * weights["rd_index"] +
+            F.coalesce(F.col("unemployment_index"), F.lit(0)) * weights["unemployment_index"]
+        )
+
+        sum_of_weights_expr = (
+            F.when(F.col("patents_index").isNotNull(), weights["patents_index"]).otherwise(0) +
+            F.when(F.col("research_index").isNotNull(), weights["research_index"]).otherwise(0) +
+            F.when(F.col("rd_index").isNotNull(), weights["rd_index"]).otherwise(0) +
+            F.when(F.col("unemployment_index").isNotNull(), weights["unemployment_index"]).otherwise(0)
+        )
+
+        # 🔹 Finalny wynik
+        df = df.withColumn(
+            "innovation_score_final",
+            F.when(
+                sum_of_weights_expr > 0,
+                sum_of_values_expr / sum_of_weights_expr
+            ).otherwise(F.lit(None))
+        )
+
+        return df
