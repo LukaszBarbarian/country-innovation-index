@@ -4,7 +4,7 @@ from pyspark.sql import DataFrame
 from pyspark.sql.types import DoubleType as DblType
 from pyspark.ml.feature import MinMaxScaler, VectorAssembler
 from pyspark.ml.functions import vector_to_array
-from pyspark.sql.window import Window 
+from pyspark.sql.window import Window
 
 # Importy klas z Twojego projektu
 from src.common.enums.model_type import ModelType
@@ -111,90 +111,101 @@ class FactInnovationBuilder(AnalyticalBaseBuilder):
             "graduate_unemployment_rate",
         ]
         
-        # 🔹 Log transform
-        temp_df = df.fillna(0, subset=norm_cols)
-        log_cols = [f"{c}_log" for c in norm_cols]
+        # 🔹 Log transform (NULL zostaje NULL, brak fillna(0))
+        temp_df = df
+        log_cols = []
         for c in norm_cols:
-            temp_df = temp_df.withColumn(f"{c}_log", F.log1p(F.col(c)))
-
-        # 🔹 Normalizacja
+            log_col = f"{c}_log"
+            log_cols.append(log_col)
+            temp_df = temp_df.withColumn(log_col, F.when(F.col(c).isNotNull(), F.log1p(F.col(c))))
+        
+        # =====================================================================
+        # 1) GLOBALNE skalowanie (cross-country)
+        # =====================================================================
         assembler = VectorAssembler(inputCols=log_cols, outputCol="features")
         temp_df_assembled = assembler.transform(temp_df)
         scaler = MinMaxScaler(inputCol="features", outputCol="scaled_features")
         scaler_model = scaler.fit(temp_df_assembled)
         df_scaled = scaler_model.transform(temp_df_assembled)
-        
-        # 🔹 Kluczowa zmiana: Łączenie znormalizowanych danych z główną ramką
-        df_scaled_with_array = df_scaled.withColumn("scaled_array", vector_to_array(F.col("scaled_features")))
-        df = df.join(df_scaled_with_array.select(
-            "ISO3166-1-Alpha-3",
-            "year",
-            "scaled_array"
-        ), on=["ISO3166-1-Alpha-3", "year"], how="left")
-        
-        # 🔹 Obliczanie znormalizowanych kolumn
+
+        df_scaled = df_scaled.withColumn("scaled_array", vector_to_array(F.col("scaled_features")))
+
         for i, c in enumerate(norm_cols):
-            df = df.withColumn(
-                f"{c}_norm",
-                F.when(
-                    F.col(c).isNull(), F.lit(None)
-                ).otherwise(
-                    F.col("scaled_array").getItem(i)
+            df_scaled = df_scaled.withColumn(
+                f"{c}_norm_global",
+                F.when(F.col(c).isNull(), None).otherwise(F.col("scaled_array").getItem(i))
+            )
+        df_scaled = df_scaled.drop("scaled_array", "features", "scaled_features")
+        
+        # =====================================================================
+        # 2) LOKALNE skalowanie (per kraj, min/max w oknie)
+        # =====================================================================
+        for c in norm_cols:
+            w = Window.partitionBy("ISO3166-1-Alpha-3")
+            df_scaled = df_scaled.withColumn(
+                f"{c}_min", F.min(c).over(w)
+            ).withColumn(
+                f"{c}_max", F.max(c).over(w)
+            ).withColumn(
+                f"{c}_norm_local",
+                F.when(F.col(c).isNull(), None).otherwise(
+                    (F.col(c) - F.col(f"{c}_min")) / (F.col(f"{c}_max") - F.col(f"{c}_min"))
+                )
+            ).drop(f"{c}_min", f"{c}_max")
+        
+        # =====================================================================
+        # Obliczanie indeksów – globalny i lokalny
+        # =====================================================================
+        def build_index(df_in: DataFrame, suffix: str) -> DataFrame:
+            return (
+                df_in.withColumn(
+                    f"patents_index_{suffix}",
+                    F.when(
+                        (F.col(f"patents_per_million_norm_{suffix}").isNotNull() |
+                         F.col(f"resident_patents_per_million_norm_{suffix}").isNotNull() |
+                         F.col(f"patent_expansion_ratio_norm_{suffix}").isNotNull()),
+                        (F.coalesce(F.col(f"patents_per_million_norm_{suffix}"), F.lit(0)) * subindex_weights["patents_index"]["patents_per_million_norm"] +
+                         F.coalesce(F.col(f"resident_patents_per_million_norm_{suffix}"), F.lit(0)) * subindex_weights["patents_index"]["resident_patents_per_million_norm"] +
+                         F.coalesce(F.col(f"patent_expansion_ratio_norm_{suffix}"), F.lit(0)) * subindex_weights["patents_index"]["patent_expansion_ratio_norm"])
+                    )
+                ).withColumn(
+                    f"research_index_{suffix}",
+                    F.when(
+                        (F.col(f"researchers_per_million_norm_{suffix}").isNotNull() |
+                         F.col(f"nobelists_per_million_norm_{suffix}").isNotNull()),
+                        (F.coalesce(F.col(f"researchers_per_million_norm_{suffix}"), F.lit(0)) * subindex_weights["research_index"]["researchers_per_million_norm"] +
+                         F.coalesce(F.col(f"nobelists_per_million_norm_{suffix}"), F.lit(0)) * subindex_weights["research_index"]["nobelists_per_million_norm"])
+                    )
+                ).withColumn(
+                    f"rd_index_{suffix}",
+                    F.when(F.col(f"rd_gdp_pct_norm_{suffix}").isNotNull(), F.col(f"rd_gdp_pct_norm_{suffix}"))
+                ).withColumn(
+                    f"unemployment_index_{suffix}",
+                    F.when(F.col(f"graduate_unemployment_rate_norm_{suffix}").isNotNull(), 1 - F.col(f"graduate_unemployment_rate_norm_{suffix}"))
+                ).withColumn(
+                    f"innovation_score_final_{suffix}",
+                    F.when(
+                        (F.when(F.col(f"patents_index_{suffix}").isNotNull(), weights["patents_index"]).otherwise(0) +
+                         F.when(F.col(f"research_index_{suffix}").isNotNull(), weights["research_index"]).otherwise(0) +
+                         F.when(F.col(f"rd_index_{suffix}").isNotNull(), weights["rd_index"]).otherwise(0) +
+                         F.when(F.col(f"unemployment_index_{suffix}").isNotNull(), weights["unemployment_index"]).otherwise(0)) > 0,
+                        (
+                            F.coalesce(F.col(f"patents_index_{suffix}"), F.lit(0)) * weights["patents_index"] +
+                            F.coalesce(F.col(f"research_index_{suffix}"), F.lit(0)) * weights["research_index"] +
+                            F.coalesce(F.col(f"rd_index_{suffix}"), F.lit(0)) * weights["rd_index"] +
+                            F.coalesce(F.col(f"unemployment_index_{suffix}"), F.lit(0)) * weights["unemployment_index"]
+                        ) /
+                        (
+                            F.when(F.col(f"patents_index_{suffix}").isNotNull(), weights["patents_index"]).otherwise(0) +
+                            F.when(F.col(f"research_index_{suffix}").isNotNull(), weights["research_index"]).otherwise(0) +
+                            F.when(F.col(f"rd_index_{suffix}").isNotNull(), weights["rd_index"]).otherwise(0) +
+                            F.when(F.col(f"unemployment_index_{suffix}").isNotNull(), weights["unemployment_index"]).otherwise(0)
+                        )
+                    )
                 )
             )
 
-        # 🔹 Usuwamy tymczasowe kolumny
-        df = df.drop("scaled_array")
-        
-        # 🔹 Obliczanie podindeksów
-        df = df.withColumn(
-            "patents_index",
-            F.when(
-                (F.col("patents_per_million_norm").isNotNull() |
-                 F.col("resident_patents_per_million_norm").isNotNull() |
-                 F.col("patent_expansion_ratio_norm").isNotNull()),
-                (F.coalesce(F.col("patents_per_million_norm"), F.lit(0)) * subindex_weights["patents_index"]["patents_per_million_norm"] +
-                 F.coalesce(F.col("resident_patents_per_million_norm"), F.lit(0)) * subindex_weights["patents_index"]["resident_patents_per_million_norm"] +
-                 F.coalesce(F.col("patent_expansion_ratio_norm"), F.lit(0)) * subindex_weights["patents_index"]["patent_expansion_ratio_norm"])
-            ).otherwise(F.lit(None))
-        ).withColumn(
-            "research_index",
-            F.when(
-                (F.col("researchers_per_million_norm").isNotNull() |
-                 F.col("nobelists_per_million_norm").isNotNull()),
-                (F.coalesce(F.col("researchers_per_million_norm"), F.lit(0)) * subindex_weights["research_index"]["researchers_per_million_norm"] +
-                 F.coalesce(F.col("nobelists_per_million_norm"), F.lit(0)) * subindex_weights["research_index"]["nobelists_per_million_norm"])
-            ).otherwise(F.lit(None))
-        ).withColumn(
-            "rd_index",
-            F.when(F.col("rd_gdp_pct_norm").isNotNull(), F.col("rd_gdp_pct_norm")).otherwise(F.lit(None))
-        ).withColumn(
-            "unemployment_index",
-            F.when(F.col("graduate_unemployment_rate_norm").isNotNull(), 1 - F.col("graduate_unemployment_rate_norm")).otherwise(F.lit(None))
-        )
-
-        # 🔹 Obliczanie dynamicznej sumy wag i wartości
-        sum_of_values_expr = (
-            F.coalesce(F.col("patents_index"), F.lit(0)) * weights["patents_index"] +
-            F.coalesce(F.col("research_index"), F.lit(0)) * weights["research_index"] +
-            F.coalesce(F.col("rd_index"), F.lit(0)) * weights["rd_index"] +
-            F.coalesce(F.col("unemployment_index"), F.lit(0)) * weights["unemployment_index"]
-        )
-
-        sum_of_weights_expr = (
-            F.when(F.col("patents_index").isNotNull(), weights["patents_index"]).otherwise(0) +
-            F.when(F.col("research_index").isNotNull(), weights["research_index"]).otherwise(0) +
-            F.when(F.col("rd_index").isNotNull(), weights["rd_index"]).otherwise(0) +
-            F.when(F.col("unemployment_index").isNotNull(), weights["unemployment_index"]).otherwise(0)
-        )
-
-        # 🔹 Finalny wynik
-        df = df.withColumn(
-            "innovation_score_final",
-            F.when(
-                sum_of_weights_expr > 0,
-                sum_of_values_expr / sum_of_weights_expr
-            ).otherwise(F.lit(None))
-        )
+        df = build_index(df_scaled, "global")
+        df = build_index(df, "local")
 
         return df
