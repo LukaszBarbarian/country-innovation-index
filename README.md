@@ -344,6 +344,8 @@ terraform apply
 
 ## Diagrams & Reports
 
+<img width="1086" height="621" alt="image" src="https://github.com/user-attachments/assets/93ed61d2-215b-461c-b03f-015a291b510b" />
+
 
 
 ---
