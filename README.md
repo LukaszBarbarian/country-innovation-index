@@ -64,9 +64,8 @@ A concise, non-redundant description of the Medallion implementation used in thi
 | **Reporting** | Power BI | Visualization and business analysis. |
 | **Automation** | Terraform, GitHub Actions | IaC (Infrastructure as Code) and CI/CD. |
 
+<img width="1173" height="705" alt="image" src="https://github.com/user-attachments/assets/bbb56101-848d-4ef1-b001-35490055328f" />
 
-
-A diagram is expected under `docs/architecture.png` if you add one.
 
 ---
 
