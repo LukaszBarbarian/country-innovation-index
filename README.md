@@ -278,15 +278,15 @@ country-innovation-index/
 ├── infra/terraform/ # Terraform for Azure resources
 ├── function_app.py # single Azure Function (temporarily at repo root) — TODO: move to src/bronze
 ├── src/
-│    ├── common/ # shared code (utilities, factory, registry)
-│    ├── bronze/ # bronze-layer functions & ingestion helpers
-│    │   └── manifests/dev.manifest.json # manifest uploaded by CI/CD (bronze manifest)
-│    ├── silver/ # silver transformations (notebooks, scripts)
-│    ├── gold/ # gold layer builders / reporting exports
-│    ├── azure_data_factory/ # ADF JSON definitions synced from the ADF service
-│    └── synapse/ # Synapse artifacts exported from workspace
-├── tests/ # unit / integration tests
-├── .github/workflows/main.yml # CI/CD workflow (GitHub Actions)
+│    ├── common/                             # shared code (utilities, factory, registry)
+│    ├── bronze/                             # bronze-layer functions & ingestion helpers
+│    │   └── manifests/dev.manifest.json     # manifest uploaded by CI/CD (bronze manifest)
+│    ├── silver/                             # silver transformations (notebooks, scripts)
+│    ├── gold/                               # gold layer builders / reporting exports
+│    ├── azure_data_factory/                 # ADF JSON definitions synced from the ADF service
+│    └── synapse/                            # Synapse artifacts exported from workspace
+├── tests/                                   # unit / integration tests
+├── .github/workflows/main.yml               # CI/CD workflow (GitHub Actions)
 └── README.md
 ```
 
