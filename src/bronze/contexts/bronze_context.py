@@ -9,5 +9,5 @@ from src.common.models.base_context import ContextBase
 @dataclass
 class BronzeContext(ContextBase):
     manifest: Optional[BronzeManifest] = None
-    ingestion_date = datetime.datetime.utcnow()
+    ingestion_date = datetime.datetime.now(datetime.timezone.utc)
 

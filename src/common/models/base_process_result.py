@@ -27,7 +27,7 @@ class BaseProcessResult:
     message: Optional[str] = None
     output_paths: List[str] = field(default_factory=list)
 
-    start_time: Optional[datetime.datetime] = datetime.datetime.utcnow().isoformat()
+    start_time: Optional[datetime.datetime] = datetime.datetime.now(datetime.timezone.utc).isoformat()
     end_time: Optional[datetime.datetime] = None
 
     error_details: Dict[str, Any] = field(default_factory=dict)

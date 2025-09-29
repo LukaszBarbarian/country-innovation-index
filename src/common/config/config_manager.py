@@ -34,7 +34,6 @@ class ConfigManager:
         """
         setting = self.app_config_client.get_configuration_setting(key=key)
 
-        # If it's a Key Vault reference
         if setting.content_type and setting.content_type.startswith(
             "application/vnd.microsoft.appconfig.keyvaultref"
         ):
@@ -42,7 +41,6 @@ class ConfigManager:
             secret_uri = ref["uri"]
             return self._get_secret(secret_uri)
 
-        # It's a plain value
         return setting.value
 
     def _get_secret(self, secret_uri: str) -> str:

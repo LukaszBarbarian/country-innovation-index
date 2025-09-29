@@ -139,7 +139,7 @@ class BronzeStorageFileBuilder(BaseStorageFileBuilder):
             "env": context.env.value,
             "etl_layer": context.etl_layer.value,
             "correlation_id": context.correlation_id,
-            "timestamp": datetime.datetime.utcnow().isoformat(),
+            "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
             "processed_items": len(results),
             "duration_in_ms" : kwargs.get("duration_orchestrator"),
             "results": [r.to_dict() for r in results]
@@ -163,7 +163,7 @@ class BronzeStorageFileBuilder(BaseStorageFileBuilder):
             file_size_bytes=file_size_bytes,
             domain_source=None,
             dataset_name=None,
-            ingestion_date=datetime.datetime.utcnow().strftime("%Y-%m-%d"),
+            ingestion_date=datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d"),
             correlation_id=context.correlation_id,
             hash_name=context.correlation_id,
             full_blob_url=full_blob_url

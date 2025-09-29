@@ -124,7 +124,7 @@ class SilverStorageFileBuilder(BaseStorageFileBuilder):
             "env": context.env.value,
             "etl_layer": context.etl_layer.value,
             "correlation_id": context.correlation_id,
-            "timestamp": datetime.datetime.utcnow().isoformat(),
+            "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
             "processed_models": len(results),
             "duration_in_ms": kwargs.get("duration_orchestrator"),
             "results": processed_results # Use the manually processed list
@@ -140,7 +140,7 @@ class SilverStorageFileBuilder(BaseStorageFileBuilder):
 
         blob_tags = {
             "correlationId": context.correlation_id,
-            "ingestionTimestampUTC": datetime.datetime.utcnow().isoformat() + "Z",
+            "ingestionTimestampUTC": datetime.datetime.now(datetime.timezone.utc).isoformat() + "Z",
             "type": "goldSummary",
             "status": summary_data["status"],
         }
@@ -152,7 +152,7 @@ class SilverStorageFileBuilder(BaseStorageFileBuilder):
             file_size_bytes=file_size_bytes,
             domain_source=None,
             dataset_name=None,
-            ingestion_date=datetime.datetime.utcnow().strftime("%Y-%m-%d"),
+            ingestion_date=datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d"),
             correlation_id=context.correlation_id,
             blob_tags=blob_tags,
             hash_name=context.correlation_id,

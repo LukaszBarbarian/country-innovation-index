@@ -14,7 +14,7 @@ class BuildRequest:
     the results from upstream processes (e.g., from the Silver layer).
     """
     model: GoldManifestModel
-    source_results: List[ProcessModelResult]  # A list of ProcessModelResult objects.
+    source_results: List[ProcessModelResult] 
     loaded_dfs: Optional[Dict[ModelType, DataFrame]] = None
 
     def get_df(self, model_type: ModelType) -> Optional[DataFrame]:

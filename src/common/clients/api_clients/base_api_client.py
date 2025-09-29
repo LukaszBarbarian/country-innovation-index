@@ -15,7 +15,6 @@ class ApiClient(ABC):
     An abstract base class for all API clients.
     It defines the fundamental interface for fetching data from an external API.
     """
-    # Removed api_identifier from the constructor
     def __init__(self, config: Any, base_url_setting_name: str):
         """
         Initializes the ApiClient with configuration and a base URL setting name.

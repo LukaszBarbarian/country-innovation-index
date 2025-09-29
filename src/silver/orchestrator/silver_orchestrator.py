@@ -57,15 +57,15 @@ class SilverOrchestrator(BaseOrchestrator):
         This method encapsulates the entire process for one model: building,
         persisting, and error handling.
         """
-        model_start_time = datetime.datetime.utcnow()
+        model_start_time = datetime.datetime.now(datetime.timezone.utc)
         try:
             built_model = await model_director.get_built_model(model)
             persisted_result = persister.persist_model(built_model)
-            model_duration_ms = int((datetime.datetime.utcnow() - model_start_time).total_seconds() * 1000)
+            model_duration_ms = int((datetime.datetime.now(datetime.timezone.utc) - model_start_time).total_seconds() * 1000)
             persisted_result.duration_in_ms = model_duration_ms
             return persisted_result
         except Exception as e:
-            model_duration_ms = int((datetime.datetime.utcnow() - model_start_time).total_seconds() * 1000)
+            model_duration_ms = int((datetime.datetime.now(datetime.timezone.utc) - model_start_time).total_seconds() * 1000)
             # Return an error object so the OrchestratorResultBuilder can handle it.
             return BaseProcessResult(
                 status="FAILED",

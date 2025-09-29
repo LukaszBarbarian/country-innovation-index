@@ -53,7 +53,7 @@ class OrchestratorResultBuilder:
         Returns:
             OrchestratorResult: The complete and finalized orchestrator result.
         """
-        start_time = datetime.datetime.utcnow()
+        start_time = datetime.datetime.now(datetime.timezone.utc)
 
         try:
             final_result = self.create_final_orchestrator_result()
@@ -63,7 +63,7 @@ class OrchestratorResultBuilder:
 
             return final_result
         except Exception as e:
-            duration_ms = int((datetime.datetime.utcnow() - start_time).total_seconds() * 1000)
+            duration_ms = int((datetime.datetime.now(datetime.timezone.utc) - start_time).total_seconds() * 1000)
             logger.exception(f"Orchestrator result builder failed to finalize results for {self._context.etl_layer.value}")
             return self.create_error_orchestrator_result(e, duration_ms)
 

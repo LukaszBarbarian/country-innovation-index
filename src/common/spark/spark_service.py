@@ -53,6 +53,10 @@ class SparkService:
         print(f"✅ SparkSession is ready! ver: {self.spark.version}")
 
 
+    def stop(self):
+        pass 
+
+
     def https_to_abfss(self, https_url: str) -> str:
         """
         Converts an HTTPS URL of an Azure Blob Storage resource to an ABFSS URL.

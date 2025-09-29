@@ -23,7 +23,6 @@ class SummaryResultBase:
         Returns True if the status is 'COMPLETED', otherwise False.
         The check is case-insensitive.
         """
-        # We'll use `upper()` just in case to ensure consistency
         return self.status.upper() == "COMPLETED"
 
 @dataclass

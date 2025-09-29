@@ -71,21 +71,19 @@ class GoldOrchestrator(BaseOrchestrator):
             BaseProcessResult: An object representing the result of the process,
                                including success status, duration, and any errors.
         """
-        model_start_time = datetime.datetime.utcnow()
+        model_start_time = datetime.datetime.now(datetime.timezone.utc)
         try:
             built_model = await model_director.get_built_model(model)
             persisted_result = persister.persist_model(built_model)
-            model_duration_ms = int((datetime.datetime.utcnow() - model_start_time).total_seconds() * 1000)
+            model_duration_ms = int((datetime.datetime.now(datetime.timezone.utc) - model_start_time).total_seconds() * 1000)
             persisted_result.duration_in_ms = model_duration_ms
             return persisted_result
         except Exception as e:
-            model_duration_ms = int((datetime.datetime.utcnow() - model_start_time).total_seconds() * 1000)
+            model_duration_ms = int((datetime.datetime.now(datetime.timezone.utc) - model_start_time).total_seconds() * 1000)
             # Return a result object with an error so that the OrchestratorResultBuilder can handle it.
             return BaseProcessResult(
                 status="FAILED",
                 correlation_id=context.correlation_id,
-                etl_layer=context.etl_layer,
-                env=context.env,
                 duration_in_ms=model_duration_ms,
                 error_details={"error_message": str(e)}
             )

@@ -17,10 +17,10 @@ def track_duration(func: Callable) -> Callable:
     """
     @wraps(func)
     async def wrapper(*args, **kwargs) -> Awaitable[Any]:
-        start_time = datetime.datetime.utcnow()
+        start_time = datetime.datetime.now(datetime.timezone.utc)
         try:
             result = await func(*args, **kwargs)
-            end_time = datetime.datetime.utcnow()
+            end_time = datetime.datetime.now(datetime.timezone.utc)
             duration_ms = int((end_time - start_time).total_seconds() * 1000)
             
             # Create a new instance with the new duration
@@ -29,7 +29,7 @@ def track_duration(func: Callable) -> Callable:
             
             return result
         except Exception as e:
-            end_time = datetime.datetime.utcnow()
+            end_time = datetime.datetime.now(datetime.timezone.utc)
             duration_ms = int((end_time - start_time).total_seconds() * 1000)
             
             # In case of an error, your `ingest` method must return

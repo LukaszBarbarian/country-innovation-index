@@ -3,6 +3,7 @@ import httpx
 import logging
 
 from src.common.clients.api_clients.loaders.base_api_loader import ApiLoader
+from src.common.exceptions.retry import async_retry
 from src.common.models.raw_data import RawData
 
 logger = logging.getLogger(__name__)
@@ -43,17 +44,16 @@ class PaginationApiLoader(ApiLoader):
         self.limit_param = limit_param
         self.extractor = extractor or (lambda r: r.get("data", []) if isinstance(r, dict) else r)
 
+
+    @async_retry(max_retries=3, delay=2.0, exceptions=(httpx.HTTPStatusError, httpx.RequestError))
+    async def _fetch_page(self, url: str, params: dict):
+        response = await self.client.get(url, params=params)
+        response.raise_for_status()
+        return response.json()
+
+
+
     async def load(self) -> List[RawData]:
-        """
-        Loads all data from the paginated API by making sequential requests.
-
-        This method overrides the abstract 'load' method from ApiLoader. It iteratively
-        sends requests, incrementing the page/offset parameter, until an empty response
-        is received, indicating the end of the data.
-
-        Returns:
-            List[RawData]: A list of all fetched records wrapped in RawData objects.
-        """
         current_page_or_offset = self.initial_payload.get(self.page_param, 0 if self.page_param == "offset" else 1)
         current_limit = self.initial_payload.get(self.limit_param, 100)
         all_results: List[RawData] = []
@@ -64,27 +64,19 @@ class PaginationApiLoader(ApiLoader):
             logger.info(f"Loading page from {url} with params {params}")
 
             try:
-                response = await self.client.get(url, params=params)
-                response.raise_for_status()
-                json_data = response.json()
-
-                records = self.extractor(json_data)
-                
-                if not records:
-                    logger.info("No records returned, stopping pagination.")
-                    break
-
-                for record in records:
-                    all_results.append(RawData(data=record, dataset_name=self.endpoint))
-                
-                # The ONLY necessary change:
-                current_page_or_offset += current_limit if self.page_param == "offset" else 1
-
-            except httpx.HTTPStatusError as e:
-                logger.error(f"HTTP error: {e}")
-                break
+                json_data = await self._fetch_page(url, params)
             except Exception as e:
-                logger.error(f"An unexpected error occurred: {e}")
+                logger.error(f"Failed to load page {current_page_or_offset}: {e}")
+                raise
+
+            records = self.extractor(json_data)
+            if not records:
+                logger.info("No records returned, stopping pagination.")
                 break
+
+            for record in records:
+                all_results.append(RawData(data=record, dataset_name=self.endpoint))
+
+            current_page_or_offset += current_limit if self.page_param == "offset" else 1
 
         return all_results

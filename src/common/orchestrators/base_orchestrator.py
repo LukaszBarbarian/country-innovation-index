@@ -50,17 +50,15 @@ class BaseOrchestrator(ABC):
         Returns:
             OrchestratorResult: A summary object detailing the outcome of the execution.
         """
-        start_time = datetime.datetime.utcnow()
+        start_time = datetime.datetime.now(datetime.timezone.utc)
         result_builder = OrchestratorResultBuilder(context, self.config)
 
         try:
             raw_results = await self.run(context)
             processed_results = []
             
-            # Check each result for exceptions
             for result in raw_results:
                 if isinstance(result, Exception):
-                    # If an exception is found, re-raise it for the outer `except` block to handle
                     raise result
                 processed_results.append(result)
             
@@ -70,7 +68,7 @@ class BaseOrchestrator(ABC):
             return await result_builder.build_and_save()
             
         except Exception as e:
-            duration_ms = int((datetime.datetime.utcnow() - start_time).total_seconds() * 1000)
+            duration_ms = int((datetime.datetime.now(datetime.timezone.utc) - start_time).total_seconds() * 1000)
             logger.exception(f"Orchestrator for {context.etl_layer.value} failed with a critical error.")
             return result_builder.create_error_orchestrator_result(e, duration_ms)
 

@@ -195,7 +195,7 @@ summary_json = """
 
 
 config = ConfigManager()
-context = GoldParser().parse(manifest_json=manifest_json, summary_json=summary_json)
+context = GoldParser(config).parse(manifest_json=manifest_json, summary_json=summary_json)
 
 spark = SparkService(config)
 spark.start_local()

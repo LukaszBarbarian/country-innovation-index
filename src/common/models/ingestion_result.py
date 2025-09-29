@@ -2,13 +2,6 @@ from dataclasses import asdict, dataclass, field
 from enum import Enum
 import os
 from typing import Any, Dict, List, Optional
-
-# src/common/models/ingestion_models.py
-
-from src.common.enums.domain_source import DomainSource
-from src.common.enums.domain_source_type import DomainSourceType
-from src.common.enums.env import Env
-from src.common.enums.etl_layers import ETLLayer
 from src.common.models.base_process_result import BaseProcessResult
 
 @dataclass
