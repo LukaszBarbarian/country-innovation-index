@@ -30,6 +30,7 @@ Instead of a simple linear formula, the final Innovation Score is calculated as 
 
 <img width="529" height="102" alt="image" src="https://github.com/user-attachments/assets/81b0e726-495f-49b7-9699-04cdeb67e30e" />
 
+
 ---
 
 
@@ -345,6 +346,7 @@ terraform apply
 ## Diagrams & Reports
 
 <img width="1086" height="621" alt="image" src="https://github.com/user-attachments/assets/93ed61d2-215b-461c-b03f-015a291b510b" />
+<img width="1216" height="539" alt="image" src="https://github.com/user-attachments/assets/4ee7312a-ae49-4845-920c-6a55625ea7dd" />
 
 
 
