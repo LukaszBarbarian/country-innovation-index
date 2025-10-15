@@ -87,7 +87,7 @@ class OrchestratorResultBuilder:
             env=self._context.env,
             processed_items=len(self._results),
             duration_in_ms=duration_ms,
-            results=[asdict(r) for r in self._results],
+            #results=[asdict(r) for r in self._results],
             message=f"{self._context.etl_layer.value} orchestration {overall_status}. See summary for details."
         )
 

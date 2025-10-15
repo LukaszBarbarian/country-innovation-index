@@ -53,7 +53,7 @@ class GoldOrchestrator(BaseOrchestrator):
                                     model: GoldManifest, 
                                     model_director: ModelDirector, 
                                     persister: ModelPersister, 
-                                    context: SilverContext) -> BaseProcessResult:
+                                    context: GoldContext) -> BaseProcessResult:
         """
         Processes a single analytical model.
 
@@ -65,7 +65,7 @@ class GoldOrchestrator(BaseOrchestrator):
             model (GoldManifest): The manifest data for the model to be processed.
             model_director (ModelDirector): The director responsible for building the model.
             persister (ModelPersister): The persister responsible for saving the model.
-            context (SilverContext): The current ETL context.
+            context (GoldContext): The current ETL context.
 
         Returns:
             BaseProcessResult: An object representing the result of the process,
