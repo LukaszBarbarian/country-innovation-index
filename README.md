@@ -64,9 +64,8 @@ A concise, non-redundant description of the Medallion implementation used in thi
 | **Reporting** | Power BI | Visualization and business analysis. |
 | **Automation** | Terraform, GitHub Actions | IaC (Infrastructure as Code) and CI/CD. |
 
+<img width="1173" height="705" alt="image" src="https://github.com/user-attachments/assets/bbb56101-848d-4ef1-b001-35490055328f" />
 
-
-A diagram is expected under `docs/architecture.png` if you add one.
 
 ---
 
@@ -336,6 +335,8 @@ terraform apply
 3. Configure GitHub Actions secrets (Azure credentials, storage connection, Key Vault secrets).
 
 4. Let the CI/CD pipeline deploy Functions + ADF (the workflow will push manifests and code).
+   <img width="946" height="298" alt="image" src="https://github.com/user-attachments/assets/1998763e-35bb-4e68-adcf-394559708299" />
+
 
 5. Trigger Bronze via ADF trigger or call `IngestNow` locally for debugging.
 
