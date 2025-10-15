@@ -5,9 +5,7 @@ from src.bronze.ingestion.ingestion_strategy.api_ingestion_strategy import ApiIn
 from src.common.enums.env import Env
 from src.common.enums.etl_layers import ETLLayer
 from src.bronze.models.manifest import BronzeManifestSource
-from src.common.models.file_info import FileInfo
 
-# przykładowy manifest source
 mock_source = BronzeManifestSource(
     source_config_payload=MagicMock(
         domain_source="NOBELPRIZE",
@@ -32,15 +30,12 @@ async def test_ingest_failure_api_client_factory():
 async def test_ingest_failure_fetch_all_complete():
     """All dependencies mocked, simulate API fetch_all raising exception"""
     
-    # Przygotowanie kontekstu i strategii
     context = BronzeContext(env=Env.DEV, etl_layer=ETLLayer.BRONZE)
     strategy = ApiIngestionStrategy(config=MagicMock(), context=context)
     
-    # Mock dla API klienta
     mock_client = AsyncMock()
     mock_client.fetch_all.side_effect = Exception("API error")
     
-    # Mock dla pozostałych fabryk
     mock_processor = MagicMock()
     mock_file_builder = MagicMock()
     mock_file_builder.build_file.return_value = {
@@ -50,10 +45,8 @@ async def test_ingest_failure_fetch_all_complete():
     mock_blob_manager = AsyncMock()
     mock_blob_manager.upload_blob.return_value = 1024  # 1 KB
     
-    # Mock config.get
     strategy.config.get.return_value = "fake_account"
     
-    # Przygotowanie przykładowego manifest_source
     class MockSource:
         source_config_payload = type("Payload", (), {
             "domain_source": "NOBELPRIZE",
@@ -69,7 +62,6 @@ async def test_ingest_failure_fetch_all_complete():
         
         result = await strategy.ingest(mock_source)
         
-        # Sprawdzenie, że strategia zgłosiła FAILED status
         assert result.status == "FAILED"
         assert "API error" in result.message
 

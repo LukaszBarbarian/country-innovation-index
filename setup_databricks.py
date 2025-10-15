@@ -1,4 +1,4 @@
-# W setup_databricks.py
+# setup_databricks.py
 from setuptools import setup, find_packages
 
 setup(
@@ -11,6 +11,6 @@ setup(
         'pandas>=2.0.0',
     ],
     python_requires='>=3.9',
-    author='Your Name',
+    author='LS',
     description='Core Databricks utilities for CV-DEMO1 project.',
 )

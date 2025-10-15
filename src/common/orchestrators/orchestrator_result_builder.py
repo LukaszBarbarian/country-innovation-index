@@ -30,7 +30,7 @@ class OrchestratorResultBuilder:
         self._context = context
         self._config = config
         self._results: List[BaseProcessResult] = []
-        self._blob_client_manager = BlobClientManager(container_name=context.etl_layer.value.lower())
+        self._blob_client_manager = BlobClientManager(container_name=context.etl_layer.value.lower(), config=config)
 
     def add_result(self, result: BaseProcessResult):
         """

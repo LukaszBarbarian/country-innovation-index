@@ -21,3 +21,5 @@ infra/.terraform/providers/registry.terraform.io/databricks/databricks/1.84.0/wi
 infra/.terraform/providers/registry.terraform.io/databricks/databricks/1.84.0/windows_amd64/terraform-provider-databricks_v1.84.0.exe
 infra/.terraform/providers/registry.terraform.io/hashicorp/azurerm/4.36.0/windows_amd64/LICENSE.txt
 infra/.terraform/providers/registry.terraform.io/hashicorp/azurerm/4.36.0/windows_amd64/terraform-provider-azurerm_v4.36.0_x5.exe
+.vscode/launch.json
+.vscode/settings.json

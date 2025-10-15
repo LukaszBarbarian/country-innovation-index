@@ -5,6 +5,7 @@ from typing import Any, Union, Dict, Literal, Optional
 from azure.storage.blob.aio import BlobServiceClient, ContainerClient
 from azure.core.exceptions import ResourceNotFoundError, ResourceExistsError
 import json
+from src.common.config.config_manager import ConfigManager
 from src.common.models.file_info import FileInfo
 from src.common.azure_clients.base_azure_client_manager import AzureClientManagerBase
 
@@ -21,7 +22,8 @@ class BlobClientManager(AzureClientManagerBase[BlobServiceClient, ContainerClien
     
     def __init__(self,
                  container_name: str,
-                 storage_account_name_setting_name: str = "DATA_LAKE_STORAGE_ACCOUNT_NAME"):
+                 storage_account_name_setting_name: str = "DATA_LAKE_STORAGE_ACCOUNT_NAME",
+                 config: Optional[ConfigManager] = None):
         """
         Initializes the BlobClientManager.
 
@@ -33,7 +35,8 @@ class BlobClientManager(AzureClientManagerBase[BlobServiceClient, ContainerClien
         super().__init__(
             resource_name=container_name,
             storage_account_name_setting_name=storage_account_name_setting_name,
-            base_url_suffix=".blob.core.windows.net"
+            base_url_suffix=".blob.core.windows.net",
+            config=config
         )
 
     def _create_service_client_from_identity(self, account_url: str, credential) -> BlobServiceClient:

@@ -19,11 +19,9 @@ class AzureClientManagerBase(ABC, Generic[TServiceClient, TClient]):
     It is responsible for initializing connections to a specific Azure service.
     Handles authentication using either a connection string or Azure Identity
     (Managed Identity/Service Principal).
-    """
+    """    
 
-    _config: ConfigManager = ConfigManager()
-
-    def __init__(self, resource_name: str, storage_account_name_setting_name: str, base_url_suffix: str):
+    def __init__(self, resource_name: str, storage_account_name_setting_name: str, base_url_suffix: str, config: Optional[ConfigManager] = None):
         """
         Initializes the base client manager.
 
@@ -49,6 +47,7 @@ class AzureClientManagerBase(ABC, Generic[TServiceClient, TClient]):
 
         self._service_client: Optional[TServiceClient] = None
         self._client: Optional[TClient] = None
+        self._config = config or ConfigManager()
 
         self._initialize_clients()
         logger.info(f"AzureClientManagerBase initialized for resource '{self.resource_name}'.")

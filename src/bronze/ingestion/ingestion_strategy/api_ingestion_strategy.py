@@ -61,7 +61,7 @@ class ApiIngestionStrategy(BaseIngestionStrategy):
             api_client = ApiClientFactory.get_instance(manifest_source.source_config_payload.domain_source, config=self.config)
             data_processor = DataProcessorFactory.get_instance(manifest_source.source_config_payload.domain_source)
             file_builder = StorageFileBuilderFactory.get_instance(ETLLayer.BRONZE, config=self.config)
-            storage_manager = BlobClientManager(self.context.etl_layer.value)
+            storage_manager = BlobClientManager(container_name=self.context.etl_layer.value, config=self.config)
 
             # 1. Fetch data from API
             fetched_data: List[RawData] = await api_client.fetch_all(manifest_source)
